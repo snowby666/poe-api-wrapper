@@ -246,7 +246,6 @@ class PoeApi:
 
         return text
 
-
 class Poe:
     @staticmethod
     def load_config():
@@ -295,7 +294,6 @@ class Poe:
                 print('Invalid choice. Please select a valid option.\n')
         return bot
 
-        
     @classmethod
     def chat_with_bot(cls, cookie):
         
