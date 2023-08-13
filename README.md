@@ -1,7 +1,5 @@
 # Poe API Wrapper
-<br>
-A simple API wrapper for Poe.com
-
+A simple API wrapper for Poe.com using Httpx
 ## Table of Contents:
 - [Poe API Wrapper](#poe-api-wrapper)
   - [Table of Contents:](#table-of-contents)
