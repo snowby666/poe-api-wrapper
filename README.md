@@ -14,8 +14,6 @@ A simple API wrapper for Poe.com
   - [Copyright:](#copyright)
     - [Copyright Notice:](#copyright-notice)
 
-*Table of contents generated with [markdown-toc](http://ecotrust-canada.github.io/markdown-toc).*
-
 ## Highlights:
  - Log in with your Quora's token
  - Send messages
