@@ -45,13 +45,18 @@ class PoeApi:
         '''
     }
 
-    def __init__(self, cookie: str):
+    def __init__(self, cookie: str, bot:str=None):
         self.client = Client(timeout=180)
         self.client.cookies.set('m-b', cookie)
         self.client.headers.update({
             **self.HEADERS,
             'Quora-Formkey': self.get_formkey(),
         })
+        self.bot = bot
+        try:
+            self.chat_id = self.get_chatid(bot)
+        except ValueError:
+            raise ValueError('Invalid bot name!')
    
     def __del__(self):
         self.client.close()
@@ -83,7 +88,7 @@ class PoeApi:
             raise ValueError('Chat data not found!')
         return chat_data['chatOfBot']['chatId']
 
-    def send_message(self, message: str, bot='a2', chat_id: str=''):
+    def send_message(self, message: str):
         query = f'''
             mutation AddHumanMessageMutation($chatId: BigInt!, $bot: String!, $query: String!, $source: MessageSource, $withChatBreak: Boolean! = false) {{
                 messageCreate(
@@ -111,11 +116,11 @@ class PoeApi:
             }}
             {self.GRAPHQL_QUERIES['MessageFragment']}
         '''
-        variables = {'bot': bot, 'chatId': chat_id, 'query': message, 'source': None, 'withChatBreak': False}
+        variables = {'bot': self.bot, 'chatId': self.chat_id, 'query': message, 'source': None, 'withChatBreak': False}
         data = {'operationName': 'AddHumanMessageMutation', 'query': query, 'variables': variables}
         self.send_request('gql_POST', data)
 
-    def clear_context(self, chat_id: str):
+    def clear_context(self):
         query = f'''
             mutation AddMessageBreakMutation($chatId: BigInt!) {{
                 messageBreakCreate(chatId: $chatId) {{
@@ -128,7 +133,7 @@ class PoeApi:
             }}
             {self.GRAPHQL_QUERIES['MessageFragment']}
         '''
-        variables = {'chatId': chat_id}
+        variables = {'chatId': self.chat_id}
         data = {'operationName': 'AddMessageBreakMutation', 'query': query, 'variables': variables}
         self.send_request('gql_POST', data)
     
@@ -144,7 +149,7 @@ class PoeApi:
         data = {'operationName': 'DeleteMessageMutation', 'query': query, 'variables': variables}
         self.send_request('gql_POST', data)
     
-    def purge_conversation(self, chat_id: str):
+    def purge_conversation(self):
         query = f'''
             query ChatPaginationQuery($chatId: BigInt!, $before: String, $last: Int! = 50) {{
                 chat(chatId: $chatId) {{
@@ -168,7 +173,7 @@ class PoeApi:
             }}
             {self.GRAPHQL_QUERIES['MessageFragment']}
         '''
-        variables = {'before': None, 'chatId': chat_id, 'last': 50}
+        variables = {'before': None, 'chatId': self.chat_id, 'last': 50}
         data = {'operationName': 'ChatPaginationQuery', 'query': query, 'variables': variables}
 
         while True:
@@ -195,7 +200,7 @@ class PoeApi:
         data = {'operationName': 'SettingsDeleteAllMessagesButton_deleteUserMessagesMutation_Mutation', 'query': query}
         self.send_request('gql_POST', data)
         
-    def get_latest_message(self, bot: str):
+    def get_latest_message(self):
         query = f'''
             query ChatPaginationQuery($bot: String!, $before: String, $last: Int! = 10) {{
                 chatOfBot(bot: $bot) {{
@@ -219,7 +224,7 @@ class PoeApi:
             }}
             {self.GRAPHQL_QUERIES['MessageFragment']}
         '''
-        variables = {'before': None, 'bot': bot, 'last': 1}
+        variables = {'before': None, 'bot': self.bot, 'last': 1}
         data = {'operationName': 'ChatPaginationQuery', 'query': query, 'variables': variables}
 
         # author_nickname = ''
@@ -293,24 +298,24 @@ class Poe:
         
     @classmethod
     def chat_with_bot(cls, cookie):
-        client = PoeApi(cookie=cookie)
         
         while True:
             try:
                 bot = cls.select_bot()
-                chat_id = client.get_chatid(bot)
+                client = PoeApi(cookie=cookie, bot=bot)
+
                 break
             except ValueError:
                 print('Invalid bot name. Please try again.\n')
                 
         print(f'The selected bot is: {bot}')
-        client.clear_context(chat_id)
+        client.clear_context()
         print("Context is now cleared")
 
         while True:
             message = input('\033[38;5;121mYou\033[0m : ').lower() 
             if message == '!clear':
-                client.clear_context(chat_id)
+                client.clear_context()
                 print("Context is now cleared")
             elif message == '!exit':
                 break
@@ -318,12 +323,12 @@ class Poe:
                 print('\n')
                 Poe.chat_with_bot()
             elif message == '!purge':
-                client.purge_conversation(chat_id)
+                client.purge_conversation()
                 print("Conversation is now purged")
             elif message == '!purgeall':
                 client.purge_all_conversations()
                 print("All conversations are now purged")
             else:
-                client.send_message(message, bot, chat_id)
-                result = client.get_latest_message(bot)
+                client.send_message(message)
+                result = client.get_latest_message()
                 print(f'\033[38;5;20m{bot}\033[0m : {result.strip()}')
