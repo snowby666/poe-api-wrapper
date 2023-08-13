@@ -1,6 +1,5 @@
 from re import search
 from time import sleep
-from json import load
 
 from httpx import Client
 
@@ -247,11 +246,6 @@ class PoeApi:
         return text
 
 class Poe:
-    @staticmethod
-    def load_config():
-        with open('config.json') as file:
-            return load(file)
-
     @staticmethod
     def select_bot():
         bots = {
