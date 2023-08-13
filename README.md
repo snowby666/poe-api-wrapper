@@ -8,6 +8,7 @@ A simple API wrapper for Poe.com
   - [Highlights:](#highlights)
   - [Installation:](#installation)
   - [Documentation:](#documentation)
+    - [Available Bots:](#available-bots)
     - [How to get your Token:](#how-to-get-your-token)
     - [Basic Usage:](#basic-usage)
   - [Copyright:](#copyright)
@@ -39,6 +40,20 @@ python example.py
 ```
 
 ## Documentation:
+### Available Bots:
+- 1. Assistant (capybara)
+- 2. Claude-instant-100k (a2_100k)
+- 3. Claude-2-100k (a2_2)
+- 4. Claude-instant (a2)
+- 5. ChatGPT (chinchilla)
+- 6. ChatGPT-16k (agouti)
+- 7. GPT-4 (beaver)
+- 8. GPT-4-32k (vizcacha)
+- 9. Google-PaLM (acouchy)
+- 10. Llama-2-7b (llama_2_7b_chat)
+- 11. Llama-2-13b (llama_2_13b_chat)
+- 12. Llama-2-70b (llama_2_70b_chat)
+
 ### How to get your Token:
 - Sign in at https://www.quora.com/
 
@@ -51,6 +66,8 @@ Session: Go to Storage → Cookies → m-b. Copy the value of that cookie
 from api import PoeApi
 client = PoeApi("TOKEN_HERE", "BOT_NAME")
 ```
+> **Note**
+> Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client = PoeApi("TOKEN_HERE", "BOT_NAME")`
 - Sending messages & Retrieving responses
 ```py
 message = "What is reverse engineering?"
@@ -59,7 +76,7 @@ print(client.get_latest_message())
 ```
 - Clear conversation context
 ```py
-client.clear_context()
+client.chat_break()
 ```
 - Purge messages of 1 bot
 ```py

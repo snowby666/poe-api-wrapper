@@ -120,7 +120,7 @@ class PoeApi:
         data = {'operationName': 'AddHumanMessageMutation', 'query': query, 'variables': variables}
         self.send_request('gql_POST', data)
 
-    def clear_context(self):
+    def chat_break(self):
         query = f'''
             mutation AddMessageBreakMutation($chatId: BigInt!) {{
                 messageBreakCreate(chatId: $chatId) {{
@@ -309,13 +309,13 @@ class Poe:
                 print('Invalid bot name. Please try again.\n')
                 
         print(f'The selected bot is: {bot}')
-        client.clear_context()
+        client.chat_break()
         print("Context is now cleared")
 
         while True:
             message = input('\033[38;5;121mYou\033[0m : ').lower() 
             if message == '!clear':
-                client.clear_context()
+                client.chat_break()
                 print("Context is now cleared")
             elif message == '!exit':
                 break
