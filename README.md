@@ -41,18 +41,18 @@ python example.py
 
 ## Documentation:
 ### Available Bots:
-- 1. Assistant (capybara)
-- 2. Claude-instant-100k (a2_100k)
-- 3. Claude-2-100k (a2_2)
-- 4. Claude-instant (a2)
-- 5. ChatGPT (chinchilla)
-- 6. ChatGPT-16k (agouti)
-- 7. GPT-4 (beaver)
-- 8. GPT-4-32k (vizcacha)
-- 9. Google-PaLM (acouchy)
-- 10. Llama-2-7b (llama_2_7b_chat)
-- 11. Llama-2-13b (llama_2_13b_chat)
-- 12. Llama-2-70b (llama_2_70b_chat)
+- Assistant (capybara)
+- Claude-instant-100k (a2_100k)
+- Claude-2-100k (a2_2)
+- Claude-instant (a2)
+- ChatGPT (chinchilla)
+- ChatGPT-16k (agouti)
+- GPT-4 (beaver)
+- GPT-4-32k (vizcacha)
+- Google-PaLM (acouchy)
+- Llama-2-7b (llama_2_7b_chat)
+- Llama-2-13b (llama_2_13b_chat)
+- Llama-2-70b (llama_2_70b_chat)
 
 ### How to get your Token:
 - Sign in at https://www.quora.com/
