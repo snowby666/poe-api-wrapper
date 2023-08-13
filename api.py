@@ -321,7 +321,7 @@ class Poe:
                 break
             elif message == '!reset':
                 print('\n')
-                Poe.chat_with_bot()
+                Poe.chat_with_bot(cookie)
             elif message == '!purge':
                 client.purge_conversation()
                 print("Conversation is now purged")
