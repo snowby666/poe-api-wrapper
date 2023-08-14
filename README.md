@@ -54,29 +54,32 @@ python example.py
 - Sign in at https://www.quora.com/
 
 F12 for console
+
 Copy the values
 Session: Go to Storage → Cookies → m-b. Copy the value of that cookie
+
 ### Basic Usage:
-- Connect to the Bot
+- Connect to the API
 ```py
 from api import PoeApi
-client = PoeApi("TOKEN_HERE", "BOT_NAME")
+client = PoeApi("TOKEN_HERE")
 ```
-> **Note**
-> Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client = PoeApi("TOKEN_HERE", "BOT_NAME")`
 - Sending messages & Retrieving responses
 ```py
+bot = "a2"
 message = "What is reverse engineering?"
-client.send_message(message)
-print(client.get_latest_message())
+client.send_message(bot, message)
+print(client.get_latest_message(bot))
 ```
+> **Note**
+> Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
 - Clear conversation context
 ```py
-client.chat_break()
+client.chat_break(bot)
 ```
 - Purge messages of 1 bot
 ```py
-client.purge_conversation()
+client.purge_conversation(bot)
 ```
 - Purge all messages of user
 ```py

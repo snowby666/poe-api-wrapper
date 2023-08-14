@@ -1,8 +1,22 @@
 from re import search
 from time import sleep
-
 from httpx import Client
 
+"""
+This API is modified and maintained by @snowby666
+Credit to @ading2210 for the GraphQL queries
+"""
+def request_with_retries(method, *args, **kwargs):
+    attempts = kwargs.get("attempts") or 10
+    url = args[0]
+    for i in range(attempts):
+        r = method(*args, **kwargs)
+    if r.status_code == 200:
+        return r
+    if r.status_code == 307:
+        if r.headers.get("Location").startswith("/login"):
+            raise RuntimeError("Invalid or missing token.")
+    raise RuntimeError(f"Failed to download {url} too many times.")
 
 class PoeApi:
     BASE_URL = 'https://www.quora.com'
@@ -44,18 +58,13 @@ class PoeApi:
         '''
     }
 
-    def __init__(self, cookie: str, bot:str=None):
+    def __init__(self, cookie: str):
         self.client = Client(timeout=180)
         self.client.cookies.set('m-b', cookie)
         self.client.headers.update({
             **self.HEADERS,
             'Quora-Formkey': self.get_formkey(),
         })
-        self.bot = bot
-        try:
-            self.chat_id = self.get_chatid(bot)
-        except ValueError:
-            raise ValueError('Invalid bot name!')
    
     def __del__(self):
         self.client.close()
@@ -87,7 +96,7 @@ class PoeApi:
             raise ValueError('Chat data not found!')
         return chat_data['chatOfBot']['chatId']
 
-    def send_message(self, message: str):
+    def send_message(self, bot: str, message: str):
         query = f'''
             mutation AddHumanMessageMutation($chatId: BigInt!, $bot: String!, $query: String!, $source: MessageSource, $withChatBreak: Boolean! = false) {{
                 messageCreate(
@@ -115,11 +124,11 @@ class PoeApi:
             }}
             {self.GRAPHQL_QUERIES['MessageFragment']}
         '''
-        variables = {'bot': self.bot, 'chatId': self.chat_id, 'query': message, 'source': None, 'withChatBreak': False}
+        variables = {'bot': bot, 'chatId': self.get_chatid(bot), 'query': message, 'source': None, 'withChatBreak': False}
         data = {'operationName': 'AddHumanMessageMutation', 'query': query, 'variables': variables}
         self.send_request('gql_POST', data)
 
-    def chat_break(self):
+    def chat_break(self, bot: str):
         query = f'''
             mutation AddMessageBreakMutation($chatId: BigInt!) {{
                 messageBreakCreate(chatId: $chatId) {{
@@ -132,7 +141,7 @@ class PoeApi:
             }}
             {self.GRAPHQL_QUERIES['MessageFragment']}
         '''
-        variables = {'chatId': self.chat_id}
+        variables = {'chatId': self.get_chatid(bot)}
         data = {'operationName': 'AddMessageBreakMutation', 'query': query, 'variables': variables}
         self.send_request('gql_POST', data)
     
@@ -148,7 +157,7 @@ class PoeApi:
         data = {'operationName': 'DeleteMessageMutation', 'query': query, 'variables': variables}
         self.send_request('gql_POST', data)
     
-    def purge_conversation(self):
+    def purge_conversation(self, bot: str):
         query = f'''
             query ChatPaginationQuery($chatId: BigInt!, $before: String, $last: Int! = 50) {{
                 chat(chatId: $chatId) {{
@@ -172,7 +181,7 @@ class PoeApi:
             }}
             {self.GRAPHQL_QUERIES['MessageFragment']}
         '''
-        variables = {'before': None, 'chatId': self.chat_id, 'last': 50}
+        variables = {'before': None, 'chatId': self.get_chatid(bot), 'last': 50}
         data = {'operationName': 'ChatPaginationQuery', 'query': query, 'variables': variables}
 
         while True:
@@ -199,7 +208,7 @@ class PoeApi:
         data = {'operationName': 'SettingsDeleteAllMessagesButton_deleteUserMessagesMutation_Mutation', 'query': query}
         self.send_request('gql_POST', data)
         
-    def get_latest_message(self):
+    def get_latest_message(self, bot: str):
         query = f'''
             query ChatPaginationQuery($bot: String!, $before: String, $last: Int! = 10) {{
                 chatOfBot(bot: $bot) {{
@@ -223,7 +232,7 @@ class PoeApi:
             }}
             {self.GRAPHQL_QUERIES['MessageFragment']}
         '''
-        variables = {'before': None, 'bot': self.bot, 'last': 1}
+        variables = {'before': None, 'bot': bot, 'last': 1}
         data = {'operationName': 'ChatPaginationQuery', 'query': query, 'variables': variables}
 
         # author_nickname = ''
@@ -244,7 +253,195 @@ class PoeApi:
                 break
 
         return text
+    
+    def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, linkification=False,  markdown_rendering=True, suggested_replies=False, private=False, temperature=None):
+        query = '''
+        mutation CreateBotMain_poeBotCreate_Mutation(
+            $model: String!
+            $displayName: String
+            $handle: String!
+            $prompt: String!
+            $isPromptPublic: Boolean!
+            $introduction: String!
+            $description: String!
+            $profilePictureUrl: String
+            $apiUrl: String
+            $apiKey: String
+            $isApiBot: Boolean
+            $hasLinkification: Boolean
+            $hasMarkdownRendering: Boolean
+            $hasSuggestedReplies: Boolean
+            $isPrivateBot: Boolean
+            $temperature: Float
+        ) {
+            poeBotCreate(
+            model: $model
+            handle: $handle
+            displayName: $displayName
+            promptPlaintext: $prompt
+            isPromptPublic: $isPromptPublic
+            introduction: $introduction
+            description: $description
+            profilePicture: $profilePictureUrl
+            apiUrl: $apiUrl
+            apiKey: $apiKey
+            isApiBot: $isApiBot
+            hasLinkification: $hasLinkification
+            hasMarkdownRendering: $hasMarkdownRendering
+            hasSuggestedReplies: $hasSuggestedReplies
+            isPrivateBot: $isPrivateBot
+            temperature: $temperature
+            ) {
+            status
+            bot {
+                id
+                ...BotHeader_bot
+            }
+            }
+        }
 
+        fragment BotHeader_bot on Bot {
+            displayName
+            isLimitedAccess
+            ...BotImage_bot
+            ...BotLink_bot
+            ...IdAnnotation_node
+            ...botHelpers_useViewerCanAccessPrivateBot
+            ...botHelpers_useDeletion_bot
+        }
+
+        fragment BotImage_bot on Bot {
+            displayName
+            ...botHelpers_useDeletion_bot
+            ...BotImage_useProfileImage_bot
+        }
+
+        fragment BotImage_useProfileImage_bot on Bot {
+            image {
+            __typename
+            ... on LocalBotImage {
+                localName
+            }
+            ... on UrlBotImage {
+                url
+            }
+            }
+            ...botHelpers_useDeletion_bot
+        }
+
+        fragment BotLink_bot on Bot {
+            handle
+        }
+
+        fragment IdAnnotation_node on Node {
+            __isNode: __typename
+            id
+        }
+
+        fragment botHelpers_useDeletion_bot on Bot {
+            deletionState
+        }
+
+        fragment botHelpers_useViewerCanAccessPrivateBot on Bot {
+            isPrivateBot
+            viewerIsCreator
+            isSystemBot
+        }
+        '''
+        variables = {
+            "model": base_model,
+            "displayName": display_name,
+            "handle": handle,
+            "prompt": prompt,
+            "isPromptPublic": prompt_public,
+            "introduction": intro_message,
+            "description": description,
+            "profilePictureUrl": pfp_url,
+            "apiUrl": api_url,
+            "apiKey": api_key,
+            "isApiBot": api_bot,
+            "hasLinkification": linkification,
+            "hasMarkdownRendering": markdown_rendering,
+            "hasSuggestedReplies": suggested_replies,
+            "isPrivateBot": private,
+            "temperature": temperature
+        }
+        data = {'operationName': 'PoeBotCreateMutation', 'query': query, 'variables': variables}
+        result = self.send_request('gql_POST', data)["data"]["poeBotCreate"]
+        if result["status"] != "success":
+           print(f"Poe returned an error while trying to create a bot: {result['status']}")
+        else:
+           print("Bot created successfully")
+    
+    # get_bot logic
+    
+    def get_bot(self, handle):
+        url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{handle}.json'
+
+        data = request_with_retries(self.session.get, url).json()
+        chat_data = data["pageProps"]["data"]["chatOfBotHandle"]
+        
+        return chat_data 
+    def edit_bot(self, handle, prompt, bot_id=None,display_name=None, base_model="chinchilla", description="",
+                intro_message="", api_key=None, api_url=None, private=False,
+                prompt_public=True, pfp_url=None, linkification=False,
+                markdown_rendering=True, suggested_replies=False, temperature=None):
+
+        query = '''
+        mutation EditBotMain_poeBotEdit_Mutation(
+        $botId: BigInt!
+        $handle: String!
+        $displayName: String
+        $description: String!
+        $introduction: String!
+        $isPromptPublic: Boolean!
+        $baseBot: String!
+        $profilePictureUrl: String
+        $prompt: String!
+        $apiUrl: String
+        $apiKey: String
+        $hasLinkification: Boolean
+        $hasMarkdownRendering: Boolean
+        $hasSuggestedReplies: Boolean
+        $isPrivateBot: Boolean
+        $temperature: Float
+        ) {
+        poeBotEdit(botId: $botId, handle: $handle, displayName: $displayName, description: $description, introduction: $introduction, isPromptPublic: $isPromptPublic, model: $baseBot, promptPlaintext: $prompt, profilePicture: $profilePictureUrl, apiUrl: $apiUrl, apiKey: $apiKey, hasLinkification: $hasLinkification, hasMarkdownRendering: $hasMarkdownRendering, hasSuggestedReplies: $hasSuggestedReplies, isPrivateBot: $isPrivateBot, temperature: $temperature) {
+            status
+            bot {
+            handle
+            id
+            }
+        }
+        }
+        '''
+        variables = {
+        "baseBot": base_model,
+        "botId": bot_id,
+        "handle": handle,
+        "displayName": display_name,
+        "prompt": prompt,
+        "isPromptPublic": prompt_public,
+        "introduction": intro_message,
+        "description": description,
+        "profilePictureUrl": pfp_url,
+        "apiUrl": api_url,
+        "apiKey": api_key,
+        "hasLinkification": linkification,
+        "hasMarkdownRendering": markdown_rendering,
+        "hasSuggestedReplies": suggested_replies,
+        "isPrivateBot": private,
+        "temperature": temperature
+        }
+        
+        data = {'operationName': 'PoeBotEditMutation', 'query': query, 'variables': variables}
+        result = self.send_request('gql_POST', data)
+        print(result)
+        # if result["status"] != "success":
+        #     print(f"Poe returned an error while trying to edit a bot: {result['status']}")
+        # else:
+        #     print("Bot edited successfully")
+import time
 class Poe:
     @staticmethod
     def select_bot():
@@ -294,20 +491,20 @@ class Poe:
         while True:
             try:
                 bot = cls.select_bot()
-                client = PoeApi(cookie=cookie, bot=bot)
-
+                client = PoeApi(cookie=cookie)
+                client.get_chatid(bot)
                 break
             except ValueError:
                 print('Invalid bot name. Please try again.\n')
                 
         print(f'The selected bot is: {bot}')
-        client.chat_break()
+        client.chat_break(bot)
         print("Context is now cleared")
-
+        
         while True:
             message = input('\033[38;5;121mYou\033[0m : ').lower() 
             if message == '!clear':
-                client.chat_break()
+                client.chat_break(bot)
                 print("Context is now cleared")
             elif message == '!exit':
                 break
@@ -315,12 +512,12 @@ class Poe:
                 print('\n')
                 Poe.chat_with_bot(cookie)
             elif message == '!purge':
-                client.purge_conversation()
+                client.purge_conversation(bot)
                 print("Conversation is now purged")
             elif message == '!purgeall':
                 client.purge_all_conversations()
                 print("All conversations are now purged")
             else:
-                client.send_message(message)
-                result = client.get_latest_message()
+                client.send_message(bot, message)
+                result = client.get_latest_message(bot)
                 print(f'\033[38;5;20m{bot}\033[0m : {result.strip()}')
