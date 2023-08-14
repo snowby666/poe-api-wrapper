@@ -19,6 +19,8 @@ A simple API wrapper for Poe.com using Httpx
  - Clear conversation context
  - Purge messages of 1 bot
  - Purge all messages of user
+ - Create custom bot
+ - Edit custom bot
 
 ## Installation:
 - First, clone the repository and enter the folder:
@@ -59,7 +61,7 @@ Copy the values
 Session: Go to Storage → Cookies → m-b. Copy the value of that cookie
 
 ### Basic Usage:
-- Connect to the API
+- Connecting to the API
 ```py
 from api import PoeApi
 client = PoeApi("TOKEN_HERE")
@@ -77,13 +79,24 @@ print(client.get_latest_message(bot))
 ```py
 client.chat_break(bot)
 ```
-- Purge messages of 1 bot
+- Purging messages of 1 bot
+  
+You can pass the numbers of messages to be deleted into `client.purge_conversation(bot, count)` (the default is 50)
+  
 ```py
-client.purge_conversation(bot)
+client.purge_conversation(bot, 10)
 ```
-- Purge all messages of user
+- Purging all messages of user
 ```py
 client.purge_all_conversations()
+```
+- Creating a new Bot
+```py
+client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2")
+```
+- Editing a Bot
+```py
+client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", "BOT_ID", base_model='chinchilla')
 ```
 
 ## Copyright:

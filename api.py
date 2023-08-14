@@ -6,17 +6,6 @@ from httpx import Client
 This API is modified and maintained by @snowby666
 Credit to @ading2210 for the GraphQL queries
 """
-def request_with_retries(method, *args, **kwargs):
-    attempts = kwargs.get("attempts") or 10
-    url = args[0]
-    for i in range(attempts):
-        r = method(*args, **kwargs)
-    if r.status_code == 200:
-        return r
-    if r.status_code == 307:
-        if r.headers.get("Location").startswith("/login"):
-            raise RuntimeError("Invalid or missing token.")
-    raise RuntimeError(f"Failed to download {url} too many times.")
 
 class PoeApi:
     BASE_URL = 'https://www.quora.com'
@@ -157,10 +146,10 @@ class PoeApi:
         data = {'operationName': 'DeleteMessageMutation', 'query': query, 'variables': variables}
         self.send_request('gql_POST', data)
     
-    def purge_conversation(self, bot: str):
+    def purge_conversation(self, bot: str, count: int=50):
         query = f'''
-            query ChatPaginationQuery($chatId: BigInt!, $before: String, $last: Int! = 50) {{
-                chat(chatId: $chatId) {{
+            query ChatPaginationQuery($bot: String!, $before: String, $last: Int! = {count}) {{
+                chatOfBot(bot: $bot) {{
                     id
                     __typename
                     messagesConnection(before: $before, last: $last) {{
@@ -181,19 +170,16 @@ class PoeApi:
             }}
             {self.GRAPHQL_QUERIES['MessageFragment']}
         '''
-        variables = {'before': None, 'chatId': self.get_chatid(bot), 'last': 50}
+        variables = {'before': None, 'bot': bot, 'last': count}
         data = {'operationName': 'ChatPaginationQuery', 'query': query, 'variables': variables}
-
-        while True:
-            sleep(2)
-            response_json = self.send_request('gql_POST', data)
-            edges = response_json['data']['chat']['messagesConnection']['edges']
-            if edges:
-                message_ids = [edge['node']['messageId'] for edge in edges]
-                self.delete_message(message_ids)
-            else:
-                break
-
+        response_json = self.send_request('gql_POST', data)
+        edges = response_json['data']['chatOfBot']['messagesConnection']['edges']
+        if edges:
+            message_ids = [edge['node']['messageId'] for edge in edges]
+            self.delete_message(message_ids)
+        else:
+            print('No messages found!')
+            
     def purge_all_conversations(self):
         query = f'''
             mutation SettingsDeleteAllMessagesButton_deleteUserMessagesMutation_Mutation {{
@@ -372,21 +358,12 @@ class PoeApi:
            print(f"Poe returned an error while trying to create a bot: {result['status']}")
         else:
            print("Bot created successfully")
-    
-    # get_bot logic
-    
-    def get_bot(self, handle):
-        url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{handle}.json'
-
-        data = request_with_retries(self.session.get, url).json()
-        chat_data = data["pageProps"]["data"]["chatOfBotHandle"]
         
-        return chat_data 
-    def edit_bot(self, handle, prompt, bot_id=None,display_name=None, base_model="chinchilla", description="",
+    # get_bot logic 
+    def edit_bot(self, handle, prompt, bot_id, display_name=None, base_model="chinchilla", description="",
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
-                markdown_rendering=True, suggested_replies=False, temperature=None):
-
+                markdown_rendering=True, suggested_replies=False, temperature=None):     
         query = '''
         mutation EditBotMain_poeBotEdit_Mutation(
         $botId: BigInt!
@@ -435,13 +412,12 @@ class PoeApi:
         }
         
         data = {'operationName': 'PoeBotEditMutation', 'query': query, 'variables': variables}
-        result = self.send_request('gql_POST', data)
-        print(result)
-        # if result["status"] != "success":
-        #     print(f"Poe returned an error while trying to edit a bot: {result['status']}")
-        # else:
-        #     print("Bot edited successfully")
-import time
+        result = self.send_request('gql_POST', data)["data"]["poeBotEdit"]
+        if result["status"] != "success":
+             print(f"Poe returned an error while trying to edit a bot: {result['status']}")
+        else:
+             print("Bot edited successfully")
+        
 class Poe:
     @staticmethod
     def select_bot():
