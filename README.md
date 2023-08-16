@@ -60,7 +60,7 @@ F12 for Devtools (Right-click + Inspect)
 - Firefox: Devtools > Storage > Cookies
 - Safari: Devtools > Storage > Cookies
 
-Copy the value of the `m-b` cookie
+Copy the value of `m-b` cookie
 ### Basic Usage:
 - Connecting to the API
 ```py
