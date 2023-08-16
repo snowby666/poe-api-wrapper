@@ -53,13 +53,14 @@ python example.py
 - Llama-2-70b (llama_2_70b_chat)
 
 ### How to get your Token:
-- Sign in at https://www.quora.com/
+Sign in at https://www.quora.com/
 
-F12 for console
+F12 for Devtools (Right-click + Inspect)
+- Chromium: Devtools > Application > Cookies > quora.com
+- Firefox: Devtools > Storage > Cookies
+- Safari: Devtools > Storage > Cookies
 
-Copy the values
-Session: Go to Storage → Cookies → m-b. Copy the value of that cookie
-
+Copy the value of the `m-b` cookie
 ### Basic Usage:
 - Connecting to the API
 ```py

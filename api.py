@@ -224,7 +224,7 @@ class PoeApi:
         # author_nickname = ''
         state = 'incomplete'
         while True:
-            sleep(2)
+            sleep(0.1)
             response_json = self.send_request('gql_POST', data)
             edges = response_json['data']['chatOfBot']['messagesConnection']['edges']
             if edges:
