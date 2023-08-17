@@ -109,13 +109,12 @@ client.get_chat_history()
 # ------------------ Chat History ------------------
 # Chat ID | Bot Name
 # --------------------------------------------------
+# 58232105 | a2
 # 58142663 | capybara
 # 58171742 | capybara
-# 45354224 | codestressen
 # --------------------------------------------------
-
 # Get chat ids of a bot
-client.get_chat_history("BOT_NAME")
+client.get_chat_history("capybara")
 
 # Output:
 # 1. 58142663
