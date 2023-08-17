@@ -105,6 +105,8 @@ class PoeApi:
         response_json = self.send_request('gql_POST', data)
         edges = response_json['data']['chats']['edges']
         
+        chat_ids = {}
+        
         if bot == None:
             # print the chat history table
             print('-'*18+' \033[38;5;121mChat History\033[0m '+'-'*18)
@@ -113,20 +115,25 @@ class PoeApi:
             for edge in edges:
                 chat = edge['node']
                 print(f'\033[38;5;121m{chat["chatId"]}\033[0m | {chat["defaultBotNickname"]}')
+                if chat['defaultBotNickname'] in chat_ids:
+                    chat_ids[chat['defaultBotNickname']].append(chat['chatId'])
+                else:
+                    chat_ids[chat['defaultBotNickname']] = [chat['chatId']]
             print('-' * 50)
-            return edges
         else:
             num = 0
-            chat_ids = []
             for edge in edges:
                 chat = edge['node']
                 if chat['defaultBotNickname'] == bot:
                     num += 1
                     print(f'\033[38;5;121m{num}.\033[0m {chat["chatId"]}')
-                    chat_ids.append(chat['chatId'])
-            if chat_ids == []:
-                print(f'No chat history of {bot} found!')
-            return chat_ids 
+                    if chat['defaultBotNickname'] in chat_ids:
+                        chat_ids[chat['defaultBotNickname']].append(chat['chatId'])
+                    else:
+                        chat_ids[chat['defaultBotNickname']] = [chat['chatId']]
+        if chat_ids == {}:
+            print(f'No chat history of {bot} found!')
+        return chat_ids 
            
     def get_chatid(self, bot: str='a2'):
         query = f'''

@@ -105,7 +105,7 @@ client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", "BOT_ID", base_model='chinchilla
 # Get chat ids of all bots
 client.get_chat_history()
 
-# Output:
+# Output | {'a2': [58232105], 'capybara': [58142663, 58171742]}
 # ------------------ Chat History ------------------
 # Chat ID | Bot Name
 # --------------------------------------------------
@@ -113,10 +113,11 @@ client.get_chat_history()
 # 58142663 | capybara
 # 58171742 | capybara
 # --------------------------------------------------
+
 # Get chat ids of a bot
 client.get_chat_history("capybara")
 
-# Output:
+# Output | {'capybara': [58142663, 58171742]}
 # 1. 58142663
 # 2. 58171742
 ```
