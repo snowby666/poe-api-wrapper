@@ -21,6 +21,7 @@ A simple API wrapper for Poe.com using Httpx
  - Purge all messages of user
  - Create custom bot
  - Edit custom bot
+ - Get chat ids of all bot (support multi threads of each bot)
 
 ## Installation:
 - First, clone the repository and enter the folder:
@@ -98,6 +99,14 @@ client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2")
 - Editing a Bot
 ```py
 client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", "BOT_ID", base_model='chinchilla')
+```
+- Getting chat ids
+```py
+# Get chat ids of all bots
+client.get_chat_history()
+
+# Get chat ids of a bot
+client.get_chat_history("BOT_NAME")
 ```
 
 ## Copyright:

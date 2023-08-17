@@ -67,6 +67,67 @@ class PoeApi:
         response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', json=data)
         return response.json()
 
+    def get_chat_history(self, bot:str=None, count: int=50):
+        query = f'''
+            query ChatHistoryListPaginationQuery($count: Int!, $cursor: String) {{
+                chats(count: $count, cursor: $cursor) {{
+                    __typename
+                    edges {{
+                        __typename
+                        node {{
+                            __typename
+                            ...ChatFragment
+                            messagesConnection(first: 1) {{
+                                edges {{
+                                    node {{
+                                        __typename
+                                        ...MessageFragment
+                                    }}
+                                }}
+                            }}
+                        }}
+                        cursor
+                        id
+                    }}
+                    pageInfo {{
+                        __typename
+                        endCursor
+                        hasNextPage
+                    }}
+                    id
+                }}
+            }}
+            {self.GRAPHQL_QUERIES['ChatFragment']}
+            {self.GRAPHQL_QUERIES['MessageFragment']}
+        '''
+        variables = {'count': count, 'cursor': None}
+        data = {'operationName': 'ChatHistoryListPaginationQuery', 'query': query, 'variables': variables}
+        response_json = self.send_request('gql_POST', data)
+        edges = response_json['data']['chats']['edges']
+        
+        if bot == None:
+            # print the chat history table
+            print('-'*18+' \033[38;5;121mChat History\033[0m '+'-'*18)
+            print('\033[38;5;121mChat ID\0 | \033[38;5;121mBot Name\033[0m')
+            print('-' * 50)
+            for edge in edges:
+                chat = edge['node']
+                print(f'\033[38;5;121m{chat["chatId"]}\033[0m | {chat["defaultBotNickname"]}')
+            print('-' * 50)
+            return edges
+        else:
+            num = 0
+            chat_ids = []
+            for edge in edges:
+                chat = edge['node']
+                if chat['defaultBotNickname'] == bot:
+                    num += 1
+                    print(f'\033[38;5;121m{num}.\033[0m {chat["chatId"]}')
+                    chat_ids.append(chat['chatId'])
+            if chat_ids == []:
+                print(f'No chat history of {bot} found!')
+            return chat_ids 
+           
     def get_chatid(self, bot: str='a2'):
         query = f'''
             query ChatViewQuery($bot: String!) {{
