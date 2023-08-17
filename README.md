@@ -105,8 +105,21 @@ client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", "BOT_ID", base_model='chinchilla
 # Get chat ids of all bots
 client.get_chat_history()
 
+# Output:
+# ------------------ Chat History ------------------
+# Chat ID | Bot Name
+# --------------------------------------------------
+# 58142663 | capybara
+# 58171742 | capybara
+# 45354224 | codestressen
+# --------------------------------------------------
+
 # Get chat ids of a bot
 client.get_chat_history("BOT_NAME")
+
+# Output:
+# 1. 58142663
+# 2. 58171742
 ```
 
 ## Copyright:
