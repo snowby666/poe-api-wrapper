@@ -65,6 +65,7 @@ class PoeApi:
 
     def send_request(self, path: str, data: dict):
         response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', json=data)
+        print(response.json())
         return response.json()
 
     def get_chatid(self, bot: str='a2'):
@@ -80,6 +81,7 @@ class PoeApi:
         variables = {'bot': bot}
         data = {'operationName': 'ChatViewQuery', 'query': query, 'variables': variables}
         response_json = self.send_request('gql_POST', data)
+        print(response_json)
         chat_data = response_json.get('data')
         if chat_data is None:
             raise ValueError('Chat data not found!')
