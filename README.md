@@ -21,7 +21,8 @@ A simple API wrapper for Poe.com using Httpx
  - Purge all messages of user
  - Create custom bot
  - Edit custom bot
- - Get chat ids of all bot (support multi threads of each bot)
+ - Get Chat Ids & Chat Codes of bot(s)
+ - Support multi-chat threads
 
 ## Installation:
 - First, clone the repository and enter the folder:
@@ -68,25 +69,71 @@ Copy the value of `m-b` cookie
 from api import PoeApi
 client = PoeApi("TOKEN_HERE")
 ```
-- Sending messages & Retrieving responses
+- Getting Chat Ids & Chat Codes
+```py
+# Get chat ids of all bots
+client.get_chat_history()
+# Output:
+# ------------------ Chat History ------------------
+# Chat ID  |     Chat Code       | Bot Name
+# --------------------------------------------------
+# 59727831 | 2i58aywsckpnm0v7wyl | chinchilla       
+# 59727472 | 2i58bw1nfv0aq7eab6i | chinchilla       
+# 59726162 | 2i58ciex72dom7im83r | a2
+# 59726106 | 2i58campfdh1yn9us8i | a2
+# 59726052 | 2i58d5x8am0untzhaxp | a2
+# 59724775 | 2i588127auu1k5ilri9 | capybara
+# 59724472 | 2i588hu98sfob7dfifx | capybara
+# 59724127 | 2i586nb5jwhhvtr8gk4 | a2
+# 59722624 | 2i58qnkisefkly649ml | a2
+# 59719138 | 2i58xtl3nftynxnsxxi | capybara
+# 59667229 | 2i5e3a7vvpbvt4nrif8 | a2
+# 59673297 | 2i5gzkx1x2wicy1tzwr | a2
+# 59680790 | 2i5hperhw2irsy351gn | capybara
+# --------------------------------------------------
+
+print(client.get_chat_history())
+# Output:
+# {'chinchilla': [{'chatId': 59727831, 'chatCode': '2i58aywsckpnm0v7wyl', 'id': 'Q2hhdDo1OTcyNzgzMQ=='}, {'chatId': 59727472, 'chatCode': '2i58bw1nfv0aq7eab6i', 'id': 'Q2hhdDo1OTcyNzQ3Mg=='}], 'a2': [{'chatId': 59726162, 'chatCode': '2i58ciex72dom7im83r', 'id': 'Q2hhdDo1OTcyNjE2Mg=='}, {'chatId': 59726106, 'chatCode': '2i58campfdh1yn9us8i', 'id': 'Q2hhdDo1OTcyNjEwNg=='}, {'chatId': 59726052, 'chatCode': '2i58d5x8am0untzhaxp', 'id': 'Q2hhdDo1OTcyNjA1Mg=='}, {'chatId': 59724127, 'chatCode': '2i586nb5jwhhvtr8gk4', 'id': 'Q2hhdDo1OTcyNDEyNw=='}, {'chatId': 59722624, 'chatCode': '2i58qnkisefkly649ml', 'id': 'Q2hhdDo1OTcyMjYyNA=='}, {'chatId': 59667229, 'chatCode': '2i5e3a7vvpbvt4nrif8', 'id': 'Q2hhdDo1OTY2NzIyOQ=='}, {'chatId': 59673297, 'chatCode': '2i5gzkx1x2wicy1tzwr', 'id': 'Q2hhdDo1OTY3MzI5Nw=='}], 'capybara': [{'chatId': 59724775, 'chatCode': '2i588127auu1k5ilri9', 'id': 'Q2hhdDo1OTcyNDc3NQ=='}, {'chatId': 59724472, 'chatCode': '2i588hu98sfob7dfifx', 'id': 'Q2hhdDo1OTcyNDQ3Mg=='}, {'chatId': 59719138, 'chatCode': '2i58xtl3nftynxnsxxi', 'id': 'Q2hhdDo1OTcxOTEzOA=='}, {'chatId': 59680790, 'chatCode': '2i5hperhw2irsy351gn', 'id': 'Q2hhdDo1OTY4MDc5MA=='}]}
+
+# Get chat ids of a bot
+print(client.get_chat_history("capybara"))
+# Output:
+# {'capybara': [{'chatId': 59724775, 'chatCode': '2i588127auu1k5ilri9', 'id': 'Q2hhdDo1OTcyNDc3NQ=='}, {'chatId': 59724472, 'chatCode': '2i588hu98sfob7dfifx', 'id': 'Q2hhdDo1OTcyNDQ3Mg=='}, {'chatId': 59719138, 'chatCode': '2i58xtl3nftynxnsxxi', 'id': 'Q2hhdDo1OTcxOTEzOA=='}, {'chatId': 59680790, 'chatCode': '2i5hperhw2irsy351gn', 'id': 'Q2hhdDo1OTY4MDc5MA=='}]}
+```
+
+- Sending messages & Retrieving responses 
 ```py
 bot = "a2"
 message = "What is reverse engineering?"
-client.send_message(bot, message)
-print(client.get_latest_message(bot))
+
+# Create new chat thread
+print(client.send_message(bot, message))
+
+# Send message to a existing chat thread
+# 1. Using chatCode
+print(client.send_message(bot, message, chatCode))
+# 2. Using chatId
+print(client.send_message(bot, message, chatId))
 ```
 > **Note**
 > Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
 - Clear conversation context
 ```py
-client.chat_break(bot)
+# 1. Using chatCode
+client.chat_break(bot, chatCode)
+# 2. Using chatId
+client.chat_break(bot, chatId)
 ```
 - Purging messages of 1 bot
   
 You can pass the numbers of messages to be deleted into `client.purge_conversation(bot, count)` (the default is 50)
   
 ```py
-client.purge_conversation(bot, 10)
+# 1. Using chatCode
+client.purge_conversation(bot, chatCode, 10)
+# 2. Using chatId
+client.purge_conversation(bot, chatId, 10)
 ```
 - Purging all messages of user
 ```py
@@ -99,27 +146,6 @@ client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2")
 - Editing a Bot
 ```py
 client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", "BOT_ID", base_model='chinchilla')
-```
-- Getting chat ids
-```py
-# Get chat ids of all bots
-client.get_chat_history()
-
-# Output | {'a2': [58232105], 'capybara': [58142663, 58171742]}
-# ------------------ Chat History ------------------
-# Chat ID | Bot Name
-# --------------------------------------------------
-# 58232105 | a2
-# 58142663 | capybara
-# 58171742 | capybara
-# --------------------------------------------------
-
-# Get chat ids of a bot
-client.get_chat_history("capybara")
-
-# Output | {'capybara': [58142663, 58171742]}
-# 1. 58142663
-# 2. 58171742
 ```
 
 ## Copyright:
