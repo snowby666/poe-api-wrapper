@@ -9,6 +9,7 @@ A simple API wrapper for Poe.com using Httpx
     - [Available Bots:](#available-bots)
     - [How to get your Token:](#how-to-get-your-token)
     - [Basic Usage:](#basic-usage)
+    - [Misc:](#misc)
   - [Copyright:](#copyright)
     - [Copyright Notice:](#copyright-notice)
 
@@ -147,6 +148,14 @@ client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2")
 ```py
 client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", "BOT_ID", base_model='chinchilla')
 ```
+
+### Misc:
+- How to find chatCode manually?
+
+Here is an example, the chatCode is 2i5bego6rzetfsevv5g
+
+![](https://cdn.discordapp.com/attachments/957946068836950026/1142363043741843506/image.png)
+
 
 ## Copyright:
 This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). All code has been written by me, [snowby666](https://github.com/snowby666).
