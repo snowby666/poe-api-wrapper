@@ -22,6 +22,7 @@ A simple API wrapper for Poe.com using Httpx
  - Purge all messages of user
  - Create custom bot
  - Edit custom bot
+ - Delete a custom bot
  - Get Chat Ids & Chat Codes of bot(s)
  - Support multi-chat threads
 
@@ -111,7 +112,7 @@ message = "What is reverse engineering?"
 # Create new chat thread
 print(client.send_message(bot, message))
 
-# Send message to a existing chat thread
+# Send message to an existing chat thread
 # 1. Using chatCode
 print(client.send_message(bot, message, chatCode))
 # 2. Using chatId
@@ -146,7 +147,11 @@ client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2")
 ```
 - Editing a Bot
 ```py
-client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", "BOT_ID", base_model='chinchilla')
+client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla')
+```
+- Deleting a Bot
+```py
+client.delete_bot("BOT_NAME")
 ```
 
 ### Misc:
@@ -162,7 +167,7 @@ This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe
 
 ### Copyright Notice:
 ```
-snowby666/poe-api-wrapper: a simple API wrapper for poe.com
+snowby666/poe-api-wrapper: A simple API wrapper for poe.com using Httpx
 Copyright (C) 2023 snowby666
 
 This program is free software: you can redistribute it and/or modify

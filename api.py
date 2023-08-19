@@ -135,7 +135,7 @@ class PoeApi:
             variables = {"connections": [
                     f"client:{id}:__ChatMessagesView_chat_messagesConnection_connection"],
                     "chatId": chatId}
-            self.send_request('gql_POST', 'chatHelpers_addMessageBreakEdgeMutation_Mutation', variables)
+            self.send_request('gql_POST', 'ChatHelpers_addMessageBreakEdgeMutation_Mutation', variables)
         
     def delete_message(self, message_ids):
         variables = {'messageIds': message_ids}
@@ -188,7 +188,19 @@ class PoeApi:
                 break
         return text
     
+    def complete_profile(self, handle: str=None):
+        if handle == None:
+            handle = ''.join(secrets.choice(string.ascii_letters + string.digits) for i in range(10))
+        variables = {"handle" : handle}
+        self.send_request('gql_POST', 'NuxInitialModal_poeSetHandle_Mutation', variables)
+        self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
+    
     def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, linkification=False,  markdown_rendering=True, suggested_replies=False, private=False, temperature=None):
+        # Auto complete profile
+        try:
+            self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
+        except:
+            self.complete_profile()
         variables = {
             "model": base_model,
             "displayName": display_name,
@@ -207,20 +219,35 @@ class PoeApi:
             "isPrivateBot": private,
             "temperature": temperature
         }
-        result = self.send_request('gql_POST', 'PoeBotCreate', variables)["data"]["poeBotCreate"]
+        result = self.send_request('gql_POST', 'PoeBotCreate', variables)['data']['poeBotCreate']
         if result["status"] != "success":
            print(f"Poe returned an error while trying to create a bot: {result['status']}")
         else:
            print("Bot created successfully")
         
     # get_bot logic 
-    def edit_bot(self, handle, prompt, bot_id, display_name=None, base_model="chinchilla", description="",
+    def get_botData(self, handle):
+        variables = {"botHandle": handle}
+        try:
+            response_json = self.send_request('gql_POST', 'BotLandingPageQuery', variables)
+            return response_json['data']['bot']
+        except Exception as e:
+            raise ValueError(
+                f"Fail to get botId from {handle}. Make sure the bot exists and you have access to it."
+            ) from e
+            
+    def get_userId(self, handle):
+        variables = {"handle": handle}
+        response_json = self.send_request('gql_POST', '', variables)
+        return response_json['data']['user']['id']
+
+    def edit_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="",
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
                 markdown_rendering=True, suggested_replies=False, temperature=None):     
         variables = {
         "baseBot": base_model,
-        "botId": bot_id,
+        "botId": self.get_botData(handle)['botId'],
         "handle": handle,
         "displayName": display_name,
         "prompt": prompt,
@@ -241,6 +268,28 @@ class PoeApi:
              print(f"Poe returned an error while trying to edit a bot: {result['status']}")
         else:
              print("Bot edited successfully")
+      
+    def delete_bot(self, handle):
+        isCreator = self.get_botData(handle)['viewerIsCreator']
+        botId = self.get_botData(handle)['botId']
+        try:
+            if isCreator == True:
+                response = self.send_request("BotInfoCardActionBar_poeBotDelete_Mutation", {"botId": botId})
+            else:
+                response = self.send_request(
+                    "BotInfoCardActionBar_poeRemoveBotFromUserList_Mutation",
+                    {"connections": [
+                        "client:Vmlld2VyOjA=:__HomeBotSelector_viewer_availableBotsConnection_connection"],
+                        "botId": botId}
+                )
+        except Exception:
+            raise ValueError(
+                f"Failed to delete bot {handle}. Make sure the bot exists and belongs to you."
+            )
+        if response["data"] is None and response["errors"]:
+            raise ValueError(
+                f"Failed to delete bot {handle} :{response['errors'][0]['message']}"  # noqa: E501
+            )
         
 class Poe:
     @staticmethod
@@ -352,4 +401,6 @@ class Poe:
                 client.get_chat_history()
             else:
                 result = client.send_message(bot, message, chatId)
+                if chatId is None:
+                    chatId = client.get_chat_history(bot=bot)[bot][0]['chatId']
                 print(f'\033[38;5;20m{bot}\033[0m : {result.strip()}')

@@ -2,7 +2,7 @@ import json
 
 QUERIES = {
   "AddEmailMutation": "6d9ff3c8ed7badced30cfdad97492d4c21719931e8c44c5601abfa429b62ded7",
-  "chatHelpers_addMessageBreakEdgeMutation_Mutation": "9450e06185f46531eca3e650c26fa8524f876924d1a8e9a3fb322305044bdac3",
+  "ChatHelpers_addMessageBreakEdgeMutation_Mutation": "9450e06185f46531eca3e650c26fa8524f876924d1a8e9a3fb322305044bdac3",
   "AddPhoneNumber": "26ae865f0686a910a86759c069eb1c0085d78b55a8abf64444ec63b03c76fb58",
   "AnnotateWithIdsProviderQuery": "b4e6992c3af8f208ab2b3979dce48889835736ed29f623ea9f609265018d0d8f",
   "AvailableBotsListModalPaginationQuery": "3be373baa573ccd196b9d71c94953b1d1bc586625bd64efe51655d75e68bbfb7",
@@ -79,6 +79,7 @@ QUERIES = {
   "NewLandingPageQuery": "f36fbfcbad84b02876a254ba77ecf78f96360e77291766209b9e7655852440da",
   "NumTokensFromPromptQuery": "1d9bef79811f3b2ddca5ce4027b7eaa31a51bbeed1edf8b6f72e2e0d09d80609",
   "NuxInitialModalQuery": "f8cd0d8494afe3b5dbb349baa28d3ac21f2219ce699e2d59a2345c864905e0c3",
+  "NuxInitialModal_poeSetHandle_Mutation": "93a0c939986bb344f87a76d9d709f147a23f1a45ec26e291bcea9acf66b3215f",
   "OnboardingFreeTrialModalQuery": "d2cc659e3def4561ca15b268a97588c5af6cd154afb001312aa69f63c5b2cc9e",
   "OnboardingPaywallModalQuery": "b413e41e89125528f1b2e7f472bde37f6f48a25cb774f4ea3ff883644c973cca",
   "OnboardingPaywallWithGraphicModalQuery": "f986cd3dc4fbab98927983c5d4ed78fa095af78392cf3880af9203dea975890d",
@@ -87,6 +88,7 @@ QUERIES = {
   "PageWrapperQuery": "fa2f44e7aafe6d1698f88ef7443fe13727765570ab504555a15d9c1578ded275",
   "PagesBotNameQuery": "a156136af92b189768540f864445f0b8d9191584530def6b1a5502c843539cfb",
   "PagesDefaultBotChatPageQuery": "75bd0877369c2b4191c936572822ce1875c980f1f6f8683381bd4a6850bdea92",
+  "BotInfoCardActionBar_poeBotDelete_Mutation": "ddda605feb83223640499942fac70c440d6767d48d8ff1a26543f37c9bb89c68",
   "PoeBotCreate": "fcc424e9f56e141a2f6386b00ea102be2c83f71121bd3f4aead1131659413290",
   "PoeBotDelete": "c5e5ee2fdac007b02d074ce7882a0631bfbccc73d8833ba8765297c5ea782bb6",
   "PoeBotEdit": "eb93047f1b631df35bd446e0e03555fcc61c8ad83d54047770cd4c2c418f8187",
@@ -139,7 +141,7 @@ QUERIES = {
   "WebSpeedUpsellQuery": "d8556da659d21dc2c583248c1c617ca20492b64c6948ae4a16256c0848f9c32e",
   "WebSubscriptionAnnouncementQuery": "a1b332d7d6816accfccb619e0f0728771ac7c398881fa423051d06551cd0f069",
   "WebSubscriptionPaywallModalQuery": "4d248f3aa4fbf68eb57a1bdda52a6dc5f38dd3b1234c01a95d4b17fdfbd922db",
-  "WebSubscriptionPaywallWrapperQuery": "f84fada22609f5dc5933e7ef1e54001fa5e76871836f268e68ad8df7e202f6ca"
+  "WebSubscriptionPaywallWrapperQuery": "f84fada22609f5dc5933e7ef1e54001fa5e76871836f268e68ad8df7e202f6ca",
 }
 
 def generate_payload(query_name, variables) -> str:
