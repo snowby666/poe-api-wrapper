@@ -127,7 +127,7 @@ client.chat_break(bot, chatId)
 ```
 - Purging messages of 1 bot
   
-You can pass the numbers of messages to be deleted into `client.purge_conversation(bot, count)` (the default is 50)
+You can pass the numbers of messages to be deleted into `client.purge_conversation(bot, chatId, chatCode, count)` (the default is 50)
   
 ```py
 # 1. Using chatCode
