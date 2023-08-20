@@ -1,4 +1,4 @@
-<div style="display: flex; align-items: center; justify-content: center;">
+<div style="align-items: center; justify-content: center;">
 
   <h2 style="margin-right: 10px">Poe API Wrapper </h2>
   <img src="https://psc2.cf2.poecdn.net/favicon.svg" style="height: 35px;">
