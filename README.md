@@ -47,7 +47,7 @@
 ## Installation:
 - First, install this library with the following command:
 ```sh
-pip3 install poe-api-wrapper
+pip3 install -U poe-api-wrapper
 ```
 - You can run an example of this library:
 ```py

@@ -6,7 +6,7 @@ long_description = (base_path / "README.md").read_text()
 
 VERSION = '1.0.3'
 DESCRIPTION = 'A simple API wrapper for Poe.com using Httpx'
-LONG_DESCRIPTION = 'This is a Python API wrapper for Poe.com, using Httpx. With this, you will have free access to ChatGPT, Claude, Palm and more!'
+LONG_DESCRIPTION = '👾 A Python API wrapper for Poe.com, using Httpx. With this, you will have free access to ChatGPT, Claude, Llama, Google-PaLM and more! 🚀'
 
 setup(
     name="poe-api-wrapper",
