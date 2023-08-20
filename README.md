@@ -30,15 +30,18 @@
 
 ## Highlights:
  - Log in with your Quora's token
+ - Get Chat Ids & Chat Codes of bot(s)
+ - Create new chat thread
  - Send messages
  - Retrieve responses
+ - Delete a chat thread
  - Clear conversation context
  - Purge messages of 1 bot
  - Purge all messages of user
  - Create custom bot
  - Edit custom bot
  - Delete a custom bot
- - Get Chat Ids & Chat Codes of bot(s)
+ - Get available bots
  - Support multi-chat threads
 
 ## Installation:
@@ -126,18 +129,35 @@ print(client.send_message(bot, message))
 
 # Send message to an existing chat thread
 # 1. Using chatCode
-print(client.send_message(bot, message, chatCode))
+print(client.send_message(bot, message, chatCode="2i58ciex72dom7im83r"))
 # 2. Using chatId
-print(client.send_message(bot, message, chatId))
+print(client.send_message(bot, message, chatId="59726162"))
 ```
 > **Note**
 > Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
-- Clear conversation context
+- Deleting a chat thread
+```py
+# Delete 1 chat
+# Using chatCode
+client.delete_chat(bot, chatCode="2i58ciex72dom7im83r")
+# Using chatId
+client.delete_chat(bot, chatID="59726162")
+
+# Delete n chats
+# Using chatCode
+client.delete_chat(bot, chatCode=["LIST_OF_CHAT_CODES"])
+# Using chatId
+client.delete_chat(bot, chatId=["LIST_OF_CHAT_IDS"])
+
+# Delete all chats of a bot
+client.delete_chat(bot, del_all=True)
+```
+- Clearing conversation context
 ```py
 # 1. Using chatCode
-client.chat_break(bot, chatCode)
+client.chat_break(bot, chatCode="2i58ciex72dom7im83r")
 # 2. Using chatId
-client.chat_break(bot, chatId)
+client.chat_break(bot, chatId="59726162")
 ```
 - Purging messages of 1 bot
   
@@ -145,9 +165,9 @@ You can pass the numbers of messages to be deleted into `client.purge_conversati
   
 ```py
 # 1. Using chatCode
-client.purge_conversation(bot, chatCode, 10)
+client.purge_conversation(bot, chatCode="2i58ciex72dom7im83r", 10)
 # 2. Using chatId
-client.purge_conversation(bot, chatId, 10)
+client.purge_conversation(bot, chatId="59726162", 10)
 ```
 - Purging all messages of user
 ```py
@@ -164,6 +184,14 @@ client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla')
 - Deleting a Bot
 ```py
 client.delete_bot("BOT_NAME")
+```
+- Getting available Bots
+```py
+# Get a defined numbers of bots (default is 25)
+client.get_available_bots(count=10)
+
+# Get all available bots
+client.get_available_bots(get_all=True)
 ```
 
 ### Misc:

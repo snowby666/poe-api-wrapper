@@ -66,9 +66,48 @@ class PoeApi:
         response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers={'Content-Type': 'application/x-www-form-urlencoded'})
         return response.json()
     
-    def send_query(self, path: str, data: dict):
-        response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', json=data)
-        return response.json()
+    def get_available_bots(self, count: int=25, get_all: bool=False):
+        self.bots = {}
+        if not (get_all or count):
+            raise TypeError(
+                "Please provide at least one of the following parameters: get_all=<bool>, count=<int>"
+            )
+        response = self.send_request('gql_POST',"AvailableBotsSelectorModalPaginationQuery", {}) 
+        bots = [
+            each["node"]
+            for each in response["data"]["viewer"]["availableBotsConnection"]["edges"]
+            if each["node"]["deletionState"] == "not_deleted"
+        ]
+        cursor = response["data"]["viewer"]["availableBotsConnection"]["pageInfo"][
+            "endCursor"
+        ]
+        if len(bots) >= count and not get_all:
+            self.bots.update({bot["handle"]: {"bot": bot} for bot in bots})
+            return self.bots
+        while len(bots) < count or get_all:
+            response = self.send_request("gql_POST", "AvailableBotsSelectorModalPaginationQuery", {"cursor": cursor})
+            new_bots = [
+                each["node"]
+                for each in response["data"]["viewer"]["availableBotsConnection"][
+                    "edges"
+                ]
+                if each["node"]["deletionState"] == "not_deleted"
+            ]
+            cursor = response["data"]["viewer"]["availableBotsConnection"]["pageInfo"][
+                "endCursor"
+            ]
+            bots += new_bots
+            if len(new_bots) == 0:
+                if not get_all:
+                    print(f"Only {len(bots)} bots found on this account")
+                else:
+                    print("Succeed to get all available bots")
+                self.bots.update({bot["handle"]: {"bot": bot} for bot in bots})
+                return self.bots
+            
+        print("Succeed to get available bots")
+        self.bots.update({bot["handle"]: {"bot": bot} for bot in bots})
+        return self.bots
      
     def get_chat_history(self, bot:str=None, handle:str="", useBot:bool=False): 
         variables = {'handle': handle, 'useBot': useBot}
@@ -104,7 +143,7 @@ class PoeApi:
                     pass           
         return chat_bots
     
-    def create_new_chat(self, bot: str="", message: str=""):
+    def create_new_chat(self, bot: str="a2", message: str=""):
         variables = {"bot":bot,"query":message,"source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,"newChatContext":"chat_settings_new_chat_button"}},"sdid":"","attachments":[]}
         response_json = self.send_request('gql_POST', 'ChatHelpersSendNewChatMessageMutation', variables)
         chatCode = response_json['data']['messageEdgeCreate']['chat']['chatCode']
@@ -141,7 +180,7 @@ class PoeApi:
         variables = {'messageIds': message_ids}
         self.send_request('gql_POST', 'DeleteMessageMutation', variables)
     
-    def purge_conversation(self, bot: str="", chatId: int=None, chatCode: str=None, count: int=50):
+    def purge_conversation(self, bot: str, chatId: int=None, chatCode: str=None, count: int=50):
         if chatId != None and chatCode == None:
             chatdata = self.get_chat_history(bot=bot)[bot]
             for chat in chatdata:
@@ -188,6 +227,33 @@ class PoeApi:
                 break
         return text
     
+    def delete_chat(self, bot: str, chatId: any=None, chatCode: any=None, del_all: bool=False):
+        chatdata = self.get_chat_history(bot=bot)[bot]
+        if chatId != None and not isinstance(chatId, list):
+            self.send_request('gql_POST', 'DeleteChat', {'chatId': chatId})
+            print(f'Chat {chatId} deleted') 
+        if del_all == True:
+            for chat in chatdata:
+                self.send_request('gql_POST', 'DeleteChat', {'chatId': chat['chatId']})
+                print(f'Chat {chat["chatId"]} deleted')
+        if chatCode != None:
+                for chat in chatdata:
+                    if isinstance(chatCode, list):
+                        if chat['chatCode'] in chatCode:
+                            chatId = chat['chatId']
+                            self.send_request('gql_POST', 'DeleteChat', {'chatId': chatId})
+                            print(f'Chat {chatId} deleted')
+                    else:
+                        if chat['chatCode'] == chatCode:
+                            chatId = chat['chatId']
+                            self.send_request('gql_POST', 'DeleteChat', {'chatId': chatId})
+                            print(f'Chat {chatId} deleted')
+                            break               
+        elif chatId != None and isinstance(chatId, list):
+            for chat in chatId:
+                self.send_request('gql_POST', 'DeleteChat', {'chatId': chat})
+                print(f'Chat {chat} deleted')   
+        
     def complete_profile(self, handle: str=None):
         if handle == None:
             handle = ''.join(secrets.choice(string.ascii_letters + string.digits) for i in range(10))
@@ -235,11 +301,6 @@ class PoeApi:
             raise ValueError(
                 f"Fail to get botId from {handle}. Make sure the bot exists and you have access to it."
             ) from e
-            
-    def get_userId(self, handle):
-        variables = {"handle": handle}
-        response_json = self.send_request('gql_POST', '', variables)
-        return response_json['data']['user']['id']
 
     def edit_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="",
                 intro_message="", api_key=None, api_url=None, private=False,
@@ -274,9 +335,9 @@ class PoeApi:
         botId = self.get_botData(handle)['botId']
         try:
             if isCreator == True:
-                response = self.send_request("BotInfoCardActionBar_poeBotDelete_Mutation", {"botId": botId})
+                response = self.send_request('gql_POST', "BotInfoCardActionBar_poeBotDelete_Mutation", {"botId": botId})
             else:
-                response = self.send_request(
+                response = self.send_request('gql_POST',
                     "BotInfoCardActionBar_poeRemoveBotFromUserList_Mutation",
                     {"connections": [
                         "client:Vmlld2VyOjA=:__HomeBotSelector_viewer_availableBotsConnection_connection"],
@@ -288,8 +349,10 @@ class PoeApi:
             )
         if response["data"] is None and response["errors"]:
             raise ValueError(
-                f"Failed to delete bot {handle} :{response['errors'][0]['message']}"  # noqa: E501
+                f"Failed to delete bot {handle} :{response['errors'][0]['message']}"
             )
+        else:
+            print("Bot deleted successfully")
         
 class Poe:
     @staticmethod
@@ -397,6 +460,8 @@ class Poe:
             elif message == '!purgeall':
                 client.purge_all_conversations()
                 print("All conversations are now purged")
+            elif message == '!delete':
+                client.delete_chat(bot, chatId)
             elif message == '!history':
                 client.get_chat_history()
             else:

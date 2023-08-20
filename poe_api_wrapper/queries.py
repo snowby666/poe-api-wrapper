@@ -89,6 +89,7 @@ QUERIES = {
   "PagesBotNameQuery": "a156136af92b189768540f864445f0b8d9191584530def6b1a5502c843539cfb",
   "PagesDefaultBotChatPageQuery": "75bd0877369c2b4191c936572822ce1875c980f1f6f8683381bd4a6850bdea92",
   "BotInfoCardActionBar_poeBotDelete_Mutation": "ddda605feb83223640499942fac70c440d6767d48d8ff1a26543f37c9bb89c68",
+  "BotInfoCardActionBar_poeRemoveBotFromUserList_Mutation": "94f91aa5973c4eb74b9565a2695e422a2ff2afd334c7979fe6da655f4a430d85",
   "PoeBotCreate": "fcc424e9f56e141a2f6386b00ea102be2c83f71121bd3f4aead1131659413290",
   "PoeBotDelete": "c5e5ee2fdac007b02d074ce7882a0631bfbccc73d8833ba8765297c5ea782bb6",
   "PoeBotEdit": "eb93047f1b631df35bd446e0e03555fcc61c8ad83d54047770cd4c2c418f8187",
