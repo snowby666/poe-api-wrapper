@@ -34,7 +34,7 @@
  - Create new chat thread
  - Send messages
  - Retrieve responses
- - Delete a chat thread
+ - Delete chat threads
  - Clear conversation context
  - Purge messages of 1 bot
  - Purge all messages of user
@@ -135,7 +135,7 @@ print(client.send_message(bot, message, chatId="59726162"))
 ```
 > **Note**
 > Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
-- Deleting a chat thread
+- Deleting chat threads
 ```py
 # Delete 1 chat
 # Using chatCode
