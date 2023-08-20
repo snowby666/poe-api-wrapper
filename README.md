@@ -1,7 +1,6 @@
-<div style="display: flex; align-items: center; justify-content: center;">
+<div align="center">
 
-  <h2 style="margin-right: 10px">Poe API Wrapper </h2>
-  <img src="https://psc2.cf2.poecdn.net/favicon.svg" style="height: 35px;">
+# Poe API Wrapper <img src="https://psc2.cf2.poecdn.net/favicon.svg" style="height: 35px;">
 
 </div>
 
@@ -10,16 +9,17 @@
 A simple API wrapper for Poe.com using Httpx
 
 ## Table of Contents:
-- [Table of Contents:](#table-of-contents)
-- [Highlights:](#highlights)
-- [Installation:](#installation)
-- [Documentation:](#documentation)
-  - [Available Bots:](#available-bots)
-  - [How to get your Token:](#how-to-get-your-token)
-  - [Basic Usage:](#basic-usage)
-  - [Misc:](#misc)
-- [Copyright:](#copyright)
-  - [Copyright Notice:](#copyright-notice)
+- [Poe API Wrapper ](#poe-api-wrapper-)
+  - [Table of Contents:](#table-of-contents)
+  - [Highlights:](#highlights)
+  - [Installation:](#installation)
+  - [Documentation:](#documentation)
+    - [Available Bots:](#available-bots)
+    - [How to get your Token:](#how-to-get-your-token)
+    - [Basic Usage:](#basic-usage)
+    - [Misc:](#misc)
+  - [Copyright:](#copyright)
+    - [Copyright Notice:](#copyright-notice)
 
 ## Highlights:
  - Log in with your Quora's token
