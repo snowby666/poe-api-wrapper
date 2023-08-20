@@ -1,12 +1,19 @@
 <div align="center">
+<a href="https://github.com/snowby666">
+<img src="https://socialify.git.ci/snowby666/poe-api-wrapper/image?font=Raleway&forks=1&issues=1&language=1&logo=https://i.ibb.co/JsNwP3B/nobgprofile-3.png&name=1&owner=1&pattern=Charlie%20Brown&pulls=1&stargazers=1&theme=Auto" width="700" height="350"></a>
 
 # Poe API Wrapper <img src="https://psc2.cf2.poecdn.net/favicon.svg" style="height: 35px;">
 
+<p><em>A simple API wrapper for Poe.com using Httpx</em></p>
 </div>
 
-[![PyPi Version](https://img.shields.io/pypi/v/poe-api-wrapper.svg)](https://pypi.org/project/poe-api-wrapper/)
-
-A simple API wrapper for Poe.com using Httpx
+<p align="center">
+<a href="https://pypi.org/project/poe-api-wrapper/">
+<img src="https://img.shields.io/pypi/v/poe-api-wrapper">
+</a>
+<img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="python">
+<br>
+</p>
 
 ## Table of Contents:
 - [Poe API Wrapper ](#poe-api-wrapper-)
