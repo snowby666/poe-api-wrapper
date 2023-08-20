@@ -2,7 +2,7 @@ from re import search
 from time import sleep
 from httpx import Client
 import secrets, string
-from queries import generate_payload
+from .queries import generate_payload
 """
 This API is modified and maintained by @snowby666
 Credit to @ading2210 for the GraphQL queries

@@ -1,5 +1,9 @@
 # Poe API Wrapper
+
+[![PyPi Version](https://img.shields.io/pypi/v/poe-api-wrapper.svg)](https://pypi.org/project/poe-api-wrapper/)
+
 A simple API wrapper for Poe.com using Httpx
+
 ## Table of Contents:
 - [Poe API Wrapper](#poe-api-wrapper)
   - [Table of Contents:](#table-of-contents)
@@ -27,18 +31,15 @@ A simple API wrapper for Poe.com using Httpx
  - Support multi-chat threads
 
 ## Installation:
-- First, clone the repository and enter the folder:
+- First, install this library with the following command:
 ```sh
-git clone https://github.com/snowby666/poe-api-wrapper.git
-cd poe-api-wrapper
+pip3 install poe-api-wrapper
 ```
-- Install the required packages:
-```sh
-pip install -r requirements.txt
-```
-- Run the example.py:
-```sh
-python example.py 
+- You can run an example of this library
+```py
+from poe_api_wrapper import Poe
+token = "TOKEN_HERE"
+Poe.chat_with_bot(token)
 ```
 
 ## Documentation:
@@ -68,7 +69,7 @@ Copy the value of `m-b` cookie
 ### Basic Usage:
 - Connecting to the API
 ```py
-from api import PoeApi
+from poe_api_wrapper import PoeApi
 client = PoeApi("TOKEN_HERE")
 ```
 - Getting Chat Ids & Chat Codes
