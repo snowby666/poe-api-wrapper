@@ -2,7 +2,7 @@
 <a href="https://github.com/snowby666">
 <img src="https://socialify.git.ci/snowby666/poe-api-wrapper/image?font=Raleway&forks=1&issues=1&language=1&logo=https://i.ibb.co/JsNwP3B/nobgprofile-3.png&name=1&owner=1&pattern=Charlie%20Brown&pulls=1&stargazers=1&theme=Auto" width="700" height="350"></a>
 
-# Poe API Wrapper <img src="https://psc2.cf2.poecdn.net/favicon.svg" style="height: 35px;">
+<h1>Poe API Wrapper <img src="https://psc2.cf2.poecdn.net/favicon.svg" height="35"></h1>
 
 <p><em>A simple API wrapper for Poe.com using Httpx</em></p>
 </div>
@@ -16,20 +16,20 @@
 </p>
 
 ## Table of Contents:
-- [Poe API Wrapper ](#poe-api-wrapper-)
-  - [Table of Contents:](#table-of-contents)
-  - [Highlights:](#highlights)
-  - [Installation:](#installation)
-  - [Documentation:](#documentation)
-    - [Available Bots:](#available-bots)
-    - [How to get your Token:](#how-to-get-your-token)
-    - [Basic Usage:](#basic-usage)
-    - [Misc:](#misc)
-  - [Copyright:](#copyright)
-    - [Copyright Notice:](#copyright-notice)
+- [Table of Contents:](#table-of-contents)
+- [Highlights:](#highlights)
+- [Installation:](#installation)
+- [Documentation:](#documentation)
+  - [Available Bots:](#available-bots)
+  - [How to get your Token:](#how-to-get-your-token)
+  - [Basic Usage:](#basic-usage)
+  - [Misc:](#misc)
+- [Copyright:](#copyright)
+  - [Copyright Notice:](#copyright-notice)
 
 ## Highlights:
  - Log in with your Quora's token
+ - Auto Proxy requests
  - Get Chat Ids & Chat Codes of bot(s)
  - Create new chat thread
  - Send messages
@@ -85,6 +85,9 @@ Copy the value of `m-b` cookie
 ```py
 from poe_api_wrapper import PoeApi
 client = PoeApi("TOKEN_HERE")
+
+# Using Client with proxy
+client = PoeApi("TOKEN_HERE", proxy=True)
 ```
 - Getting Chat Ids & Chat Codes
 ```py

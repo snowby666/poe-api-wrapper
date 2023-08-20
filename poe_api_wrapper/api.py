@@ -3,6 +3,8 @@ from time import sleep
 from httpx import Client
 import secrets, string
 from .queries import generate_payload
+from .proxies import fetch_proxy
+
 """
 This API is modified and maintained by @snowby666
 Credit to @ading2210 for the GraphQL queries
@@ -45,8 +47,19 @@ class PoeApi:
     }
     FORMKEY_PATTERN = r'formkey": "(.*?)"'
 
-    def __init__(self, cookie: str):
-        self.client = Client(timeout=180)
+    def __init__(self, cookie: str, proxy: bool=False):
+        if proxy == True:
+            proxies = fetch_proxy()
+            for p in range(len(proxies)):
+                try:
+                    self.client = Client(timeout=180, proxies= {"http://": f"{proxies[p]}"})
+                    print(f"Connection established with {proxies[p]}")
+                    break
+                except:
+                    print(f"Connection failed with {proxies[p]}. Trying {p+1}/{len(proxies)} ...")
+                    sleep(1)
+        else:
+            self.client = Client(timeout=180)
         self.client.cookies.set('m-b', cookie)
         self.client.headers.update({
             **self.HEADERS,
@@ -146,17 +159,21 @@ class PoeApi:
     def create_new_chat(self, bot: str="a2", message: str=""):
         variables = {"bot":bot,"query":message,"source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,"newChatContext":"chat_settings_new_chat_button"}},"sdid":"","attachments":[]}
         response_json = self.send_request('gql_POST', 'ChatHelpersSendNewChatMessageMutation', variables)
+        if response_json["data"] is None and response_json["errors"]:
+            raise ValueError(
+                f"Bot {bot} not found. Make sure the bot exists before creating new chat."
+            )
         chatCode = response_json['data']['messageEdgeCreate']['chat']['chatCode']
         print(f'New Thread created | {chatCode}')
         return chatCode
 
     def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None):
-        if chatId is None:
+        if (chatId == None and chatCode == None):
             chatCode = self.create_new_chat(bot, message)
         else:
             variables = {'bot': bot, 'chatId': chatId, 'query': message, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, 'withChatBreak': False, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': []}
             self.send_request('gql_POST', 'SendMessageMutation', variables)
-            if chatCode is None:
+            if chatCode == None:
                 chat_data = self.get_chat_history(bot=bot)[bot]
                 for chat in chat_data:
                     if chat['chatId'] == chatId:
@@ -462,6 +479,8 @@ class Poe:
                 print("All conversations are now purged")
             elif message == '!delete':
                 client.delete_chat(bot, chatId)
+                print('\n')
+                Poe.chat_with_bot(cookie)
             elif message == '!history':
                 client.get_chat_history()
             else:
