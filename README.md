@@ -1,21 +1,23 @@
-# Poe API Wrapper
+<div style="display: flex; align-items: center; justify-content: center;">
+  <h2 style="margin-right: 10px">Poe API Wrapper </h2>
+  <img src="https://psc2.cf2.poecdn.net/favicon.svg" style="height: 35px;">
+</div>
 
 [![PyPi Version](https://img.shields.io/pypi/v/poe-api-wrapper.svg)](https://pypi.org/project/poe-api-wrapper/)
 
 A simple API wrapper for Poe.com using Httpx
 
 ## Table of Contents:
-- [Poe API Wrapper](#poe-api-wrapper)
-  - [Table of Contents:](#table-of-contents)
-  - [Highlights:](#highlights)
-  - [Installation:](#installation)
-  - [Documentation:](#documentation)
-    - [Available Bots:](#available-bots)
-    - [How to get your Token:](#how-to-get-your-token)
-    - [Basic Usage:](#basic-usage)
-    - [Misc:](#misc)
-  - [Copyright:](#copyright)
-    - [Copyright Notice:](#copyright-notice)
+- [Table of Contents:](#table-of-contents)
+- [Highlights:](#highlights)
+- [Installation:](#installation)
+- [Documentation:](#documentation)
+  - [Available Bots:](#available-bots)
+  - [How to get your Token:](#how-to-get-your-token)
+  - [Basic Usage:](#basic-usage)
+  - [Misc:](#misc)
+- [Copyright:](#copyright)
+  - [Copyright Notice:](#copyright-notice)
 
 ## Highlights:
  - Log in with your Quora's token
@@ -35,7 +37,7 @@ A simple API wrapper for Poe.com using Httpx
 ```sh
 pip3 install poe-api-wrapper
 ```
-- You can run an example of this library
+- You can run an example of this library:
 ```py
 from poe_api_wrapper import Poe
 token = "TOKEN_HERE"
