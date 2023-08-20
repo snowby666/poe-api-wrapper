@@ -1,6 +1,8 @@
 <div style="display: flex; align-items: center; justify-content: center;">
+
   <h2 style="margin-right: 10px">Poe API Wrapper </h2>
   <img src="https://psc2.cf2.poecdn.net/favicon.svg" style="height: 35px;">
+
 </div>
 
 [![PyPi Version](https://img.shields.io/pypi/v/poe-api-wrapper.svg)](https://pypi.org/project/poe-api-wrapper/)
