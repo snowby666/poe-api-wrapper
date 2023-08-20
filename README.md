@@ -131,7 +131,7 @@ print(client.send_message(bot, message))
 # 1. Using chatCode
 print(client.send_message(bot, message, chatCode="2i58ciex72dom7im83r"))
 # 2. Using chatId
-print(client.send_message(bot, message, chatId="59726162"))
+print(client.send_message(bot, message, chatId=59726162))
 ```
 > **Note**
 > Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
@@ -141,7 +141,7 @@ print(client.send_message(bot, message, chatId="59726162"))
 # Using chatCode
 client.delete_chat(bot, chatCode="2i58ciex72dom7im83r")
 # Using chatId
-client.delete_chat(bot, chatID="59726162")
+client.delete_chat(bot, chatID=59726162)
 
 # Delete n chats
 # Using chatCode
@@ -157,7 +157,7 @@ client.delete_chat(bot, del_all=True)
 # 1. Using chatCode
 client.chat_break(bot, chatCode="2i58ciex72dom7im83r")
 # 2. Using chatId
-client.chat_break(bot, chatId="59726162")
+client.chat_break(bot, chatId=59726162)
 ```
 - Purging messages of 1 bot
   
@@ -167,7 +167,7 @@ You can pass the numbers of messages to be deleted into `client.purge_conversati
 # 1. Using chatCode
 client.purge_conversation(bot, chatCode="2i58ciex72dom7im83r", 10)
 # 2. Using chatId
-client.purge_conversation(bot, chatId="59726162", 10)
+client.purge_conversation(bot, chatId=59726162, 10)
 ```
 - Purging all messages of user
 ```py
