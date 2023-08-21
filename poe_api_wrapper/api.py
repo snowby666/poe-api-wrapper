@@ -171,14 +171,16 @@ class PoeApi:
         if (chatId == None and chatCode == None):
             chatCode = self.create_new_chat(bot, message)
         else:
+            chat_data = self.get_chat_history(bot=bot)[bot]
+            for chat in chat_data:
+                if chat['chatId'] == chatId and chatCode == None:
+                    chatCode = chat['chatCode']
+                    break
+                if chat['chatCode'] == chatCode and chatId == None:  
+                    chatId = chat['chatId']
+                    break    
             variables = {'bot': bot, 'chatId': chatId, 'query': message, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, 'withChatBreak': False, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': []}
             self.send_request('gql_POST', 'SendMessageMutation', variables)
-            if chatCode == None:
-                chat_data = self.get_chat_history(bot=bot)[bot]
-                for chat in chat_data:
-                    if chat['chatId'] == chatId:
-                        chatCode = chat['chatCode']
-                        break
         return self.get_latest_message(chatCode)
         
     def chat_break(self, bot: str, chatId: int=None, chatCode: str=None):
@@ -233,6 +235,7 @@ class PoeApi:
             sleep(0.1)
             response_json = self.send_request('gql_POST','ChatPageQuery', variables)
             edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
+            chatId = response_json['data']['chatOfCode']['chatId']
             if edges:
                 latest_message = edges[-1]['node']
                 text = latest_message['text']
@@ -242,7 +245,7 @@ class PoeApi:
             else:
                 text = 'Fail to get a message. Please try again!'
                 break
-        return text
+        return {"response": text, "chatId": chatId, "chatCode": chatCode}
     
     def delete_chat(self, bot: str, chatId: any=None, chatCode: any=None, del_all: bool=False):
         chatdata = self.get_chat_history(bot=bot)[bot]
@@ -476,7 +479,8 @@ class Poe:
                 print("Conversation is now purged")
             elif message == '!purgeall':
                 client.purge_all_conversations()
-                print("All conversations are now purged")
+                print("All conversations are now purged\n")
+                Poe.chat_with_bot(cookie)
             elif message == '!delete':
                 client.delete_chat(bot, chatId)
                 print('\n')
@@ -486,5 +490,5 @@ class Poe:
             else:
                 result = client.send_message(bot, message, chatId)
                 if chatId is None:
-                    chatId = client.get_chat_history(bot=bot)[bot][0]['chatId']
-                print(f'\033[38;5;20m{bot}\033[0m : {result.strip()}')
+                    chatId = result["chatId"]
+                print(f'\033[38;5;20m{bot}\033[0m : {result["response"].strip()}')

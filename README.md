@@ -8,9 +8,7 @@
 </div>
 
 <p align="center">
-<a href="https://pypi.org/project/poe-api-wrapper/">
-<img src="https://img.shields.io/pypi/v/poe-api-wrapper">
-</a>
+<a href="https://pypi.org/project/poe-api-wrapper/"><img src="https://img.shields.io/pypi/v/poe-api-wrapper"></a>
 <img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="python">
 <br>
 </p>
@@ -86,7 +84,7 @@ Copy the value of `m-b` cookie
 from poe_api_wrapper import PoeApi
 client = PoeApi("TOKEN_HERE")
 
-# Using Client with proxy
+# Using Client with proxy (default is False)
 client = PoeApi("TOKEN_HERE", proxy=True)
 ```
 - Getting Chat Ids & Chat Codes
@@ -126,15 +124,21 @@ print(client.get_chat_history("capybara"))
 ```py
 bot = "a2"
 message = "What is reverse engineering?"
-
 # Create new chat thread
-print(client.send_message(bot, message))
+request = client.send_message(bot, message)
+# Retrieve the response
+print(request["response"])
+# You can get chatId and chatCode of created thread to continue the conversation
+print(request)
+# Output:
+# {"response": "LONG_TEXT", "chatId": 61475686, "chatCode": '2hzxajay28grsqqk7us'}
+
 
 # Send message to an existing chat thread
 # 1. Using chatCode
-print(client.send_message(bot, message, chatCode="2i58ciex72dom7im83r"))
+print(client.send_message(bot, message, chatCode="2i58ciex72dom7im83r")["response"])
 # 2. Using chatId
-print(client.send_message(bot, message, chatId=59726162))
+print(client.send_message(bot, message, chatId=59726162)["response"])
 ```
 > **Note**
 > Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
@@ -190,7 +194,7 @@ client.delete_bot("BOT_NAME")
 ```
 - Getting available Bots
 ```py
-# Get a defined numbers of bots (default is 25)
+# Get a defined number of bots (default is 25)
 client.get_available_bots(count=10)
 
 # Get all available bots
