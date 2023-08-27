@@ -1,4 +1,4 @@
-import json
+import json, random
 
 QUERIES = {
   "AddEmailMutation": "6d9ff3c8ed7badced30cfdad97492d4c21719931e8c44c5601abfa429b62ded7",
@@ -22,13 +22,12 @@ QUERIES = {
   "ChatLoaderQuery": "d9467ac216e21b510eb8e72a2888289d173c9d5ce399b072fd88bee3da1b1459",
   "ChatPageBotBotsPagination": "ed9017f85fe2fedbf02b2d000cb4b551d2ec870715d0c7bce6d54a0f3f9b657b",
   "ChatPageQuery": "63eee0aafc4d83a50fe7ceaec1853b191ea86b3d561268fa7aad24c69bb891d9",
-  "hatsHistoryPageQuery": "050767d78f19014e99493016ab2b708b619c7c044eebd838347cf259f0f2aefb",
+  "ChatsHistoryPageQuery": "050767d78f19014e99493016ab2b708b619c7c044eebd838347cf259f0f2aefb",
   "ChatSetTitle": "24574aab7fedf86d1654bbc70bf5421abbc33e195aa1c11178697023a27a912e",
   "ChatSettingsModalQuery": "41910ff112abaa713edd836cbb7fc567433f3f7ac3a61659fffca6306f7288ac",
   "ChatSubscriptionPaywallModalQuery": "559ac4c7c8f0f6f50148d255bb6318107034375df7bca4214f608cd65b573a21",
   "ChatSwitcherRefetchQuery": "815b8e6406bd19b25da36523b8b33c8c25e6db2fe93505117bb583c2d9dd60e4",
   "ChatTitleUpdated": "740e2c7ab27297b7a8acde39a400b932c71beb7e9b525280fc99c1639f1be93a",
-  "ChatsHistoryPageQuery": "050767d78f19014e99493016ab2b708b619c7c044eebd838347cf259f0f2aefb",
   "ContinueChatFromPoeShare": "a220810c2d1d3b5284b6be44309a3d2b197c312a79b1a27f165a12f1508322bd",
   "ContinueChatIndexPageQuery": "a7eea6eebd14aa355723514558762315d0b4df46205b70f825d288d5ed1635ec",
   "ContinueChatPageQuery": "fe3a4d2006b1c4bb47ac6dea0639bc9128ad983cf37cbc0006c33efab372a19d",
@@ -146,6 +145,8 @@ QUERIES = {
 }
 
 def generate_payload(query_name, variables) -> str:
+    if query_name == "recv":
+        return generate_recv_payload(variables)
     payload = {
         "queryName": query_name,
         "variables": variables,
@@ -153,4 +154,25 @@ def generate_payload(query_name, variables) -> str:
             "hash": QUERIES[query_name]
         }
     }
+    return json.dumps(payload, separators=(",", ":"))
+
+def generate_recv_payload(variables):
+    payload = [
+    {
+      "category": "poe/bot_response_speed",
+      "data": variables,
+    }
+    ]
+
+    if random.random() > 0.9:
+        payload.append({
+        "category": "poe/statsd_event",
+        "data": {
+            "key": "poe.speed.web_vitals.INP",
+            "value": random.randint(100, 125),
+            "category": "time",
+            "path": "/[handle]",
+            "extra_data": {},
+        },
+        })
     return json.dumps(payload, separators=(",", ":"))

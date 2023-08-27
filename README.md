@@ -9,7 +9,8 @@
 
 <p align="center">
 <a href="https://pypi.org/project/poe-api-wrapper/"><img src="https://img.shields.io/pypi/v/poe-api-wrapper"></a>
-<img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="python">
+<img alt="Python Version" src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="python">
+<img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/poe-api-wrapper">
 <br>
 </p>
 
@@ -31,7 +32,8 @@
  - Get Chat Ids & Chat Codes of bot(s)
  - Create new chat thread
  - Send messages
- - Retrieve responses
+ - Stream bot responses
+ - Retrieve suggested replies
  - Delete chat threads
  - Clear conversation context
  - Purge messages of 1 bot
@@ -120,25 +122,39 @@ print(client.get_chat_history("capybara"))
 # {'capybara': [{'chatId': 59724775, 'chatCode': '2i588127auu1k5ilri9', 'id': 'Q2hhdDo1OTcyNDc3NQ=='}, {'chatId': 59724472, 'chatCode': '2i588hu98sfob7dfifx', 'id': 'Q2hhdDo1OTcyNDQ3Mg=='}, {'chatId': 59719138, 'chatCode': '2i58xtl3nftynxnsxxi', 'id': 'Q2hhdDo1OTcxOTEzOA=='}, {'chatId': 59680790, 'chatCode': '2i5hperhw2irsy351gn', 'id': 'Q2hhdDo1OTY4MDc5MA=='}]}
 ```
 
-- Sending messages & Retrieving responses 
+- Sending messages & Streaming responses 
 ```py
 bot = "a2"
 message = "What is reverse engineering?"
-# Create new chat thread
-request = client.send_message(bot, message)
-# Retrieve the response
-print(request["response"])
-# You can get chatId and chatCode of created thread to continue the conversation
-print(request)
-# Output:
-# {"response": "LONG_TEXT", "chatId": 61475686, "chatCode": '2hzxajay28grsqqk7us'}
 
+# Create new chat thread
+# Streamed example:
+for chunk in client.send_message(bot, message, chatId, suggest_replies=True):
+  print(chunk["response"], end="", flush=True)
+print("\n")
+
+# Non-streamed example:
+for chunk in client.send_message(bot, message, chatId, suggest_replies=True):
+  pass
+print(chunk["text"])
+
+# Retrieve suggested replies
+for reply in chunk["suggestedReplies"]:
+  print(reply)
+
+# You can chatCode and chatId of created thread to continue the conversation
+chatCode = chunk["chatCode"]
+chatId = chunk["chatId"]
 
 # Send message to an existing chat thread
 # 1. Using chatCode
-print(client.send_message(bot, message, chatCode="2i58ciex72dom7im83r")["response"])
+for chunk in client.send_message(bot, message, chatCode="2i58ciex72dom7im83r", suggest_replies=True):
+  print(chunk["response"], end="", flush=True)
+print("\n")
 # 2. Using chatId
-print(client.send_message(bot, message, chatId=59726162)["response"])
+for chunk in client.send_message(bot, message, chatId=59726162, suggest_replies=True)
+  print(chunk["response"], end="", flush=True)
+print("\n")
 ```
 > **Note**
 > Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
@@ -168,13 +184,13 @@ client.chat_break(bot, chatId=59726162)
 ```
 - Purging messages of 1 bot
   
-You can pass the numbers of messages to be deleted into `client.purge_conversation(bot, chatId, chatCode, count)` (the default is 50)
+You can pass the number of messages to be deleted into `client.purge_conversation(bot, chatId, chatCode, count)` (the default is 50)
   
 ```py
 # 1. Using chatCode
-client.purge_conversation(bot, chatCode="2i58ciex72dom7im83r", 10)
+client.purge_conversation(bot, chatCode="2i58ciex72dom7im83r", count=10)
 # 2. Using chatId
-client.purge_conversation(bot, chatId=59726162, 10)
+client.purge_conversation(bot, chatId=59726162, count=10)
 ```
 - Purging all messages of user
 ```py
