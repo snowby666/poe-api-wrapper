@@ -74,7 +74,7 @@ class PoeApi:
         self.setup_count = 0
         self.active_messages = {}
         self.message_queues = {}
-        self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:8]
+        self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
         self.channel_last_use_time = time()
         
         self.connect_ws()
@@ -760,4 +760,4 @@ class Poe:
                 for reply in range(len(chunk["suggestedReplies"])):
                     print(f"\033[38;2;255;203;107m[Type !suggest {reply+1}] : {chunk['suggestedReplies'][reply]}\033[0m\n")
                 if chatId is None:
-                    chatId = message["chatId"]
+                    chatId = chunk["chatId"]
