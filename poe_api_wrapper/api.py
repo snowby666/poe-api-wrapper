@@ -160,8 +160,7 @@ class PoeApi:
         self.get_channel_settings()
         self.subscribe()
 
-        ws = websocket.WebSocketApp(self.channel_url, on_message=self.on_message, on_open=self.on_ws_connect, on_error=self.on_ws_error, on_close=self.on_ws_close
-        )
+        ws = websocket.WebSocketApp(self.channel_url, on_message=self.on_message, on_open=self.on_ws_connect, on_error=self.on_ws_error, on_close=self.on_ws_close)
         
         self.ws = ws
 

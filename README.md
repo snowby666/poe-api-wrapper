@@ -129,12 +129,12 @@ message = "What is reverse engineering?"
 
 # Create new chat thread
 # Streamed example:
-for chunk in client.send_message(bot, message, chatId, suggest_replies=True):
+for chunk in client.send_message(bot, message, suggest_replies=True):
   print(chunk["response"], end="", flush=True)
 print("\n")
 
 # Non-streamed example:
-for chunk in client.send_message(bot, message, chatId, suggest_replies=True):
+for chunk in client.send_message(bot, message, suggest_replies=True):
   pass
 print(chunk["text"])
 
