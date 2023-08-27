@@ -427,8 +427,9 @@ class PoeApi:
             while True:
                 sleep(0.1)
                 response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
+                hasSuggestedReplies = response_json['data']['chatOfCode']['defaultBotObject']['hasSuggestedReplies']
                 edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
-                if edges:
+                if hasSuggestedReplies and edges:
                     latest_message = edges[-1]['node']
                     suggestions = latest_message['suggestedReplies']
                     state = latest_message['state']
