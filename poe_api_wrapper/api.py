@@ -1,5 +1,5 @@
 from re import search
-from time import sleep, time
+from time import sleep
 from httpx import Client
 import secrets, string, random, websocket, json, threading, queue
 from .queries import generate_payload
@@ -70,12 +70,9 @@ class PoeApi:
         self.ws_connecting = False
         self.ws_connected = False
         self.ws_error = False
-        self.connect_count = 0
-        self.setup_count = 0
         self.active_messages = {}
         self.message_queues = {}
         self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
-        self.channel_last_use_time = time()
         
         self.connect_ws()
         
@@ -160,12 +157,8 @@ class PoeApi:
         self.ws_connecting = True
         self.ws_connected = False
 
-        if self.connect_count % 3 == 0 or time() - self.channel_last_use_time >= 360:
-            self.get_channel_settings()
-            self.subscribe()
-
-        self.connect_count += 1
-        self.channel_last_use_time = time()
+        self.get_channel_settings()
+        self.subscribe()
 
         ws = websocket.WebSocketApp(self.channel_url, on_message=self.on_message, on_open=self.on_ws_connect, on_error=self.on_ws_error, on_close=self.on_ws_close
         )
@@ -395,9 +388,9 @@ class PoeApi:
             message["response"] = message["text"][len(last_text):]
             message["chatCode"] = chatCode
             message["chatId"] = chatId
-            last_text = message["text"]
-            message_id = message["messageId"]
-
+            
+            yield message
+            
             if message["state"] == "complete":
                 if last_text and message["messageId"] == message_id:
                     break
@@ -407,8 +400,9 @@ class PoeApi:
             if message["state"] == "error_user_message_too_long":
                 last_text = 'Message too long. Please try again!'
                 break
-
-            yield message
+            
+            last_text = message["text"]
+            message_id = message["messageId"]
             
         def recv_post_thread():
             bot_message_id = self.active_messages[human_message_id]
