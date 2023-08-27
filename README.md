@@ -152,7 +152,7 @@ for chunk in client.send_message(bot, message, chatCode="2i58ciex72dom7im83r", s
   print(chunk["response"], end="", flush=True)
 print("\n")
 # 2. Using chatId
-for chunk in client.send_message(bot, message, chatId=59726162, suggest_replies=True)
+for chunk in client.send_message(bot, message, chatId=59726162, suggest_replies=True):
   print(chunk["response"], end="", flush=True)
 print("\n")
 ```
