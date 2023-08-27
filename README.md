@@ -142,7 +142,7 @@ print(chunk["text"])
 for reply in chunk["suggestedReplies"]:
   print(reply)
 
-# You can chatCode and chatId of created thread to continue the conversation
+# You can get chatCode and chatId of created thread to continue the conversation
 chatCode = chunk["chatCode"]
 chatId = chunk["chatId"]
 
