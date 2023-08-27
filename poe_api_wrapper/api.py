@@ -391,6 +391,12 @@ class PoeApi:
                 del self.active_messages[human_message_id]
                 del self.message_queues[human_message_id]
                 raise RuntimeError("Response timed out.")
+            
+            message["response"] = message["text"][len(last_text):]
+            message["chatCode"] = chatCode
+            message["chatId"] = chatId
+            last_text = message["text"]
+            message_id = message["messageId"]
 
             if message["state"] == "complete":
                 if last_text and message["messageId"] == message_id:
@@ -401,13 +407,6 @@ class PoeApi:
             if message["state"] == "error_user_message_too_long":
                 last_text = 'Message too long. Please try again!'
                 break
-
-            message["response"] = message["text"][len(last_text):]
-            message["chatCode"] = chatCode
-            message["chatId"] = chatId
-            
-            last_text = message["text"]
-            message_id = message["messageId"]
 
             yield message
             
