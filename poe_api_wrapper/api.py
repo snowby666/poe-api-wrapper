@@ -1,7 +1,9 @@
 from re import search
 from time import sleep
 from httpx import Client
-import secrets, string, random, websocket, json, threading, queue
+from requests_toolbelt import MultipartEncoder
+import os, secrets, string, random, websocket, json, threading, queue, keyboard
+from urllib.parse import urlparse
 from .queries import generate_payload
 from .proxies import fetch_proxy
 
@@ -25,6 +27,17 @@ BOTS_LIST = {
     'Llama-2-70b': 'llama_2_70b_chat',
 }
 
+EXTENSIONS = {
+    '.pdf': 'application/pdf',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.txt': 'text/plain',
+    '.py': 'text/x-python',
+    '.js': 'text/javascript',
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.csv': 'text/csv',
+}
+
 def bot_map(bot):
     if bot in BOTS_LIST:
         return BOTS_LIST[bot]
@@ -32,7 +45,35 @@ def bot_map(bot):
     
 def generate_nonce(length:int=16):
       return "".join(secrets.choice(string.ascii_letters + string.digits) for i in range(length))
-  
+
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+    
+def generate_file(file_path: list):
+    files = []   
+    for file in file_path: 
+        if is_valid_url(file):  
+            with Client() as fetcher:
+                response = fetcher.get(file)
+                file_data = response.read()
+            file_name = file.split('/')[-1]
+            file_extension = os.path.splitext(file_name)[1].lower()
+        else: 
+            file_extension = os.path.splitext(file)[1].lower()
+            file_name = os.path.basename(file)
+            file_data = open(file, 'rb')
+            
+        if file_extension in EXTENSIONS:
+            content_type = EXTENSIONS[file_extension]
+        else:
+            raise RuntimeError("This file type is not supported. Please try again with a different file.") 
+        files.append((file_name, file_data, content_type))
+    return files
+
 class PoeApi:
     BASE_URL = 'https://www.quora.com'
     HEADERS = {
@@ -72,6 +113,7 @@ class PoeApi:
         self.ws_error = False
         self.active_messages = {}
         self.message_queues = {}
+        self.message_generating = True
         self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
         
         self.connect_ws()
@@ -85,9 +127,20 @@ class PoeApi:
         formkey = search(self.FORMKEY_PATTERN, response.text)[1]
         return formkey
     
-    def send_request(self, path: str, query_name:str="", variables:dict={}):
+    def send_request(self, path: str, query_name: str="", variables: dict={}, file_form: list=[]):
         payload = generate_payload(query_name, variables)
-        response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+        if file_form == []:
+            headers= {'Content-Type': 'application/x-www-form-urlencoded'}
+        else:
+            fields = {'queryInfo': payload}
+            for i in range(len(file_form)):
+                fields[f'file{i}'] = file_form[i]
+            payload = MultipartEncoder(
+                fields=fields
+                )
+            headers = {'Content-Type': payload.content_type}
+            payload = payload.to_string()
+        response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers)
         return response.json()
     
     def get_channel_settings(self):
@@ -142,7 +195,6 @@ class PoeApi:
             
     def ws_run_thread(self):
         kwargs = {}
-        self.ws.close()
         self.ws.run_forever(**kwargs)
 
     def connect_ws(self, timeout=5):
@@ -302,18 +354,36 @@ class PoeApi:
                     pass           
         return chat_bots
     
-    def create_new_chat(self, bot: str="a2", message: str=""):
-        variables = {"bot":bot,"query":message,"source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,"newChatContext":"chat_settings_new_chat_button"}},"sdid":"","attachments":[]}
-        response_json = self.send_request('gql_POST', 'ChatHelpersSendNewChatMessageMutation', variables)
+    def create_new_chat(self, bot: str="a2", message: str="", file_form: list=[]):
+        attachments = []
+        if file_form == []:
+            apiPath = 'gql_POST'
+        else:
+            apiPath = 'gql_upload_POST'
+            for i in range(len(file_form)):
+                attachments.append(f'file{i}')
+        variables = {"bot":bot,"query":message,"source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,"newChatContext":"chat_settings_new_chat_button"}},"sdid":"","attachments":attachments}
+        response_json = self.send_request(apiPath, 'ChatHelpersSendNewChatMessageMutation', variables, file_form)
         if response_json["data"] is None and response_json["errors"]:
             raise ValueError(
                 f"Bot {bot} not found. Make sure the bot exists before creating new chat."
             )
         if response_json['data']['messageEdgeCreate']['status'] == 'reached_limit':
             raise RuntimeError(f"Daily limit reached for {bot}.")
+        print(f"New Thread created | {response_json['data']['messageEdgeCreate']['chat']['chatCode']}")
+        
+        if file_form != []:
+            status = response_json['data']['messageEdgeCreate']['status']
+            if status == 'success':
+                for file in file_form:
+                    print(f"File {file[0]} uploaded successfully")
+            elif status == 'unsupported_file_type':
+                print("This file type is not supported. Please try again with a different file.")
+            else:
+                print("An unknown error occurred. Please try again.")
         return response_json['data']['messageEdgeCreate']['chat']
 
-    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, stream: bool=True, suggest_replies: bool=False,timeout=20):
+    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout=20):
         timer = 0
         while None in self.active_messages.values():
             sleep(0.01)
@@ -326,12 +396,21 @@ class PoeApi:
             sleep(0.01)
         self.connect_ws()
         
+        attachments = []
+        if file_path == []:
+            apiPath = 'gql_POST'
+            file_form = []
+        else:
+            apiPath = 'gql_upload_POST'
+            file_form = generate_file(file_path)
+            for i in range(len(file_form)):
+                attachments.append(f'file{i}')
+        
         if (chatId == None and chatCode == None):
             try:
-                message_data = self.create_new_chat(bot, message)
+                message_data = self.create_new_chat(bot, message, file_form)
                 chatCode = message_data['chatCode']
                 chatId = message_data['chatId']
-                print(f'New Thread created | {chatCode}')
                 del self.active_messages["pending"]
             except Exception as e:
                 del self.active_messages["pending"]
@@ -351,10 +430,20 @@ class PoeApi:
                     chatId = chat['chatId']
                     break  
                   
-            variables = {'bot': bot, 'chatId': chatId, 'query': message, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, 'withChatBreak': False, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': []}
+            variables = {'bot': bot, 'chatId': chatId, 'query': message, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, 'withChatBreak': False, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': attachments}
             
             try:
-                message_data = self.send_request('gql_POST', 'SendMessageMutation', variables)
+                message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                if file_path != []:
+                    status = message_data['data']['messageEdgeCreate']['status']
+                    if status == 'success':
+                        for file in file_form:
+                            print(f"File {file[0]} uploaded successfully")
+                    elif status == 'unsupported_file_type':
+                        print("This file type is not supported. Please try again with a different file.")
+                    else:
+                        print("An unknown error occurred. Please try again.")
+                        
                 del self.active_messages["pending"]
             except Exception as e:
                 del self.active_messages["pending"]
@@ -369,7 +458,8 @@ class PoeApi:
                     raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
             except:
                 raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
-
+            
+        self.message_generating = True
         self.active_messages[human_message_id] = None
         self.message_queues[human_message_id] = queue.Queue()
 
@@ -384,21 +474,22 @@ class PoeApi:
                 del self.message_queues[human_message_id]
                 raise RuntimeError("Response timed out.")
             
-            message["response"] = message["text"][len(last_text):]
             message["chatCode"] = chatCode
             message["chatId"] = chatId
+            if message["state"] == "error_user_message_too_long":
+                message["response"]  = 'Message too long. Please try again!'
+                yield message
+                break
+            
+            message["response"] = message["text"][len(last_text):]
             
             yield message
             
-            if message["state"] == "complete":
+            if message["state"] == "complete" or not self.message_generating:
                 if last_text and message["messageId"] == message_id:
                     break
                 else:
                     continue
-                
-            if message["state"] == "error_user_message_too_long":
-                last_text = 'Message too long. Please try again!'
-                break
             
             last_text = message["text"]
             message_id = message["messageId"]
@@ -453,7 +544,11 @@ class PoeApi:
         
         del self.active_messages[human_message_id]
         del self.message_queues[human_message_id]
-            
+        
+    def cancel_message(self, chunk: dict):
+        self.message_generating = False
+        variables = {"messageId": chunk["messageId"], "textLength": len(chunk["text"]), "linkifiedTextLength": len(chunk["linkifiedText"])}
+        self.send_request('gql_POST', 'ChatHelpers_messageCancel_Mutation', variables)
         
     def chat_break(self, bot: str, chatId: int=None, chatCode: str=None):
             chat_data = self.get_chat_history(bot=bot)[bot]
@@ -646,19 +741,19 @@ class Poe:
         }
         while True:
             choice = input('Who do you want to talk to?\n'
-                        '1. Assistant (capybara)\n'
-                        '2. Claude-instant-100k (a2_100k)\n'
-                        '3. Claude-2-100k (a2_2)\n'
-                        '4. Claude-instant (a2)\n'
-                        '5. ChatGPT (chinchilla)\n'
-                        '6. ChatGPT-16k (agouti)\n'
-                        '7. GPT-4 (beaver)\n'
-                        '8. GPT-4-32k (vizcacha)\n'
-                        '9. Google-PaLM (acouchy)\n'
-                        '10. Llama-2-7b (llama_2_7b_chat)\n'
-                        '11. Llama-2-13b (llama_2_13b_chat)\n'
-                        '12. Llama-2-70b (llama_2_70b_chat)\n'
-                        '13. Add you own bot\n\n'
+                        '[1] Assistant (capybara)\n'
+                        '[2] Claude-instant-100k (a2_100k)\n'
+                        '[3] Claude-2-100k (a2_2)\n'
+                        '[4] Claude-instant (a2)\n'
+                        '[5] ChatGPT (chinchilla)\n'
+                        '[6] ChatGPT-16k (agouti)\n'
+                        '[7] GPT-4 (beaver)\n'
+                        '[8] GPT-4-32k (vizcacha)\n'
+                        '[9] Google-PaLM (acouchy)\n'
+                        '[10] Llama-2-7b (llama_2_7b_chat)\n'
+                        '[11] Llama-2-13b (llama_2_13b_chat)\n'
+                        '[12] Llama-2-70b (llama_2_70b_chat)\n'
+                        '[13] Add you own bot\n\n'
                         'Your choice: ')
             if choice.isdigit() and 1 <= int(choice) <= 13:
                 if choice == '13':
@@ -674,10 +769,10 @@ class Poe:
     def chat_thread(threads):
         while True:
             print('\nChoose a Thread to chat with:\n'
-                '\033[38;5;121m1\033[0m. Create a new Thread')
+                '\033[38;5;121m[1]\033[0m Create a new Thread')
             for i,k in enumerate(threads):
                 i += 2      
-                print(f'\033[38;5;121m{i}\033[0m. Thread {k["chatCode"]}')
+                print(f'\033[38;5;121m[{i}]\033[0m Thread {k["chatCode"]}')
                 
             choice = input('\nYour choice: ')
             if choice.isdigit() and 1 <= int(choice) <= len(threads)+1:
@@ -716,10 +811,26 @@ class Poe:
             print("Context is now cleared")
         else:
             chatId = None
+            
+        print('\n🔰 Type !help for more commands 🔰\n')
         
         while True:
             message = input('\033[38;5;121mYou\033[0m : ').lower() 
-            if message == '!clear':
+            if message == '':
+                continue
+            elif message == '!help':
+                print('--------------------------- CMDS ---------------------------\n'
+                    '\033[38;5;121m!upload --query_here --url1|url2|url3|...\033[0m : Add attachments\n'
+                    '\033[38;5;121m!clear\033[0m : Clear the context\n'
+                    '\033[38;5;121m!purge\033[0m : Delete the last 50 messages\n'
+                    '\033[38;5;121m!purgeall\033[0m : Delete all the messages\n'
+                    '\033[38;5;121m!delete\033[0m : Delete the conversation\n'
+                    '\033[38;5;121m!history\033[0m : Show the chat history\n'
+                    '\033[38;5;121m!reset\033[0m : Choose a new Bot\n'
+                    '\033[38;5;121m!exit\033[0m : Exit the program\n'
+                    '\033[38;5;121mPress Q key\033[0m : Stop message generation\n'
+                    '------------------------------------------------------------\n') 
+            elif message == '!clear':
                 client.chat_break(bot, chatId)
                 print("Context is now cleared")
             elif message == '!exit':
@@ -742,14 +853,29 @@ class Poe:
                 client.get_chat_history()
             else:
                 print(f'\033[38;5;20m{bot}\033[0m : ', end='')
+                
                 if message == '!suggest 1':
                     message =  chunk["suggestedReplies"][0]
                 elif message == '!suggest 2':
                     message =  chunk["suggestedReplies"][1]
                 elif message == '!suggest 3':
                     message =  chunk["suggestedReplies"][2]
-                for chunk in client.send_message(bot, message, chatId, suggest_replies=True):
+                    
+                if message.startswith('!upload'):
+                    try:
+                        file_urls = message.split('--')[2].strip().split('|')
+                        message = message.split('--')[1].split('--')[0].strip()
+                    except:
+                        print("Invalid command. Please try again.\n")
+                        continue  
+                else:
+                    file_urls = []
+                for chunk in client.send_message(bot, message, chatId, suggest_replies=True, file_path=file_urls):
                     print(chunk["response"], end="", flush=True)
+                    if keyboard.is_pressed('q'):
+                        client.cancel_message(chunk)
+                        print("\nMessage is now cancelled")
+                        break 
                 print("\n")
                 for reply in range(len(chunk["suggestedReplies"])):
                     print(f"\033[38;2;255;203;107m[Type !suggest {reply+1}] : {chunk['suggestedReplies'][reply]}\033[0m\n")

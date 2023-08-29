@@ -33,7 +33,9 @@
  - Create new chat thread
  - Send messages
  - Stream bot responses
+ - Support file attachments
  - Retrieve suggested replies
+ - Stop message generation
  - Delete chat threads
  - Clear conversation context
  - Purge messages of 1 bot
@@ -129,18 +131,14 @@ message = "What is reverse engineering?"
 
 # Create new chat thread
 # Streamed example:
-for chunk in client.send_message(bot, message, suggest_replies=True):
-  print(chunk["response"], end="", flush=True)
+for chunk in client.send_message(bot, message):
+    print(chunk["response"], end="", flush=True)
 print("\n")
 
 # Non-streamed example:
-for chunk in client.send_message(bot, message, suggest_replies=True):
-  pass
+for chunk in client.send_message(bot, message):
+    pass
 print(chunk["text"])
-
-# Retrieve suggested replies
-for reply in chunk["suggestedReplies"]:
-  print(reply)
 
 # You can get chatCode and chatId of created thread to continue the conversation
 chatCode = chunk["chatCode"]
@@ -148,16 +146,49 @@ chatId = chunk["chatId"]
 
 # Send message to an existing chat thread
 # 1. Using chatCode
-for chunk in client.send_message(bot, message, chatCode="2i58ciex72dom7im83r", suggest_replies=True):
-  print(chunk["response"], end="", flush=True)
-print("\n")
+for chunk in client.send_message(bot, message, chatCode="2i58ciex72dom7im83r"):
+    print(chunk["response"], end="", flush=True)
 # 2. Using chatId
-for chunk in client.send_message(bot, message, chatId=59726162, suggest_replies=True):
-  print(chunk["response"], end="", flush=True)
-print("\n")
+for chunk in client.send_message(bot, message, chatId=59726162):
+    print(chunk["response"], end="", flush=True)
 ```
 > **Note**
 > Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
+- Adding file attachments
+```py
+# Web urls example:
+file_urls = ["https://sweet.ua.pt/jpbarraca/course/er-2122/slides/er-1-intro_to_re.pdf", 
+            "https://www.kcl.ac.uk/warstudies/assets/automation-and-artificial-intelligence.pdf"]
+for chunk in client.send_message(bot, "Compare 2 files and describe them in 300 words", file_path=file_urls):
+    print(chunk["response"], end="", flush=True)
+    
+# Local paths example:
+local_paths = ["c:\users\snowby666\hello_world.py"]
+for chunk in client.send_message(bot, "What is this file about?", file_path=local_paths):
+    print(chunk["response"], end="", flush=True)
+```
+- Retrieving suggested replies 
+```py
+for chunk in client.send_message(bot, message="Introduce 5 books about clean code", suggest_replies=True):
+    print(chunk["response"], end="", flush=True)
+print("\n")
+
+for reply in chunk["suggestedReplies"]:
+    print(reply)
+```
+- Stopping message generation
+```py
+# You can use an event to trigger this function
+# Example:
+import keyboard
+for chunk in client.send_message(bot, message):
+    print(chunk["response"], end="", flush=True)
+    # Press Q key to stop the generation
+    if keyboard.is_pressed('q'):
+        client.cancel_message(chunk)
+        print("\nMessage is now cancelled")
+        break 
+```
 - Deleting chat threads
 ```py
 # Delete 1 chat
@@ -224,6 +255,13 @@ Here is an example, the chatCode is 2i5bego6rzetfsevv5g
 
 ![](https://cdn.discordapp.com/attachments/957946068836950026/1142363043741843506/image.png)
 
+- What are the file types that poe-api-wrapper support?
+
+Currently, this API only supports these file types for adding attachments
+
+| .pdf | .docx | .txt | .py | .js | .html | .css | .csv |
+| - | - | - | - | - | - | - | - |  
+|                               |
 
 ## Copyright:
 This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). All code has been written by me, [snowby666](https://github.com/snowby666).
