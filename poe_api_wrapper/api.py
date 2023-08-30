@@ -320,7 +320,6 @@ class PoeApi:
         return self.bots
     
     def get_chat_history(self, bot:str=None, handle:str="", useBot:bool=False): 
-        bot = bot.lower().replace(' ', '')
         variables = {'handle': handle, 'useBot': useBot}
         response_json = self.send_request('gql_POST', 'ChatsHistoryPageQuery', variables)
         edges = response_json['data']['chats']['edges']
@@ -341,6 +340,7 @@ class PoeApi:
                     chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"]}]
             print('-' * 50)
         else:
+            bot = bot.lower().replace(' ', '')
             for edge in edges:
                 chat = edge['node']
                 try:
