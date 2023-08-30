@@ -25,6 +25,9 @@ BOTS_LIST = {
     'Llama-2-7b': 'llama_2_7b_chat',
     'Llama-2-13b': 'llama_2_13b_chat',
     'Llama-2-70b': 'llama_2_70b_chat',
+    'Code-Llama-7b': 'code_llama_7b_instruct',
+    'Code-Llama-13b': 'code_llama_13b_instruct',
+    'Code-Llama-34b': 'code_llama_34b_instruct'
 }
 
 EXTENSIONS = {
@@ -33,9 +36,13 @@ EXTENSIONS = {
     '.txt': 'text/plain',
     '.py': 'text/x-python',
     '.js': 'text/javascript',
+    '.ts': 'text/plain',
     '.html': 'text/html',
     '.css': 'text/css',
     '.csv': 'text/csv',
+    '.c' : 'text/plain',
+    '.cs': 'text/plain',
+    '.cpp': 'text/plain',
 }
 
 def bot_map(bot):
@@ -280,18 +287,14 @@ class PoeApi:
     def get_available_bots(self, count: int=25, get_all: bool=False):
         self.bots = {}
         if not (get_all or count):
-            raise TypeError(
-                "Please provide at least one of the following parameters: get_all=<bool>, count=<int>"
-            )
+            raise TypeError("Please provide at least one of the following parameters: get_all=<bool>, count=<int>")
         response = self.send_request('gql_POST',"AvailableBotsSelectorModalPaginationQuery", {}) 
         bots = [
             each["node"]
             for each in response["data"]["viewer"]["availableBotsConnection"]["edges"]
             if each["node"]["deletionState"] == "not_deleted"
         ]
-        cursor = response["data"]["viewer"]["availableBotsConnection"]["pageInfo"][
-            "endCursor"
-        ]
+        cursor = response["data"]["viewer"]["availableBotsConnection"]["pageInfo"]["endCursor"]
         if len(bots) >= count and not get_all:
             self.bots.update({bot["handle"]: {"bot": bot} for bot in bots})
             return self.bots
@@ -299,14 +302,10 @@ class PoeApi:
             response = self.send_request("gql_POST", "AvailableBotsSelectorModalPaginationQuery", {"cursor": cursor})
             new_bots = [
                 each["node"]
-                for each in response["data"]["viewer"]["availableBotsConnection"][
-                    "edges"
-                ]
+                for each in response["data"]["viewer"]["availableBotsConnection"]["edges"]
                 if each["node"]["deletionState"] == "not_deleted"
             ]
-            cursor = response["data"]["viewer"]["availableBotsConnection"]["pageInfo"][
-                "endCursor"
-            ]
+            cursor = response["data"]["viewer"]["availableBotsConnection"]["pageInfo"]["endCursor"]
             bots += new_bots
             if len(new_bots) == 0:
                 if not get_all:
@@ -321,6 +320,7 @@ class PoeApi:
         return self.bots
     
     def get_chat_history(self, bot:str=None, handle:str="", useBot:bool=False): 
+        bot = bot.lower().replace(' ', '')
         variables = {'handle': handle, 'useBot': useBot}
         response_json = self.send_request('gql_POST', 'ChatsHistoryPageQuery', variables)
         edges = response_json['data']['chats']['edges']
@@ -384,6 +384,7 @@ class PoeApi:
         return response_json['data']['messageEdgeCreate']['chat']
 
     def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout=20):
+        bot = bot.lower().replace(' ', '')
         timer = 0
         while None in self.active_messages.values():
             sleep(0.01)
@@ -551,22 +552,24 @@ class PoeApi:
         self.send_request('gql_POST', 'ChatHelpers_messageCancel_Mutation', variables)
         
     def chat_break(self, bot: str, chatId: int=None, chatCode: str=None):
-            chat_data = self.get_chat_history(bot=bot)[bot]
-            for chat in chat_data:
-                if chat['chatId'] == chatId or chat['chatCode'] == chatCode:
-                    chatId = chat['chatId']
-                    id = chat['id']
-                    break
-            variables = {"connections": [
-                    f"client:{id}:__ChatMessagesView_chat_messagesConnection_connection"],
-                    "chatId": chatId}
-            self.send_request('gql_POST', 'ChatHelpers_addMessageBreakEdgeMutation_Mutation', variables)
+        bot = bot.lower().replace(' ', '')
+        chat_data = self.get_chat_history(bot=bot)[bot]
+        for chat in chat_data:
+            if chat['chatId'] == chatId or chat['chatCode'] == chatCode:
+                chatId = chat['chatId']
+                id = chat['id']
+                break
+        variables = {"connections": [
+                f"client:{id}:__ChatMessagesView_chat_messagesConnection_connection"],
+                "chatId": chatId}
+        self.send_request('gql_POST', 'ChatHelpers_addMessageBreakEdgeMutation_Mutation', variables)
             
     def delete_message(self, message_ids):
         variables = {'messageIds': message_ids}
         self.send_request('gql_POST', 'DeleteMessageMutation', variables)
     
     def purge_conversation(self, bot: str, chatId: int=None, chatCode: str=None, count: int=50):
+        bot = bot.lower().replace(' ', '')
         if chatId != None and chatCode == None:
             chatdata = self.get_chat_history(bot=bot)[bot]
             for chat in chatdata:
@@ -596,6 +599,7 @@ class PoeApi:
         self.send_request('gql_POST', 'DeleteUserMessagesMutation', {})
     
     def delete_chat(self, bot: str, chatId: any=None, chatCode: any=None, del_all: bool=False):
+        bot = bot.lower().replace(' ', '')
         chatdata = self.get_chat_history(bot=bot)[bot]
         if chatId != None and not isinstance(chatId, list):
             self.send_request('gql_POST', 'DeleteChat', {'chatId': chatId})
@@ -721,6 +725,41 @@ class PoeApi:
             )
         else:
             print("Bot deleted successfully")
+            
+    def explore_bots(self, search: str=None, count: int = 50, explore_all: bool = False):
+        bots = []
+        new_cursor = None
+        if search == None:
+            query_name = "ExploreBotsListPaginationQuery"
+            variables = {"count": count, "cursor": new_cursor}
+            connectionType = "exploreBotsConnection"
+        else:
+            query_name = "SearchResultsListPaginationQuery"
+            variables = {"query": search, "entityType":"bot", "count": count, "cursor": new_cursor}
+            connectionType = "searchEntityConnection"
+            
+        result = self.send_request("gql_POST", query_name, variables)
+        new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
+        bots += [
+            each["node"] for each in result["data"][connectionType]["edges"]
+        ]
+        if len(bots) >= count and not explore_all:
+            return bots[:count]
+        while len(bots) < count or explore_all:
+            result = self.send_request("gql_POST", query_name, variables)
+            if len(result["data"][connectionType]["edges"]) == 0:
+                if not explore_all:
+                    print(f"No more bots could be explored,only {len(bots)} bots found.")
+                return bots
+            new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
+            new_bots = [
+                each["node"]
+                for each in result["data"][connectionType]["edges"]
+            ]
+            bots += new_bots
+            
+        print("Succeed to explore bots")
+        return bots[:count]
         
 class Poe:
     @staticmethod
@@ -738,6 +777,9 @@ class Poe:
             10: 'llama_2_7b_chat',
             11: 'llama_2_13b_chat',
             12: 'llama_2_70b_chat',
+            13: 'code_llama_7b_instruct',
+            14: 'code_llama_13b_instruct',
+            15: 'code_llama_34b_instruct'
         }
         while True:
             choice = input('Who do you want to talk to?\n'
@@ -753,10 +795,13 @@ class Poe:
                         '[10] Llama-2-7b (llama_2_7b_chat)\n'
                         '[11] Llama-2-13b (llama_2_13b_chat)\n'
                         '[12] Llama-2-70b (llama_2_70b_chat)\n'
-                        '[13] Add you own bot\n\n'
+                        '[13] Code-Llama-7b (code_llama_7b_instruct)\n'
+                        '[14] Code-Llama-13b (code_llama_13b_instruct)\n'
+                        '[15] Code-Llama-34b (code_llama_34b_instruct)\n'
+                        '[16] Add you own bot\n\n'
                         'Your choice: ')
-            if choice.isdigit() and 1 <= int(choice) <= 13:
-                if choice == '13':
+            if choice.isdigit() and 1 <= int(choice) <= 16:
+                if choice == '16':
                     bot = input('Enter the bot name: ')
                 else:
                     bot = bots[int(choice)]

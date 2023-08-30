@@ -44,6 +44,7 @@
  - Edit custom bot
  - Delete a custom bot
  - Get available bots
+ - Explore 3rd party bots
  - Support multi-chat threads
 
 ## Installation:
@@ -72,6 +73,9 @@ Poe.chat_with_bot(token)
 - Llama-2-7b (llama_2_7b_chat)
 - Llama-2-13b (llama_2_13b_chat)
 - Llama-2-70b (llama_2_70b_chat)
+- Code-Llama-7b (code_llama_7b_instruct)
+- Code-Llama-13b (code_llama_13b_instruct)
+- Code-Llama-34b (code_llama_34b_instruct)
 
 ### How to get your Token:
 Sign in at https://www.quora.com/
@@ -169,7 +173,7 @@ for chunk in client.send_message(bot, "What is this file about?", file_path=loca
 ```
 - Retrieving suggested replies 
 ```py
-for chunk in client.send_message(bot, message="Introduce 5 books about clean code", suggest_replies=True):
+for chunk in client.send_message(bot, "Introduce 5 books about clean code", suggest_replies=True):
     print(chunk["response"], end="", flush=True)
 print("\n")
 
@@ -242,10 +246,26 @@ client.delete_bot("BOT_NAME")
 - Getting available Bots
 ```py
 # Get a defined number of bots (default is 25)
-client.get_available_bots(count=10)
+print(client.get_available_bots(count=10))
 
 # Get all available bots
-client.get_available_bots(get_all=True)
+print(client.get_available_bots(get_all=True))
+```
+- Exploring 3rd party bots
+```py
+# Explore section example:
+# Get a defined number of bots (default is 50)
+print(client.explore_bots(count=10))
+
+# Get all available bots
+print(client.explore_bots(explore_all=True))
+
+# Search section example:
+# Get a defined number of bots (default is 50)
+print(client.explore_bots(search="Midjourney", count=30))
+
+# Get all available bots
+print(client.explore_bots(search="Midjourney", explore_all=True))
 ```
 
 ### Misc:
@@ -259,9 +279,9 @@ Here is an example, the chatCode is 2i5bego6rzetfsevv5g
 
 Currently, this API only supports these file types for adding attachments
 
-| .pdf | .docx | .txt | .py | .js | .html | .css | .csv |
-| - | - | - | - | - | - | - | - |  
-|                               |
+| .pdf | .docx | .txt | .py | .js | .ts | .html | .css | .csv | .c | .cs | .cpp |
+| - | - | - | - | - | - | - | - | - | - | - | - |
+|                                               |
 
 ## Copyright:
 This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). All code has been written by me, [snowby666](https://github.com/snowby666).
