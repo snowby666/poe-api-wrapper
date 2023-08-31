@@ -326,6 +326,7 @@ class PoeApi:
         else:
             useBot = True    
             model = bot.lower().replace(' ', '')
+            handle = model
             for key, value in BOTS_LIST.items():
                 if model == value:
                     handle = key
@@ -938,7 +939,8 @@ class Poe:
                         print("\nMessage is now cancelled")
                         break 
                 print("\n")
-                for reply in range(len(chunk["suggestedReplies"])):
-                    print(f"\033[38;2;255;203;107m[Type !suggest {reply+1}] : {chunk['suggestedReplies'][reply]}\033[0m\n")
+                if chunk["suggestedReplies"] != []:
+                    for reply in range(len(chunk["suggestedReplies"])):
+                        print(f"\033[38;2;255;203;107m[Type !suggest {reply+1}] : {chunk['suggestedReplies'][reply]}\033[0m\n")
                 if chatId is None:
                     chatId = chunk["chatId"]
