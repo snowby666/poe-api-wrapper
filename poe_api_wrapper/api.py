@@ -319,14 +319,24 @@ class PoeApi:
         self.bots.update({bot["handle"]: {"bot": bot} for bot in bots})
         return self.bots
     
-    def get_chat_history(self, bot:str=None, handle:str="", useBot:bool=False): 
+    def get_chat_history(self, bot: str=None): 
+        if bot == None:
+            useBot = False
+            handle = ""
+        else:
+            useBot = True    
+            model = bot.lower().replace(' ', '')
+            for key, value in BOTS_LIST.items():
+                if model == value:
+                    handle = key
+                    break
+                
         variables = {'handle': handle, 'useBot': useBot}
         response_json = self.send_request('gql_POST', 'ChatsHistoryPageQuery', variables)
-        edges = response_json['data']['chats']['edges']
-        
         chat_bots = {}
         
         if bot == None:
+            edges = response_json['data']['chats']['edges']
             print('-'*18+' \033[38;5;121mChat History\033[0m '+'-'*18)
             print('\033[38;5;121mChat ID\033[0m  |     \033[38;5;121mChat Code\033[0m       | \033[38;5;121mBot Name\033[0m')
             print('-' * 50)
@@ -340,16 +350,14 @@ class PoeApi:
                     chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"]}]
             print('-' * 50)
         else:
-            bot = bot.lower().replace(' ', '')
+            edges = response_json['data']['filteredChats']['edges']
             for edge in edges:
                 chat = edge['node']
                 try:
-                    model = bot_map(chat["defaultBotObject"]["displayName"])
-                    if model == bot:
-                        if model in chat_bots:
-                            chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"]})
-                        else:
-                            chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"]}]
+                    if model in chat_bots:
+                        chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"]})
+                    else:
+                        chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"]}]
                 except:
                     pass           
         return chat_bots
@@ -728,30 +736,38 @@ class PoeApi:
             
     def explore_bots(self, search: str=None, count: int = 50, explore_all: bool = False):
         bots = []
-        new_cursor = None
         if search == None:
             query_name = "ExploreBotsListPaginationQuery"
-            variables = {"count": count, "cursor": new_cursor}
+            variables = {"count": count}
             connectionType = "exploreBotsConnection"
         else:
             query_name = "SearchResultsListPaginationQuery"
-            variables = {"query": search, "entityType":"bot", "count": count, "cursor": new_cursor}
+            variables = {"query": search, "entityType":"bot", "count": 10}
             connectionType = "searchEntityConnection"
             
         result = self.send_request("gql_POST", query_name, variables)
-        new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
+        if search == None:
+            new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
+        else:
+            new_cursor = 20
         bots += [
             each["node"] for each in result["data"][connectionType]["edges"]
         ]
         if len(bots) >= count and not explore_all:
             return bots[:count]
         while len(bots) < count or explore_all:
-            result = self.send_request("gql_POST", query_name, variables)
+            if search == None:
+                result = self.send_request("gql_POST", query_name, {"count": count, "cursor": new_cursor})
+            else:
+                result = self.send_request("gql_POST", query_name, {"query": search, "entityType":"bot", "count": 10, "cursor": new_cursor})
             if len(result["data"][connectionType]["edges"]) == 0:
                 if not explore_all:
-                    print(f"No more bots could be explored,only {len(bots)} bots found.")
+                    print(f"No more bots could be explored, only {len(bots)} bots found.")
                 return bots
-            new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
+            if search == None:
+                new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
+            else:
+                new_cursor += 10
             new_bots = [
                 each["node"]
                 for each in result["data"][connectionType]["edges"]
