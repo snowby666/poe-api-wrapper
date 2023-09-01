@@ -273,7 +273,7 @@ shareCode = client.share_chat(bot, count=10)
 shareCode = client.share_chat(bot)
 
 # Set up the 2nd Client and import messages from the shareCode
-client2 = PoeAPI("2nd_TOKEN_HERE")
+client2 = PoeApi("2nd_TOKEN_HERE")
 print(client2.import_chat(bot, shareCode))
 # Output:
 # {'chatId': 72929127, 'chatCode': '2iw0xcem7a18wy1avd3'}
