@@ -45,6 +45,7 @@
  - Delete a custom bot
  - Get available bots
  - Explore 3rd party bots
+ - Share and import messages
  - Support multi-chat threads
 
 ## Installation:
@@ -247,7 +248,6 @@ client.delete_bot("BOT_NAME")
 ```py
 # Get a defined number of bots (default is 25)
 print(client.get_available_bots(count=10))
-
 # Get all available bots
 print(client.get_available_bots(get_all=True))
 ```
@@ -256,16 +256,27 @@ print(client.get_available_bots(get_all=True))
 # Explore section example:
 # Get a defined number of bots (default is 50)
 print(client.explore_bots(count=10))
-
 # Get all available bots
 print(client.explore_bots(explore_all=True))
 
 # Search section example:
 # Get a defined number of bots (default is 50)
 print(client.explore_bots(search="Midjourney", count=30))
-
 # Get all available bots
 print(client.explore_bots(search="Midjourney", explore_all=True))
+```
+- Sharing & Importing messages
+```py
+# Share a defined number of messages (from the lastest to the oldest)
+shareCode = client.share_chat(bot, count=10)
+# Share all the messages
+shareCode = client.share_chat(bot)
+
+# Set up the 2nd Client and import messages from the shareCode
+client2 = PoeAPI("2nd_TOKEN_HERE")
+print(client2.import_chat(bot, shareCode))
+# Output:
+# {'chatId': 72929127, 'chatCode': '2iw0xcem7a18wy1avd3'}
 ```
 
 ### Misc:

@@ -117,6 +117,7 @@ QUERIES = {
   "SettingsPageQuery": "1633485f58c7f2e730a34446b8566c40b5fe2a75ad82b930e3374d8c222b5983",
   "ShareCodeSharePageQuery": "e56f5cb9c7fc9872d053ddaef3dd7827067530b014f59e3ed07bc5e21a0f4334",
   "ShareMessageMutation": "2491190f42c1f5265d8dbaaaf7220dbfa094044fdfb2429fd7f2e35f863bc5e1",
+  "ContinueChatCTAButton_continueChatFromPoeShare_Mutation": "8b7bbb788463708e87ea979a383ddf6cbbb8818305add8b30c275a13ce9c7a95",
   "SignupOrLoginWithAppleMutation": "649943f9929600796b30f48a47094af56a5d86b4556e34e91aa8ea834cda5fda",
   "SignupOrLoginWithGoogleMutation": "519c2241faeb2bade473ed190913365604eee13ca97b67775b2c7b1aad0fb095",
   "SignupOrLoginWithQuoraMutation": "ee2498e8837e7b975806613401f5aa4ba18d03fdcc9fde0c59efc75717103df5",

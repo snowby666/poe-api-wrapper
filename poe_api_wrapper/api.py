@@ -1,5 +1,5 @@
 from re import search
-from time import sleep
+from time import sleep, time
 from httpx import Client
 from requests_toolbelt import MultipartEncoder
 import os, secrets, string, random, websocket, json, threading, queue, keyboard
@@ -521,11 +521,15 @@ class PoeApi:
             })
             sleep(0.5)
             
-        def get_suggestions(queue, chatCode: str=None):
+        def get_suggestions(queue, chatCode: str=None, timeout: int=5):
             variables = {'chatCode': chatCode}
             state = 'incomplete'
             suggestions = []
+            start_time = time()
             while True:
+                elapsed_time = time() - start_time
+                if elapsed_time >= timeout:
+                    break
                 sleep(0.1)
                 response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
                 hasSuggestedReplies = response_json['data']['chatOfCode']['defaultBotObject']['hasSuggestedReplies']
@@ -547,10 +551,13 @@ class PoeApi:
         
         if suggest_replies:
             suggestions_queue = queue.Queue()
-            t2 = threading.Thread(target=get_suggestions, args=(suggestions_queue, chatCode), daemon=True)
+            t2 = threading.Thread(target=get_suggestions, args=(suggestions_queue, chatCode, 5), daemon=True)
             t2.start()
-            suggestions = suggestions_queue.get()
-            yield suggestions
+            try:
+                suggestions = suggestions_queue.get(timeout=5)
+                yield suggestions
+            except queue.Empty:
+                yield {'text': message["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId}
         
         del self.active_messages[human_message_id]
         del self.message_queues[human_message_id]
@@ -777,6 +784,52 @@ class PoeApi:
             
         print("Succeed to explore bots")
         return bots[:count]
+    
+    def share_chat(self, bot: str, chatId: int=None, chatCode: str=None, count: int=None):
+        bot = bot.lower().replace(' ', '')
+        chat_data = self.get_chat_history(bot=bot)[bot]
+        for chat in chat_data:
+            if chatCode == None and chat['chatId'] == chatId:
+                chatCode = chat['chatCode']
+                break
+            if chatId == None and chat['chatCode'] == chatCode:  
+                chatId = chat['chatId']
+                break
+        variables = {'chatCode': chatCode}
+        response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
+        edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
+        if count == None:
+            count = len(edges)
+        message_ids = []
+        for edge in edges:
+            message_ids.append(edge['node']['messageId'])
+        variables = {'chatId': chatId, 'messageIds': message_ids[count:]}
+        response_json = self.send_request('gql_POST', 'ShareMessageMutation', variables)
+        if response_json['data']['messagesShare']:
+            shareCode = response_json['data']['messagesShare']["shareCode"]
+            print(f'Shared {count} messages with code: {shareCode}')
+            return shareCode
+        else:
+            print('An error occurred while sharing the messages')
+            return None
+        
+    def import_chat(self, bot:str="", shareCode: str=""):
+        bot = bot.lower().replace(' ', '')
+        variables = {'botName': bot, 'shareCode': shareCode, 'postId': None}
+        response_json = self.send_request('gql_POST', 'ContinueChatCTAButton_continueChatFromPoeShare_Mutation', variables)
+        if response_json['data']['continueChatFromPoeShare']['status'] == 'success':
+            print('Chat imported successfully') 
+            chatCode = response_json['data']['continueChatFromPoeShare']['messages'][0]['node']['chat']['chatCode']
+            # get chatId
+            chat_data = self.get_chat_history(bot=bot)[bot]
+            for chat in chat_data:
+                if chat['chatCode'] == chatCode:
+                    chatId = chat['chatId']
+                    break
+            return {'chatId': chatId, 'chatCode': chatCode}
+        else:
+            print('An error occurred while importing the chat')
+            return None
         
 class Poe:
     @staticmethod
@@ -869,8 +922,6 @@ class Poe:
         if (thread != None):
             chatId = thread["chatId"]
             print(f'The selected thread is: {thread["chatCode"]}')
-            client.chat_break(bot, chatId)
-            print("Context is now cleared")
         else:
             chatId = None
             
