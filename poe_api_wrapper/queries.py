@@ -109,7 +109,7 @@ QUERIES = {
   "SearchResultsListPaginationQuery": "8466d0d19866f27eabef0657dc9a1822ed5260c44dc839d32cd9c329fe444e31",
   "SearchResultsMainQuery": "f8197cc6f654594d98c414e9cb6915d3004be06b15e1c20994c88bc882289211",
   "SelectorTestPageQuery": "9ec86fe8e3d0d3b264d0fab0feb73e38c86d616c7c3d8340d7a6146bd8445ed3",
-  "SendMessageMutation": "423f47cbc3c55eaeaa17b78c005e72cefc3dcf2bf1b107c4809828155046ab15",
+  "SendMessageMutation": "730c8c00e4b18909c7a6695447e47cbc895f1f65a438cdbacca626d64d17d035",
   "SendVerificationCodeMutation": "d418fa3d2357d089b20065226041180573fa0b0382914a90cf905435281af520",
   "SetPrimaryEmailMutation": "01e75a6d937351b304ca9cc0b231e43587a5923e7f8618863bdf996df38d28b5",
   "SettingsDefaultBotSectionMutation": "4084604e8741af8650ac6b4236cdfa13c91a70cf1c63ad8a368706a386d0887e",

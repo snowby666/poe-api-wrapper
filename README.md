@@ -40,6 +40,7 @@
  - Clear conversation context
  - Purge messages of 1 bot
  - Purge all messages of user
+ - Fetch previous messages
  - Create custom bot
  - Edit custom bot
  - Delete a custom bot
@@ -101,32 +102,25 @@ client = PoeApi("TOKEN_HERE", proxy=True)
 # Get chat ids of all bots
 client.get_chat_history()
 # Output:
-# ------------------ Chat History ------------------
-# Chat ID  |     Chat Code       | Bot Name
-# --------------------------------------------------
-# 59727831 | 2i58aywsckpnm0v7wyl | chinchilla       
-# 59727472 | 2i58bw1nfv0aq7eab6i | chinchilla       
-# 59726162 | 2i58ciex72dom7im83r | a2
-# 59726106 | 2i58campfdh1yn9us8i | a2
-# 59726052 | 2i58d5x8am0untzhaxp | a2
-# 59724775 | 2i588127auu1k5ilri9 | capybara
-# 59724472 | 2i588hu98sfob7dfifx | capybara
-# 59724127 | 2i586nb5jwhhvtr8gk4 | a2
-# 59722624 | 2i58qnkisefkly649ml | a2
-# 59719138 | 2i58xtl3nftynxnsxxi | capybara
-# 59667229 | 2i5e3a7vvpbvt4nrif8 | a2
-# 59673297 | 2i5gzkx1x2wicy1tzwr | a2
-# 59680790 | 2i5hperhw2irsy351gn | capybara
-# --------------------------------------------------
+# -------------------------------------- Chat History --------------------------------------
+# Chat ID  |     Chat Code       |           Bot Name            |       Chat Title
+# ------------------------------------------------------------------------------------------
+# 74397929 | 2ith0h11zfyvsta1u3z | chinchilla                    | Comparison
+# 74397392 | 2ithbduzsysy3g178hb | code_llama_7b_instruct        | Decent Programmers
+# 74396838 | 2ith9nikybn4ksn51l8 | a2                            | Reverse Engineering
+# 74396452 | 2ith79n4x0p0p8w5yue | a2                            | Clean Code
+# 74396246 | 2ith82wj0tjrggj46no | leocooks                      | Pizza perfection
+# 74396020 | 2ith5o3p8c5ajkdwd3k | capybara                      | Greeting
+# ------------------------------------------------------------------------------------------
 
 print(client.get_chat_history())
 # Output:
-# {'chinchilla': [{'chatId': 59727831, 'chatCode': '2i58aywsckpnm0v7wyl', 'id': 'Q2hhdDo1OTcyNzgzMQ=='}, {'chatId': 59727472, 'chatCode': '2i58bw1nfv0aq7eab6i', 'id': 'Q2hhdDo1OTcyNzQ3Mg=='}], 'a2': [{'chatId': 59726162, 'chatCode': '2i58ciex72dom7im83r', 'id': 'Q2hhdDo1OTcyNjE2Mg=='}, {'chatId': 59726106, 'chatCode': '2i58campfdh1yn9us8i', 'id': 'Q2hhdDo1OTcyNjEwNg=='}, {'chatId': 59726052, 'chatCode': '2i58d5x8am0untzhaxp', 'id': 'Q2hhdDo1OTcyNjA1Mg=='}, {'chatId': 59724127, 'chatCode': '2i586nb5jwhhvtr8gk4', 'id': 'Q2hhdDo1OTcyNDEyNw=='}, {'chatId': 59722624, 'chatCode': '2i58qnkisefkly649ml', 'id': 'Q2hhdDo1OTcyMjYyNA=='}, {'chatId': 59667229, 'chatCode': '2i5e3a7vvpbvt4nrif8', 'id': 'Q2hhdDo1OTY2NzIyOQ=='}, {'chatId': 59673297, 'chatCode': '2i5gzkx1x2wicy1tzwr', 'id': 'Q2hhdDo1OTY3MzI5Nw=='}], 'capybara': [{'chatId': 59724775, 'chatCode': '2i588127auu1k5ilri9', 'id': 'Q2hhdDo1OTcyNDc3NQ=='}, {'chatId': 59724472, 'chatCode': '2i588hu98sfob7dfifx', 'id': 'Q2hhdDo1OTcyNDQ3Mg=='}, {'chatId': 59719138, 'chatCode': '2i58xtl3nftynxnsxxi', 'id': 'Q2hhdDo1OTcxOTEzOA=='}, {'chatId': 59680790, 'chatCode': '2i5hperhw2irsy351gn', 'id': 'Q2hhdDo1OTY4MDc5MA=='}]}
+# {'chinchilla': [{'chatId': 74397929, 'chatCode': '2ith0h11zfyvsta1u3z', 'id': 'Q2hhdDo3NDM5NzkyOQ==', 'title': 'Comparison'}], 'code_llama_7b_instruct': [{'chatId': 74397392, 'chatCode': '2ithbduzsysy3g178hb', 'id': 'Q2hhdDo3NDM5NzM5Mg==', 'title': 'Decent Programmers'}], 'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}], 'leocooks': [{'chatId': 74396246, 'chatCode': '2ith82wj0tjrggj46no', 'id': 'Q2hhdDo3NDM5NjI0Ng==', 'title': 'Pizza perfection'}], 'capybara': [{'chatId': 74396020, 'chatCode': '2ith5o3p8c5ajkdwd3k', 'id': 'Q2hhdDo3NDM5NjAyMA==', 'title': 'Greeting'}]}
 
 # Get chat ids of a bot
-print(client.get_chat_history("capybara"))
+print(client.get_chat_history("a2"))
 # Output:
-# {'capybara': [{'chatId': 59724775, 'chatCode': '2i588127auu1k5ilri9', 'id': 'Q2hhdDo1OTcyNDc3NQ=='}, {'chatId': 59724472, 'chatCode': '2i588hu98sfob7dfifx', 'id': 'Q2hhdDo1OTcyNDQ3Mg=='}, {'chatId': 59719138, 'chatCode': '2i58xtl3nftynxnsxxi', 'id': 'Q2hhdDo1OTcxOTEzOA=='}, {'chatId': 59680790, 'chatCode': '2i5hperhw2irsy351gn', 'id': 'Q2hhdDo1OTY4MDc5MA=='}]}
+# {'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}]}
 ```
 
 - Sending messages & Streaming responses 
@@ -148,6 +142,8 @@ print(chunk["text"])
 # You can get chatCode and chatId of created thread to continue the conversation
 chatCode = chunk["chatCode"]
 chatId = chunk["chatId"]
+# You can get the meaningful title as well
+title = chunk["title"]
 
 # Send message to an existing chat thread
 # 1. Using chatCode
@@ -172,6 +168,8 @@ local_paths = ["c:\users\snowby666\hello_world.py"]
 for chunk in client.send_message(bot, "What is this file about?", file_path=local_paths):
     print(chunk["response"], end="", flush=True)
 ```
+> **Note**
+> The files size limit is different for each model.
 - Retrieving suggested replies 
 ```py
 for chunk in client.send_message(bot, "Introduce 5 books about clean code", suggest_replies=True):
@@ -232,6 +230,34 @@ client.purge_conversation(bot, chatId=59726162, count=10)
 ```py
 client.purge_all_conversations()
 ```
+- Fetching previous messsages
+```py
+# Get a defined number of messages (default is 50)
+# Using chatCode
+previous_messages = client.get_previous_messages('code_llama_34b_instruct', chatCode='2itg2a7muygs42v1u0k', count=2)
+# Using chatId
+previous_messages = client.get_previous_messages('code_llama_34b_instruct', chatId=74411139, count=2)
+for message in previous_messages:
+    print(message)
+# Output:
+# {'author': 'human', 'text': 'nice to meet you'}
+# {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help"}
+
+# Get all previous messages
+# Using chatCode
+previous_messages = client.get_previous_messages('code_llama_34b_instruct', chatCode='2itg2a7muygs42v1u0k', get_all=True)
+# Using chatId
+previous_messages = client.get_previous_messages('code_llama_34b_instruct', chatId=74411139, get_all=True)
+for message in previous_messages:
+    print(message)
+# Output:
+# {'author': 'human', 'text': 'hi there'}
+# {'author': 'code_llama_34b_instruct', 'text': " Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?"}
+# {'author': 'human', 'text': 'nice to meet you'}
+# {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help"}
+```
+>**Note**
+> It will fetch messages from the latest to the oldest, but the order to be displayed is vice-versa.
 - Creating a new Bot
 ```py
 client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2")
@@ -269,7 +295,7 @@ print(client.explore_bots(search="Midjourney", explore_all=True))
 ```py
 # Share a defined number of messages (from the lastest to the oldest)
 shareCode = client.share_chat(bot, count=10)
-# Share all the messages
+# Share all messages
 shareCode = client.share_chat(bot)
 
 # Set up the 2nd Client and import messages from the shareCode

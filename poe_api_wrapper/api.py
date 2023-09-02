@@ -331,68 +331,97 @@ class PoeApi:
                 if model == value:
                     handle = key
                     break
-                
+        
         variables = {'handle': handle, 'useBot': useBot}
         response_json = self.send_request('gql_POST', 'ChatsHistoryPageQuery', variables)
         chat_bots = {}
         
         if bot == None:
+            if response_json['data']['chats']['pageInfo']['hasNextPage']:
+                cursor = response_json['data']['chats']['pageInfo']['endCursor']
             edges = response_json['data']['chats']['edges']
-            print('-'*18+' \033[38;5;121mChat History\033[0m '+'-'*18)
-            print('\033[38;5;121mChat ID\033[0m  |     \033[38;5;121mChat Code\033[0m       | \033[38;5;121mBot Name\033[0m')
-            print('-' * 50)
+            print('-'*38+' \033[38;5;121mChat History\033[0m '+'-'*38)
+            print('\033[38;5;121mChat ID\033[0m  |     \033[38;5;121mChat Code\033[0m       |           \033[38;5;121mBot Name\033[0m            |       \033[38;5;121mChat Title\033[0m')
+            print('-' * 90)
             for edge in edges:
                 chat = edge['node']
                 model = bot_map(chat["defaultBotObject"]["displayName"])
-                print(f'{chat["chatId"]} | {chat["chatCode"]} | {model}')
+                print(f'{chat["chatId"]} | {chat["chatCode"]} | {model}' + (30-len(model))*' ' + f'| {chat["title"]}')
                 if model in chat_bots:
-                    chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"]})
+                    chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]})
                 else:
-                    chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"]}]
-            print('-' * 50)
+                    chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]}]
+            # Fetch more chats
+            while response_json['data']['chats']['pageInfo']['hasNextPage']:
+                response_json = self.send_request('gql_POST', 'ChatHistoryListPaginationQuery', {'count': 10, 'cursor': cursor})
+                edges = response_json['data']['chats']['edges']
+                for edge in edges:
+                    chat = edge['node']
+                    model = bot_map(chat["defaultBotObject"]["displayName"])
+                    print(f'{chat["chatId"]} | {chat["chatCode"]} | {model}' + (30-len(model))*' ' + f'| {chat["title"]}')
+                    if model in chat_bots:
+                        chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]})
+                    else:
+                        chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]}]    
+                cursor = response_json['data']['chats']['pageInfo']['endCursor']            
+            print('-' * 90)  
         else:
+            if response_json['data']['filteredChats']['pageInfo']['hasNextPage']:
+                cursor = response_json['data']['filteredChats']['pageInfo']['endCursor']
             edges = response_json['data']['filteredChats']['edges']
             for edge in edges:
                 chat = edge['node']
                 try:
                     if model in chat_bots:
-                        chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"]})
+                        chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]})
                     else:
-                        chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"]}]
+                        chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]}]
                 except:
-                    pass           
+                    pass 
+            # Fetch more chats
+            while response_json['data']['filteredChats']['pageInfo']['hasNextPage']:
+                response_json = self.send_request('gql_POST', 'ChatHistoryFilteredListPaginationQuery', {'count': 10, 'handle': handle, 'cursor': cursor})
+                edges = response_json['data']['filteredChats']['edges']
+                for edge in edges:
+                    chat = edge['node']
+                    try:
+                        if model in chat_bots:
+                            chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]})
+                        else:
+                            chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]}]
+                    except:
+                        pass      
+                cursor = response_json['data']['filteredChats']['pageInfo']['endCursor']    
         return chat_bots
     
-    def create_new_chat(self, bot: str="a2", message: str="", file_form: list=[]):
-        attachments = []
-        if file_form == []:
-            apiPath = 'gql_POST'
-        else:
-            apiPath = 'gql_upload_POST'
-            for i in range(len(file_form)):
-                attachments.append(f'file{i}')
-        variables = {"bot":bot,"query":message,"source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,"newChatContext":"chat_settings_new_chat_button"}},"sdid":"","attachments":attachments}
-        response_json = self.send_request(apiPath, 'ChatHelpersSendNewChatMessageMutation', variables, file_form)
-        if response_json["data"] is None and response_json["errors"]:
-            raise ValueError(
-                f"Bot {bot} not found. Make sure the bot exists before creating new chat."
-            )
+    def retry_request(self, chatCode, apiPath, variables, file_form):
+        message_ids = []
+        variablesData = {'chatCode': chatCode}
+        response_json = self.send_request('gql_POST', 'ChatPageQuery', variablesData)
+        edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
+        edges.reverse()
+        for edge in range(len(edges)):
+            if edge < (len(edges)-1):
+                if edges[edge]['node']['state'] == 'error':
+                    message_ids.append(edges[edge]['node']['messageId'])
+                    if edges[edge+1]['node']['author'] == 'human' and edges[edge+1]['node']['state'] == 'complete':
+                        message_ids.append(edges[edge+1]['node']['messageId'])
+        self.delete_message(message_ids)
+        sleep(1)
+        response_json = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
         if response_json['data']['messageEdgeCreate']['status'] == 'reached_limit':
-            raise RuntimeError(f"Daily limit reached for {bot}.")
-        print(f"New Thread created | {response_json['data']['messageEdgeCreate']['chat']['chatCode']}")
-        
-        if file_form != []:
-            status = response_json['data']['messageEdgeCreate']['status']
-            if status == 'success':
-                for file in file_form:
-                    print(f"File {file[0]} uploaded successfully")
-            elif status == 'unsupported_file_type':
-                print("This file type is not supported. Please try again with a different file.")
-            else:
-                print("An unknown error occurred. Please try again.")
-        return response_json['data']['messageEdgeCreate']['chat']
+            raise RuntimeError(f"Daily limit reached for {variables['bot']}.")
+        try:
+            human_message = response_json["data"]["messageEdgeCreate"]["message"]
+            human_message_id = human_message["node"]["messageId"]
+        except TypeError:
+            raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
+        self.message_generating = True
+        self.active_messages[human_message_id] = None
+        self.message_queues[human_message_id] = queue.Queue()
+        return human_message_id
 
-    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout=20):
+    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout: int=5):
         bot = bot.lower().replace(' ', '')
         timer = 0
         while None in self.active_messages.values():
@@ -418,7 +447,26 @@ class PoeApi:
         
         if (chatId == None and chatCode == None):
             try:
-                message_data = self.create_new_chat(bot, message, file_form)
+                variables = {"chatId": None, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments}
+                response_json = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                if response_json["data"] is None and response_json["errors"]:
+                    raise ValueError(
+                        f"Bot {bot} not found. Make sure the bot exists before creating new chat."
+                    )
+                if response_json['data']['messageEdgeCreate']['status'] == 'reached_limit':
+                    raise RuntimeError(f"Daily limit reached for {bot}.")
+                print(f"New Thread created | {response_json['data']['messageEdgeCreate']['chat']['chatCode']}")
+                
+                if file_form != []:
+                    status = response_json['data']['messageEdgeCreate']['status']
+                    if status == 'success':
+                        for file in file_form:
+                            print(f"File {file[0]} uploaded successfully")
+                    elif status == 'unsupported_file_type':
+                        print("This file type is not supported. Please try again with a different file.")
+                    else:
+                        print("An unknown error occurred. Please try again.")
+                message_data = response_json['data']['messageEdgeCreate']['chat']
                 chatCode = message_data['chatCode']
                 chatId = message_data['chatId']
                 del self.active_messages["pending"]
@@ -440,7 +488,7 @@ class PoeApi:
                     chatId = chat['chatId']
                     break  
                   
-            variables = {'bot': bot, 'chatId': chatId, 'query': message, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, 'withChatBreak': False, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': attachments}
+            variables = {'bot': bot, 'chatId': chatId, 'query': message, 'shouldFetchChat': False, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': attachments}
             
             try:
                 message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
@@ -482,7 +530,13 @@ class PoeApi:
             except queue.Empty:
                 del self.active_messages[human_message_id]
                 del self.message_queues[human_message_id]
-                raise RuntimeError("Response timed out.")
+                try:
+                    if file_form != []:
+                        raise RuntimeError("File size too large. Please try again with a smaller file.")
+                    human_message_id = self.retry_request(chatCode, apiPath, variables, file_form)
+                    continue
+                except Exception as e:
+                    raise e
             
             message["chatCode"] = chatCode
             message["chatId"] = chatId
@@ -584,7 +638,7 @@ class PoeApi:
         variables = {'messageIds': message_ids}
         self.send_request('gql_POST', 'DeleteMessageMutation', variables)
     
-    def purge_conversation(self, bot: str, chatId: int=None, chatCode: str=None, count: int=50):
+    def purge_conversation(self, bot: str, chatId: int=None, chatCode: str=None, count: int=50, del_all: bool=False):
         bot = bot.lower().replace(' ', '')
         if chatId != None and chatCode == None:
             chatdata = self.get_chat_history(bot=bot)[bot]
@@ -596,20 +650,33 @@ class PoeApi:
         response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
         edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
         
-        num = count
-        while True:
-            if len(edges) == 0 or num == 0:
-                break
-            message_ids = []
-            for edge in edges:
-                message_ids.append(edge['node']['messageId'])
-            self.delete_message(message_ids)
-            num -= len(message_ids)
-            if len(edges) < num:
+        if del_all == True:
+            while True:
+                if len(edges) == 0:
+                    break
+                message_ids = []
+                for edge in edges:
+                    message_ids.append(edge['node']['messageId'])
+                self.delete_message(message_ids)
+                sleep(0.5)
                 response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
                 edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
-                
-        print(f"Deleted {count-num} messages")
+            print(f"Deleted {len(message_ids)} messages")
+        else:
+            num = count
+            while True:
+                if len(edges) == 0 or num == 0:
+                    break
+                message_ids = []
+                for edge in edges:
+                    message_ids.append(edge['node']['messageId'])
+                self.delete_message(message_ids)
+                sleep(0.5)
+                num -= len(message_ids)
+                if len(edges) < num:
+                    response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
+                    edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
+            print(f"Deleted {count-num} messages")
             
     def purge_all_conversations(self):
         self.send_request('gql_POST', 'DeleteUserMessagesMutation', {})
@@ -641,6 +708,63 @@ class PoeApi:
             for chat in chatId:
                 self.send_request('gql_POST', 'DeleteChat', {'chatId': chat})
                 print(f'Chat {chat} deleted')   
+                
+    def get_previous_messages(self, bot: str, chatId: int = None, chatCode: str = None, count: int = 50, get_all: bool = False):
+        bot = bot.lower().replace(' ', '')
+    
+        if chatId is not None and chatCode is None:
+            chatdata = self.get_chat_history(bot=bot)[bot]
+            for chat in chatdata:
+                if chat['chatId'] == chatId:
+                    chatCode = chat['chatCode']
+                    break
+        messages = []
+        variables = {'chatCode': chatCode}
+        response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
+        chat_data = response_json['data']['chatOfCode']
+        id = chat_data['id']
+        cursor = chat_data['messagesConnection']['pageInfo']['startCursor']
+        edges = chat_data['messagesConnection']['edges'][::-1]
+
+        if len(edges) == 0:
+            print(f"No messages found for {chatCode}")
+            return messages
+
+        if get_all:
+            while edges:
+                for edge in edges:
+                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text']})
+                variables = {'count': 25, 'cursor': cursor, 'id': id}
+                response_json = self.send_request('gql_POST', 'ChatListPaginationQuery', variables)
+                chat_data = response_json['data']['node']
+                edges = chat_data['messagesConnection']['edges'][::-1]
+                cursor = chat_data['messagesConnection']['pageInfo']['startCursor']
+        else:
+            num = count
+            for edge in edges:
+                messages.append({'author': edge['node']['author'], 'text': edge['node']['text']})
+                num -= 1
+                if len(messages) == count:
+                    break
+
+            if num == 0:
+                print(f"Found {len(messages)} messages")
+                return messages
+
+            while edges and num > 0:
+                for edge in edges:
+                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text']})
+                    num -= 1
+                    if len(messages) == count:
+                        break
+                variables = {'count': 25, 'cursor': cursor, 'id': id}
+                response_json = self.send_request('gql_POST', 'ChatListPaginationQuery', variables)
+                chat_data = response_json['data']['node']
+                edges = chat_data['messagesConnection']['edges'][::-1]
+                cursor = chat_data['messagesConnection']['pageInfo']['startCursor']
+
+        print(f"Found {len(messages)} messages")
+        return messages[::-1]
         
     def complete_profile(self, handle: str=None):
         if handle == None:
@@ -803,7 +927,7 @@ class PoeApi:
         message_ids = []
         for edge in edges:
             message_ids.append(edge['node']['messageId'])
-        variables = {'chatId': chatId, 'messageIds': message_ids[count:]}
+        variables = {'chatId': chatId, 'messageIds': message_ids if count == None else message_ids[:count]}
         response_json = self.send_request('gql_POST', 'ShareMessageMutation', variables)
         if response_json['data']['messagesShare']:
             shareCode = response_json['data']['messagesShare']["shareCode"]
@@ -925,14 +1049,14 @@ class Poe:
         else:
             chatId = None
             
-        print('\n🔰 Type !help for more commands 🔰\n')
+        print('\n🔰 Type \033[38;5;121m!help\033[0m for more commands 🔰\n')
         
         while True:
             message = input('\033[38;5;121mYou\033[0m : ').lower() 
             if message == '':
                 continue
             elif message == '!help':
-                print('--------------------------- CMDS ---------------------------\n'
+                print('--------------------------- \033[38;5;121mCMDS\033[0m ---------------------------\n'
                     '\033[38;5;121m!upload --query_here --url1|url2|url3|...\033[0m : Add attachments\n'
                     '\033[38;5;121m!clear\033[0m : Clear the context\n'
                     '\033[38;5;121m!purge\033[0m : Delete the last 50 messages\n'
