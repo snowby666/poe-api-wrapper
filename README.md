@@ -19,7 +19,7 @@
 - [Highlights:](#highlights)
 - [Installation:](#installation)
 - [Documentation:](#documentation)
-  - [Available Bots:](#available-bots)
+  - [Available Default Bots:](#available-default-bots)
   - [How to get your Token:](#how-to-get-your-token)
   - [Basic Usage:](#basic-usage)
   - [Misc:](#misc)
@@ -62,23 +62,26 @@ Poe.chat_with_bot(token)
 ```
 
 ## Documentation:
-### Available Bots:
-- Assistant (capybara)
-- Claude-instant-100k (a2_100k)
-- Claude-2-100k (a2_2)
-- Claude-instant (a2)
-- ChatGPT (chinchilla)
-- ChatGPT-16k (agouti)
-- GPT-4 (beaver)
-- GPT-4-32k (vizcacha)
-- Google-PaLM (acouchy)
-- Llama-2-7b (llama_2_7b_chat)
-- Llama-2-13b (llama_2_13b_chat)
-- Llama-2-70b (llama_2_70b_chat)
-- Code-Llama-7b (code_llama_7b_instruct)
-- Code-Llama-13b (code_llama_13b_instruct)
-- Code-Llama-34b (code_llama_34b_instruct)
-
+### Available Default Bots:
+| Display Name        | Model                   | Token Limit | Words | limitedAccessType                                               |
+| ------------------- | ----------------------- | ----------- | ----- | --------------------------------------------------------------- |
+| Assistant           | capybara                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+| Claude-instant-100k | a2_100k                 | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
+| Claude-2-100k       | a2_2                    | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
+| Claude-instant      | a2                      | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+| ChatGPT             | chinchilla              | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+| ChatGPT-16k         | agouti                  | 16K         | 12K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| GPT-4               | beaver                  | 4K          | 3K    | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| GPT-4-32k           | vizcacha                | 32K         | 24K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| Google-PaLM         | acouchy                 | 8K          | 6K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+| Llama-2-7b          | llama_2_7b_chat         | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+| Llama-2-13b         | llama_2_13b_chat        | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+| Llama-2-70b         | llama_2_70b_chat        | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+| Code-Llama-7b       | code_llama_7b_instruct  | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+| Code-Llama-13b      | code_llama_13b_instruct | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+| Code-Llama-34b      | code_llama_34b_instruct | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
+>**Important**
+> The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 ### How to get your Token:
 Sign in at https://www.quora.com/
 
@@ -122,7 +125,8 @@ print(client.get_chat_history("a2"))
 # Output:
 # {'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}]}
 ```
-
+>**Note**
+> You can pass the number of bots fetched for each interval to both functions `client.get_chat_history(interval)` and `client.get_chat_history(bot, interval)` (default is 50)
 - Sending messages & Streaming responses 
 ```py
 bot = "a2"
@@ -218,13 +222,18 @@ client.chat_break(bot, chatId=59726162)
 ```
 - Purging messages of 1 bot
   
-You can pass the number of messages to be deleted into `client.purge_conversation(bot, chatId, chatCode, count)` (the default is 50)
-  
 ```py
+# Purge a defined number of messages (default is 50)
 # 1. Using chatCode
 client.purge_conversation(bot, chatCode="2i58ciex72dom7im83r", count=10)
 # 2. Using chatId
 client.purge_conversation(bot, chatId=59726162, count=10)
+
+# Purge all messsages of the thread
+# 1. Using chatCode
+client.purge_conversation(bot, chatCode="2i58ciex72dom7im83r", del_all=True)
+# 2. Using chatId
+client.purge_conversation(bot, chatId=59726162,  del_all=True)
 ```
 - Purging all messages of user
 ```py
@@ -257,7 +266,7 @@ for message in previous_messages:
 # {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help"}
 ```
 >**Note**
-> It will fetch messages from the latest to the oldest, but the order to be displayed is vice-versa.
+> It will fetch messages from the latest to the oldest, but the order to be displayed is reversed.
 - Creating a new Bot
 ```py
 client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2")

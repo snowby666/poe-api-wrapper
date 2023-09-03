@@ -62,6 +62,7 @@ def is_valid_url(url):
     
 def generate_file(file_path: list):
     files = []   
+    file_size = 0
     for file in file_path: 
         if is_valid_url(file):  
             with Client() as fetcher:
@@ -69,17 +70,19 @@ def generate_file(file_path: list):
                 file_data = response.read()
             file_name = file.split('/')[-1]
             file_extension = os.path.splitext(file_name)[1].lower()
+            file_size += len(file_data)
         else: 
             file_extension = os.path.splitext(file)[1].lower()
             file_name = os.path.basename(file)
             file_data = open(file, 'rb')
+            file_size += os.path.getsize(file)
             
         if file_extension in EXTENSIONS:
             content_type = EXTENSIONS[file_extension]
         else:
             raise RuntimeError("This file type is not supported. Please try again with a different file.") 
         files.append((file_name, file_data, content_type))
-    return files
+    return files, file_size
 
 class PoeApi:
     BASE_URL = 'https://www.quora.com'
@@ -120,6 +123,8 @@ class PoeApi:
         self.ws_error = False
         self.active_messages = {}
         self.message_queues = {}
+        self.current_thread = {}
+        self.retry_attempts = 3
         self.message_generating = True
         self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
         
@@ -319,24 +324,12 @@ class PoeApi:
         self.bots.update({bot["handle"]: {"bot": bot} for bot in bots})
         return self.bots
     
-    def get_chat_history(self, bot: str=None): 
-        if bot == None:
-            useBot = False
-            handle = ""
-        else:
-            useBot = True    
-            model = bot.lower().replace(' ', '')
-            handle = model
-            for key, value in BOTS_LIST.items():
-                if model == value:
-                    handle = key
-                    break
-        
-        variables = {'handle': handle, 'useBot': useBot}
-        response_json = self.send_request('gql_POST', 'ChatsHistoryPageQuery', variables)
+    def get_chat_history(self, bot: str=None, interval: int=50):
+                
         chat_bots = {}
         
         if bot == None:
+            response_json = self.send_request('gql_POST', 'ChatHistoryListPaginationQuery', {'count': interval, 'cursor': None})
             if response_json['data']['chats']['pageInfo']['hasNextPage']:
                 cursor = response_json['data']['chats']['pageInfo']['endCursor']
             edges = response_json['data']['chats']['edges']
@@ -353,7 +346,7 @@ class PoeApi:
                     chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]}]
             # Fetch more chats
             while response_json['data']['chats']['pageInfo']['hasNextPage']:
-                response_json = self.send_request('gql_POST', 'ChatHistoryListPaginationQuery', {'count': 10, 'cursor': cursor})
+                response_json = self.send_request('gql_POST', 'ChatHistoryListPaginationQuery', {'count': interval, 'cursor': cursor})
                 edges = response_json['data']['chats']['edges']
                 for edge in edges:
                     chat = edge['node']
@@ -366,6 +359,13 @@ class PoeApi:
                 cursor = response_json['data']['chats']['pageInfo']['endCursor']            
             print('-' * 90)  
         else:
+            model = bot.lower().replace(' ', '')
+            handle = model
+            for key, value in BOTS_LIST.items():
+                if model == value:
+                    handle = key
+                    break
+            response_json = self.send_request('gql_POST', 'ChatHistoryFilteredListPaginationQuery', {'count': interval, 'handle': handle, 'cursor': None})
             if response_json['data']['filteredChats']['pageInfo']['hasNextPage']:
                 cursor = response_json['data']['filteredChats']['pageInfo']['endCursor']
             edges = response_json['data']['filteredChats']['edges']
@@ -380,7 +380,7 @@ class PoeApi:
                     pass 
             # Fetch more chats
             while response_json['data']['filteredChats']['pageInfo']['hasNextPage']:
-                response_json = self.send_request('gql_POST', 'ChatHistoryFilteredListPaginationQuery', {'count': 10, 'handle': handle, 'cursor': cursor})
+                response_json = self.send_request('gql_POST', 'ChatHistoryFilteredListPaginationQuery', {'count': interval, 'handle': handle, 'cursor': cursor})
                 edges = response_json['data']['filteredChats']['edges']
                 for edge in edges:
                     chat = edge['node']
@@ -394,6 +394,27 @@ class PoeApi:
                 cursor = response_json['data']['filteredChats']['pageInfo']['endCursor']    
         return chat_bots
     
+    def get_threadData(self, bot: str="", chatCode: str=None, chatId: int=None):
+        if bot not in self.current_thread:
+            self.current_thread[bot] = self.get_chat_history(bot=bot)[bot]
+        elif self.current_thread[bot] == []:
+            self.current_thread[bot] = self.get_chat_history(bot=bot)[bot]
+        if chatCode != None:
+            for chat in self.current_thread[bot]:
+                if chat['chatCode'] == chatCode:
+                    chatId = chat['chatId']
+                    id = chat['id']
+                    title = chat['title']
+                    break
+        elif chatId != None:
+            for chat in self.current_thread[bot]:
+                if chat['chatId'] == chatId:
+                    chatCode = chat['chatCode']
+                    id = chat['id']
+                    title = chat['title']
+                    break
+        return {'chatCode': chatCode, 'chatId': chatId, 'id': id, 'title': title}
+                
     def retry_request(self, chatCode, apiPath, variables, file_form):
         message_ids = []
         variablesData = {'chatCode': chatCode}
@@ -409,17 +430,26 @@ class PoeApi:
         self.delete_message(message_ids)
         sleep(1)
         response_json = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
-        if response_json['data']['messageEdgeCreate']['status'] == 'reached_limit':
-            raise RuntimeError(f"Daily limit reached for {variables['bot']}.")
-        try:
-            human_message = response_json["data"]["messageEdgeCreate"]["message"]
-            human_message_id = human_message["node"]["messageId"]
-        except TypeError:
+        if response_json['data'] == None and response_json["errors"]:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
-        self.message_generating = True
-        self.active_messages[human_message_id] = None
-        self.message_queues[human_message_id] = queue.Queue()
-        return human_message_id
+        else:
+            if response_json['data']['messageEdgeCreate']['status'] == 'reached_limit':
+                    raise RuntimeError(f"Daily limit reached for {variables['bot']}.")
+            try:
+                human_message = response_json["data"]["messageEdgeCreate"]["message"]
+                human_message_id = human_message["node"]["messageId"]
+            except TypeError:
+                raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
+            self.message_generating = True
+            self.active_messages[human_message_id] = None
+            self.message_queues[human_message_id] = queue.Queue()
+            return human_message_id
+    
+    def check_fileSizeLimit(self, chatCode: str, file_size: int):
+        response_json = self.send_request('gql_POST', 'ChatPageQuery', {'chatCode': chatCode})
+        fileSizeLimit = response_json['data']['chatOfCode']['defaultBotObject']['uploadFileSizeLimit']
+        if file_size > fileSizeLimit:
+            raise RuntimeError(f"File size too large. Please try again with a smaller file.")
 
     def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout: int=5):
         bot = bot.lower().replace(' ', '')
@@ -441,7 +471,8 @@ class PoeApi:
             file_form = []
         else:
             apiPath = 'gql_upload_POST'
-            file_form = generate_file(file_path)
+            file_form, file_size = generate_file(file_path)
+            self.check_fileSizeLimit(chatCode, file_size)
             for i in range(len(file_form)):
                 attachments.append(f'file{i}')
         
@@ -449,7 +480,7 @@ class PoeApi:
             try:
                 variables = {"chatId": None, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments}
                 response_json = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
-                if response_json["data"] is None and response_json["errors"]:
+                if response_json["data"] == None and response_json["errors"]:
                     raise ValueError(
                         f"Bot {bot} not found. Make sure the bot exists before creating new chat."
                     )
@@ -469,6 +500,12 @@ class PoeApi:
                 message_data = response_json['data']['messageEdgeCreate']['chat']
                 chatCode = message_data['chatCode']
                 chatId = message_data['chatId']
+                if bot not in self.current_thread:
+                    self.current_thread[bot] = [{'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']}]
+                elif self.current_thread[bot] == []:
+                    self.current_thread[bot] = [{'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']}]
+                else:
+                     self.current_thread[bot].append({'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']})
                 del self.active_messages["pending"]
             except Exception as e:
                 del self.active_messages["pending"]
@@ -479,15 +516,9 @@ class PoeApi:
             except TypeError:
                 raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
         else:
-            chat_data = self.get_chat_history(bot=bot)[bot]
-            for chat in chat_data:
-                if chatCode == None and chat['chatId'] == chatId:
-                    chatCode = chat['chatCode']
-                    break
-                if chatId == None and chat['chatCode'] == chatCode:  
-                    chatId = chat['chatId']
-                    break  
-                  
+            chatdata = self.get_threadData(bot, chatCode, chatId)
+            chatCode = chatdata['chatCode']
+            chatId = chatdata['chatId']
             variables = {'bot': bot, 'chatId': chatId, 'query': message, 'shouldFetchChat': False, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': attachments}
             
             try:
@@ -507,16 +538,19 @@ class PoeApi:
                 del self.active_messages["pending"]
                 raise e
             try:
-                if message_data['data']['messageEdgeCreate']['status'] == 'reached_limit':
-                    raise RuntimeError(f"Daily limit reached for {bot}.")
-                try:
-                    human_message = message_data["data"]["messageEdgeCreate"]["message"]
-                    human_message_id = human_message["node"]["messageId"]
-                except TypeError:
+                if message_data["data"] == None and message_data["errors"]:
                     raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
+                else:
+                    if message_data['data']['messageEdgeCreate']['status'] == 'reached_limit':
+                        raise RuntimeError(f"Daily limit reached for {bot}.")
+                    try:
+                        human_message = message_data["data"]["messageEdgeCreate"]["message"]
+                        human_message_id = human_message["node"]["messageId"]
+                    except TypeError:
+                        raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
             except:
                 raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
-            
+        
         self.message_generating = True
         self.active_messages[human_message_id] = None
         self.message_queues[human_message_id] = queue.Queue()
@@ -531,8 +565,11 @@ class PoeApi:
                 del self.active_messages[human_message_id]
                 del self.message_queues[human_message_id]
                 try:
-                    if file_form != []:
-                        raise RuntimeError("File size too large. Please try again with a smaller file.")
+                    self.retry_attempts -= 1
+                    print(f"Retrying request {3-self.retry_attempts}/3 times...")
+                    if self.retry_attempts < 0:
+                        self.retry_attempts = 3
+                        raise RuntimeError("Timed out waiting for response.")
                     human_message_id = self.retry_request(chatCode, apiPath, variables, file_form)
                     continue
                 except Exception as e:
@@ -623,12 +660,9 @@ class PoeApi:
         
     def chat_break(self, bot: str, chatId: int=None, chatCode: str=None):
         bot = bot.lower().replace(' ', '')
-        chat_data = self.get_chat_history(bot=bot)[bot]
-        for chat in chat_data:
-            if chat['chatId'] == chatId or chat['chatCode'] == chatCode:
-                chatId = chat['chatId']
-                id = chat['id']
-                break
+        chatdata = self.get_threadData(bot, chatCode, chatId)
+        chatId = chatdata['chatId']
+        id = chatdata['id']
         variables = {"connections": [
                 f"client:{id}:__ChatMessagesView_chat_messagesConnection_connection"],
                 "chatId": chatId}
@@ -641,11 +675,8 @@ class PoeApi:
     def purge_conversation(self, bot: str, chatId: int=None, chatCode: str=None, count: int=50, del_all: bool=False):
         bot = bot.lower().replace(' ', '')
         if chatId != None and chatCode == None:
-            chatdata = self.get_chat_history(bot=bot)[bot]
-            for chat in chatdata:
-                if chat['chatId'] == chatId:
-                    chatCode = chat['chatCode']
-                    break
+            chatdata = self.get_threadData(bot, chatCode, chatId)
+            chatCode = chatdata['chatCode']
         variables = {'chatCode': chatCode}
         response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
         edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
@@ -679,15 +710,26 @@ class PoeApi:
             print(f"Deleted {count-num} messages")
             
     def purge_all_conversations(self):
+        self.current_thread = {}
         self.send_request('gql_POST', 'DeleteUserMessagesMutation', {})
     
     def delete_chat(self, bot: str, chatId: any=None, chatCode: any=None, del_all: bool=False):
         bot = bot.lower().replace(' ', '')
-        chatdata = self.get_chat_history(bot=bot)[bot]
+        try:
+            chatdata = self.get_chat_history(bot=bot)[bot]
+        except:
+            raise RuntimeError(f"Bot {bot} not found. Make sure the bot exists before deleting chat.")
         if chatId != None and not isinstance(chatId, list):
+            if bot in self.current_thread:
+                for thread in range(len(self.current_thread[bot])):
+                    if self.current_thread[bot][thread]['chatId'] == chatId:
+                        del self.current_thread[bot][thread]
+                        break
             self.send_request('gql_POST', 'DeleteChat', {'chatId': chatId})
             print(f'Chat {chatId} deleted') 
         if del_all == True:
+            if bot in self.current_thread:
+                del self.current_thread[bot]
             for chat in chatdata:
                 self.send_request('gql_POST', 'DeleteChat', {'chatId': chat['chatId']})
                 print(f'Chat {chat["chatId"]} deleted')
@@ -696,72 +738,69 @@ class PoeApi:
                     if isinstance(chatCode, list):
                         if chat['chatCode'] in chatCode:
                             chatId = chat['chatId']
+                            if bot in self.current_thread:
+                                for thread in range(len(self.current_thread[bot])):
+                                    if self.current_thread[bot][thread]['chatId'] == chatId:
+                                        del self.current_thread[bot][thread]
+                                        break
                             self.send_request('gql_POST', 'DeleteChat', {'chatId': chatId})
                             print(f'Chat {chatId} deleted')
                     else:
                         if chat['chatCode'] == chatCode:
                             chatId = chat['chatId']
+                            if bot in self.current_thread:
+                                for thread in range(len(self.current_thread[bot])):
+                                    if self.current_thread[bot][thread]['chatId'] == chatId:
+                                        del self.current_thread[bot][thread]
+                                        break
                             self.send_request('gql_POST', 'DeleteChat', {'chatId': chatId})
                             print(f'Chat {chatId} deleted')
                             break               
         elif chatId != None and isinstance(chatId, list):
             for chat in chatId:
+                if bot in self.current_thread:
+                    if self.current_thread[bot]:
+                        for thread in range(len(self.current_thread[bot])):
+                            if self.current_thread[bot][thread]['chatId'] == chat:
+                                del self.current_thread[bot][thread]
+                                break
                 self.send_request('gql_POST', 'DeleteChat', {'chatId': chat})
                 print(f'Chat {chat} deleted')   
                 
     def get_previous_messages(self, bot: str, chatId: int = None, chatCode: str = None, count: int = 50, get_all: bool = False):
         bot = bot.lower().replace(' ', '')
-    
-        if chatId is not None and chatCode is None:
-            chatdata = self.get_chat_history(bot=bot)[bot]
-            for chat in chatdata:
-                if chat['chatId'] == chatId:
-                    chatCode = chat['chatCode']
-                    break
+        try:
+            getchatdata = self.get_threadData(bot, chatCode, chatId)
+        except:
+            raise RuntimeError(f"Thread not found. Make sure the thread exists before getting messages.")
+        chatCode = getchatdata['chatCode']
+        id = getchatdata['id']
         messages = []
-        variables = {'chatCode': chatCode}
-        response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
-        chat_data = response_json['data']['chatOfCode']
-        id = chat_data['id']
-        cursor = chat_data['messagesConnection']['pageInfo']['startCursor']
-        edges = chat_data['messagesConnection']['edges'][::-1]
-
-        if len(edges) == 0:
-            print(f"No messages found for {chatCode}")
-            return messages
+        cursor = None
+        edges = True
 
         if get_all:
             while edges:
+                variables = {'count': 100, 'cursor': cursor, 'id': id}
+                response_json = self.send_request('gql_POST', 'ChatListPaginationQuery', variables)
+                chatdata = response_json['data']['node']
+                edges = chatdata['messagesConnection']['edges'][::-1]
                 for edge in edges:
                     messages.append({'author': edge['node']['author'], 'text': edge['node']['text']})
-                variables = {'count': 25, 'cursor': cursor, 'id': id}
-                response_json = self.send_request('gql_POST', 'ChatListPaginationQuery', variables)
-                chat_data = response_json['data']['node']
-                edges = chat_data['messagesConnection']['edges'][::-1]
-                cursor = chat_data['messagesConnection']['pageInfo']['startCursor']
+                cursor = chatdata['messagesConnection']['pageInfo']['startCursor']
         else:
             num = count
-            for edge in edges:
-                messages.append({'author': edge['node']['author'], 'text': edge['node']['text']})
-                num -= 1
-                if len(messages) == count:
-                    break
-
-            if num == 0:
-                print(f"Found {len(messages)} messages")
-                return messages
-
             while edges and num > 0:
+                variables = {'count': 100, 'cursor': cursor, 'id': id}
+                response_json = self.send_request('gql_POST', 'ChatListPaginationQuery', variables)
+                chatdata = response_json['data']['node']
+                edges = chatdata['messagesConnection']['edges'][::-1]
                 for edge in edges:
                     messages.append({'author': edge['node']['author'], 'text': edge['node']['text']})
                     num -= 1
                     if len(messages) == count:
                         break
-                variables = {'count': 25, 'cursor': cursor, 'id': id}
-                response_json = self.send_request('gql_POST', 'ChatListPaginationQuery', variables)
-                chat_data = response_json['data']['node']
-                edges = chat_data['messagesConnection']['edges'][::-1]
-                cursor = chat_data['messagesConnection']['pageInfo']['startCursor']
+                cursor = chatdata['messagesConnection']['pageInfo']['startCursor']
 
         print(f"Found {len(messages)} messages")
         return messages[::-1]
@@ -874,14 +913,14 @@ class PoeApi:
             connectionType = "exploreBotsConnection"
         else:
             query_name = "SearchResultsListPaginationQuery"
-            variables = {"query": search, "entityType":"bot", "count": 10}
+            variables = {"query": search, "entityType":"bot", "count": 50}
             connectionType = "searchEntityConnection"
             
         result = self.send_request("gql_POST", query_name, variables)
         if search == None:
             new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
         else:
-            new_cursor = 20
+            new_cursor = 60
         bots += [
             each["node"] for each in result["data"][connectionType]["edges"]
         ]
@@ -891,7 +930,7 @@ class PoeApi:
             if search == None:
                 result = self.send_request("gql_POST", query_name, {"count": count, "cursor": new_cursor})
             else:
-                result = self.send_request("gql_POST", query_name, {"query": search, "entityType":"bot", "count": 10, "cursor": new_cursor})
+                result = self.send_request("gql_POST", query_name, {"query": search, "entityType":"bot", "count": 50, "cursor": new_cursor})
             if len(result["data"][connectionType]["edges"]) == 0:
                 if not explore_all:
                     print(f"No more bots could be explored, only {len(bots)} bots found.")
@@ -899,7 +938,7 @@ class PoeApi:
             if search == None:
                 new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
             else:
-                new_cursor += 10
+                new_cursor += 50
             new_bots = [
                 each["node"]
                 for each in result["data"][connectionType]["edges"]
@@ -911,14 +950,9 @@ class PoeApi:
     
     def share_chat(self, bot: str, chatId: int=None, chatCode: str=None, count: int=None):
         bot = bot.lower().replace(' ', '')
-        chat_data = self.get_chat_history(bot=bot)[bot]
-        for chat in chat_data:
-            if chatCode == None and chat['chatId'] == chatId:
-                chatCode = chat['chatCode']
-                break
-            if chatId == None and chat['chatCode'] == chatCode:  
-                chatId = chat['chatId']
-                break
+        chatdata = self.get_threadData(bot, chatCode, chatId)
+        chatCode = chatdata['chatCode']
+        chatId = chatdata['chatId']
         variables = {'chatCode': chatCode}
         response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
         edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
@@ -944,12 +978,8 @@ class PoeApi:
         if response_json['data']['continueChatFromPoeShare']['status'] == 'success':
             print('Chat imported successfully') 
             chatCode = response_json['data']['continueChatFromPoeShare']['messages'][0]['node']['chat']['chatCode']
-            # get chatId
-            chat_data = self.get_chat_history(bot=bot)[bot]
-            for chat in chat_data:
-                if chat['chatCode'] == chatCode:
-                    chatId = chat['chatId']
-                    break
+            chatdata = self.get_threadData(bot, chatCode=chatCode)
+            chatId = chatdata['chatId']
             return {'chatId': chatId, 'chatCode': chatCode}
         else:
             print('An error occurred while importing the chat')
@@ -1025,16 +1055,17 @@ class Poe:
         return response
     
     @classmethod
-    def chat_with_bot(cls, cookie):
+    def chat_with_bot(cls, cookie, new_thread=False, client=None):
         
         while True:
-            bot = cls.select_bot()
             try:
-                client = PoeApi(cookie=cookie)
-                client.get_chat_history(bot=bot)
+                if not new_thread:
+                    client = PoeApi(cookie=cookie)
+                bot = cls.select_bot()
                 break            
-            except ValueError:
-                print("Invalid bot name. Please try again.\n")  
+            except:
+                print('Invalid cookie. Please try again.\n')
+                continue
             
         print(f'The selected bot is: {bot}')
         try:
@@ -1058,6 +1089,7 @@ class Poe:
             elif message == '!help':
                 print('--------------------------- \033[38;5;121mCMDS\033[0m ---------------------------\n'
                     '\033[38;5;121m!upload --query_here --url1|url2|url3|...\033[0m : Add attachments\n'
+                    '\033[38;5;121m!load\033[0m : Load previous messages\n'
                     '\033[38;5;121m!clear\033[0m : Clear the context\n'
                     '\033[38;5;121m!purge\033[0m : Delete the last 50 messages\n'
                     '\033[38;5;121m!purgeall\033[0m : Delete all the messages\n'
@@ -1074,20 +1106,30 @@ class Poe:
                 break
             elif message == '!reset':
                 print('\n')
-                Poe.chat_with_bot(cookie)
+                Poe.chat_with_bot(cookie, new_thread=True, client=client)
             elif message == '!purge':
                 client.purge_conversation(bot, chatId)
                 print("Conversation is now purged")
             elif message == '!purgeall':
                 client.purge_all_conversations()
                 print("All conversations are now purged\n")
-                Poe.chat_with_bot(cookie)
+                Poe.chat_with_bot(cookie, new_thread=True, client=client)
             elif message == '!delete':
                 client.delete_chat(bot, chatId)
                 print('\n')
-                Poe.chat_with_bot(cookie)
+                Poe.chat_with_bot(cookie, new_thread=True, client=client)
             elif message == '!history':
                 client.get_chat_history()
+            elif message == '!load':
+                if chatId is None:
+                    print("Please type a message to create a new thread first.\n")
+                    continue
+                previous_messages = client.get_previous_messages(bot=bot, chatId=chatId, get_all=True)
+                for message in previous_messages:
+                    if message['author'] == 'human':
+                        print(f'\033[38;5;121mYou\033[0m : {message["text"]}')
+                    else:
+                        print(f'\033[38;5;20m{bot}\033[0m : {message["text"]}')
             else:
                 print(f'\033[38;5;20m{bot}\033[0m : ', end='')
                 
