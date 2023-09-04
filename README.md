@@ -63,7 +63,7 @@ Poe.chat_with_bot(token)
 
 ## Documentation:
 ### Available Default Bots:
-| Display Name        | Model                   | Token Limit | Words | limitedAccessType                                               |
+| Display Name        | Model                   | Token Limit | Words | Access Type                                               |
 | ------------------- | ----------------------- | ----------- | ----- | --------------------------------------------------------------- |
 | Assistant           | capybara                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)          |
 | Claude-instant-100k | a2_100k                 | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
@@ -249,8 +249,8 @@ previous_messages = client.get_previous_messages('code_llama_34b_instruct', chat
 for message in previous_messages:
     print(message)
 # Output:
-# {'author': 'human', 'text': 'nice to meet you'}
-# {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help"}
+# {'author': 'human', 'text': 'nice to meet you', 'messageId': 2861709279}
+# {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help", 'messageId': 2861873125}
 
 # Get all previous messages
 # Using chatCode
@@ -260,10 +260,10 @@ previous_messages = client.get_previous_messages('code_llama_34b_instruct', chat
 for message in previous_messages:
     print(message)
 # Output:
-# {'author': 'human', 'text': 'hi there'}
-# {'author': 'code_llama_34b_instruct', 'text': " Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?"}
-# {'author': 'human', 'text': 'nice to meet you'}
-# {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help"}
+# {'author': 'human', 'text': 'hi there', 'messageId': 2861363514}
+# {'author': 'code_llama_34b_instruct', 'text': " Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?", 'messageId': 2861363530}
+# {'author': 'human', 'text': 'nice to meet you', 'messageId': 2861709279}
+# {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help", 'messageId': 2861873125}
 ```
 >**Note**
 > It will fetch messages from the latest to the oldest, but the order to be displayed is reversed.

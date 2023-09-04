@@ -65,22 +65,25 @@ def generate_file(file_path: list):
     file_size = 0
     for file in file_path: 
         if is_valid_url(file):  
-            with Client() as fetcher:
-                response = fetcher.get(file)
-                file_data = response.read()
             file_name = file.split('/')[-1]
             file_extension = os.path.splitext(file_name)[1].lower()
+            if file_extension in EXTENSIONS:
+                content_type = EXTENSIONS[file_extension]
+            else:
+                raise RuntimeError("This file type is not supported. Please try again with a different file.") 
+            with Client(timeout=20) as fetcher:
+                response = fetcher.get(file)
+                file_data = response.read()
             file_size += len(file_data)
         else: 
             file_extension = os.path.splitext(file)[1].lower()
+            if file_extension in EXTENSIONS:
+                content_type = EXTENSIONS[file_extension]
+            else:
+                raise RuntimeError("This file type is not supported. Please try again with a different file.") 
             file_name = os.path.basename(file)
             file_data = open(file, 'rb')
             file_size += os.path.getsize(file)
-            
-        if file_extension in EXTENSIONS:
-            content_type = EXTENSIONS[file_extension]
-        else:
-            raise RuntimeError("This file type is not supported. Please try again with a different file.") 
         files.append((file_name, file_data, content_type))
     return files, file_size
 
@@ -395,9 +398,11 @@ class PoeApi:
         return chat_bots
     
     def get_threadData(self, bot: str="", chatCode: str=None, chatId: int=None):
+        id = None
+        title = None
         if bot not in self.current_thread:
             self.current_thread[bot] = self.get_chat_history(bot=bot)[bot]
-        elif self.current_thread[bot] == []:
+        elif len(self.current_thread[bot]) <= 1:
             self.current_thread[bot] = self.get_chat_history(bot=bot)[bot]
         if chatCode != None:
             for chat in self.current_thread[bot]:
@@ -428,7 +433,7 @@ class PoeApi:
                     if edges[edge+1]['node']['author'] == 'human' and edges[edge+1]['node']['state'] == 'complete':
                         message_ids.append(edges[edge+1]['node']['messageId'])
         self.delete_message(message_ids)
-        sleep(1)
+        sleep(2)
         response_json = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
         if response_json['data'] == None and response_json["errors"]:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
@@ -444,12 +449,6 @@ class PoeApi:
             self.active_messages[human_message_id] = None
             self.message_queues[human_message_id] = queue.Queue()
             return human_message_id
-    
-    def check_fileSizeLimit(self, chatCode: str, file_size: int):
-        response_json = self.send_request('gql_POST', 'ChatPageQuery', {'chatCode': chatCode})
-        fileSizeLimit = response_json['data']['chatOfCode']['defaultBotObject']['uploadFileSizeLimit']
-        if file_size > fileSizeLimit:
-            raise RuntimeError(f"File size too large. Please try again with a smaller file.")
 
     def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout: int=5):
         bot = bot.lower().replace(' ', '')
@@ -472,7 +471,8 @@ class PoeApi:
         else:
             apiPath = 'gql_upload_POST'
             file_form, file_size = generate_file(file_path)
-            self.check_fileSizeLimit(chatCode, file_size)
+            if file_size > 100000000:
+                raise RuntimeError("File size too large. Please try again with a smaller file.")
             for i in range(len(file_form)):
                 attachments.append(f'file{i}')
         
@@ -500,12 +500,13 @@ class PoeApi:
                 message_data = response_json['data']['messageEdgeCreate']['chat']
                 chatCode = message_data['chatCode']
                 chatId = message_data['chatId']
+                title = message_data['title']
                 if bot not in self.current_thread:
                     self.current_thread[bot] = [{'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']}]
                 elif self.current_thread[bot] == []:
                     self.current_thread[bot] = [{'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']}]
                 else:
-                     self.current_thread[bot].append({'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']})
+                    self.current_thread[bot].append({'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']})
                 del self.active_messages["pending"]
             except Exception as e:
                 del self.active_messages["pending"]
@@ -519,6 +520,7 @@ class PoeApi:
             chatdata = self.get_threadData(bot, chatCode, chatId)
             chatCode = chatdata['chatCode']
             chatId = chatdata['chatId']
+            title = chatdata['title']
             variables = {'bot': bot, 'chatId': chatId, 'query': message, 'shouldFetchChat': False, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': attachments}
             
             try:
@@ -577,6 +579,8 @@ class PoeApi:
             
             message["chatCode"] = chatCode
             message["chatId"] = chatId
+            message["title"] = title
+            
             if message["state"] == "error_user_message_too_long":
                 message["response"]  = 'Message too long. Please try again!'
                 yield message
@@ -635,23 +639,25 @@ class PoeApi:
                         break
                 else:
                     break
-            queue.put({'text': message["text"], 'response':'', 'suggestedReplies': suggestions, 'state': state, 'chatCode': chatCode, 'chatId': chatId})
+            queue.put({'text': message["text"], 'response':'', 'suggestedReplies': suggestions, 'state': state, 'chatCode': chatCode, 'chatId': chatId, 'title': title})
             
         t1 = threading.Thread(target=recv_post_thread, daemon=True)
         t1.start()
         
         if suggest_replies:
-            suggestions_queue = queue.Queue()
-            t2 = threading.Thread(target=get_suggestions, args=(suggestions_queue, chatCode, 5), daemon=True)
+            self.suggestions_queue = queue.Queue()
+            t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 5), daemon=True)
             t2.start()
             try:
-                suggestions = suggestions_queue.get(timeout=5)
+                suggestions = self.suggestions_queue.get(timeout=5)
                 yield suggestions
             except queue.Empty:
-                yield {'text': message["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId}
+                yield {'text': message["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
+            del self.suggestions_queue
         
         del self.active_messages[human_message_id]
         del self.message_queues[human_message_id]
+        self.retry_attempts = 3
         
     def cancel_message(self, chunk: dict):
         self.message_generating = False
@@ -786,7 +792,7 @@ class PoeApi:
                 chatdata = response_json['data']['node']
                 edges = chatdata['messagesConnection']['edges'][::-1]
                 for edge in edges:
-                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text']})
+                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text'], 'messageId': edge['node']['messageId']})
                 cursor = chatdata['messagesConnection']['pageInfo']['startCursor']
         else:
             num = count
@@ -796,7 +802,7 @@ class PoeApi:
                 chatdata = response_json['data']['node']
                 edges = chatdata['messagesConnection']['edges'][::-1]
                 for edge in edges:
-                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text']})
+                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text'], 'messageId': edge['node']['messageId']})
                     num -= 1
                     if len(messages) == count:
                         break
@@ -1035,20 +1041,23 @@ class Poe:
         return bot
     
     @staticmethod
-    def chat_thread(threads):
+    def chat_thread(threads, cookie, client):
         while True:
             print('\nChoose a Thread to chat with:\n'
-                '\033[38;5;121m[1]\033[0m Create a new Thread')
+                '\033[38;5;121m[1]\033[0m Return to Bot selection\n'
+                '\033[38;5;121m[2]\033[0m Create a new Thread')
             for i,k in enumerate(threads):
-                i += 2      
-                print(f'\033[38;5;121m[{i}]\033[0m Thread {k["chatCode"]}')
+                i += 3    
+                print(f'\033[38;5;121m[{i}]\033[0m Thread {k["chatCode"]} | {k["title"]}')
                 
             choice = input('\nYour choice: ')
-            if choice.isdigit() and 1 <= int(choice) <= len(threads)+1:
+            if choice.isdigit() and 1 <= int(choice) <= len(threads)+2:
                 if choice == '1':
+                    Poe.chat_with_bot(cookie, new_thread=True, client=client)
+                elif choice == '2':
                     return None
                 else:
-                    response = threads[int(choice)-2]     
+                    response = threads[int(choice)-3]     
                 break
             else:
                 print('Invalid choice. Please select a valid option.')        
@@ -1070,7 +1079,7 @@ class Poe:
         print(f'The selected bot is: {bot}')
         try:
             threads = client.get_chat_history(bot=bot)[bot]
-            thread = cls.chat_thread(threads)
+            thread = cls.chat_thread(threads, cookie, client)
         except KeyError:
             thread = None
         
@@ -1095,10 +1104,23 @@ class Poe:
                     '\033[38;5;121m!purgeall\033[0m : Delete all the messages\n'
                     '\033[38;5;121m!delete\033[0m : Delete the conversation\n'
                     '\033[38;5;121m!history\033[0m : Show the chat history\n'
+                    '\033[38;5;121m!switch\033[0m : Switch to another Thread\n'
                     '\033[38;5;121m!reset\033[0m : Choose a new Bot\n'
                     '\033[38;5;121m!exit\033[0m : Exit the program\n'
                     '\033[38;5;121mPress Q key\033[0m : Stop message generation\n'
                     '------------------------------------------------------------\n') 
+            elif message == '!switch':
+                try:
+                    threads = client.get_chat_history(bot=bot)[bot]
+                    thread = cls.chat_thread(threads, cookie, client)
+                except KeyError:
+                    thread = None
+                    print('No threads found. Please type a message to create a new thread first.\n')
+                if (thread != None):
+                    chatId = thread["chatId"]
+                    print(f'The selected thread is: {thread["chatCode"]}')
+                else:
+                    chatId = None
             elif message == '!clear':
                 client.chat_break(bot, chatId)
                 print("Context is now cleared")
