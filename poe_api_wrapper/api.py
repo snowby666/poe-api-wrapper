@@ -102,6 +102,7 @@ class PoeApi:
     FORMKEY_PATTERN = r'formkey": "(.*?)"'
 
     def __init__(self, cookie: str, proxy: bool=False):
+        self.cookie = cookie
         if proxy == True:
             proxies = fetch_proxy()
             for p in range(len(proxies)):
@@ -115,7 +116,7 @@ class PoeApi:
                     sleep(1)
         else:
             self.client = Client(timeout=180)
-        self.client.cookies.set('m-b', cookie)
+        self.client.cookies.set('m-b', self.cookie)
         self.client.headers.update({
             **self.HEADERS,
             'Quora-Formkey': self.get_formkey,
@@ -167,7 +168,7 @@ class PoeApi:
     
     def subscribe(self):
         try:
-            self.send_request('gql_POST', "SubscriptionsMutation",
+            response_json = self.send_request('gql_POST', "SubscriptionsMutation",
                 {
                     "subscriptions": [
                         {
@@ -203,6 +204,8 @@ class PoeApi:
                     ]
                 },
             )
+            if response_json['data'] == None and response_json["errors"]:
+                raise RuntimeError(f"Cookie {self.cookie} is invalid or expired. Please try again with a different cookie.")
         except Exception as e:
             raise Exception(
                 "Failed to subscribe by sending SubscriptionsMutation"
