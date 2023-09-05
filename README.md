@@ -52,7 +52,7 @@
 ## Installation:
 - First, install this library with the following command:
 ```sh
-pip3 install -U poe-api-wrapper
+pip install -U poe-api-wrapper
 ```
 - You can run an example of this library:
 ```py
@@ -102,25 +102,12 @@ client = PoeApi("TOKEN_HERE", proxy=True)
 ```
 - Getting Chat Ids & Chat Codes
 ```py
-# Get chat ids of all bots
-client.get_chat_history()
-# Output:
-# -------------------------------------- Chat History --------------------------------------
-# Chat ID  |     Chat Code       |           Bot Name            |       Chat Title
-# ------------------------------------------------------------------------------------------
-# 74397929 | 2ith0h11zfyvsta1u3z | chinchilla                    | Comparison
-# 74397392 | 2ithbduzsysy3g178hb | code_llama_7b_instruct        | Decent Programmers
-# 74396838 | 2ith9nikybn4ksn51l8 | a2                            | Reverse Engineering
-# 74396452 | 2ith79n4x0p0p8w5yue | a2                            | Clean Code
-# 74396246 | 2ith82wj0tjrggj46no | leocooks                      | Pizza perfection
-# 74396020 | 2ith5o3p8c5ajkdwd3k | capybara                      | Greeting
-# ------------------------------------------------------------------------------------------
-
+# Get chat data of all bots
 print(client.get_chat_history())
 # Output:
 # {'chinchilla': [{'chatId': 74397929, 'chatCode': '2ith0h11zfyvsta1u3z', 'id': 'Q2hhdDo3NDM5NzkyOQ==', 'title': 'Comparison'}], 'code_llama_7b_instruct': [{'chatId': 74397392, 'chatCode': '2ithbduzsysy3g178hb', 'id': 'Q2hhdDo3NDM5NzM5Mg==', 'title': 'Decent Programmers'}], 'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}], 'leocooks': [{'chatId': 74396246, 'chatCode': '2ith82wj0tjrggj46no', 'id': 'Q2hhdDo3NDM5NjI0Ng==', 'title': 'Pizza perfection'}], 'capybara': [{'chatId': 74396020, 'chatCode': '2ith5o3p8c5ajkdwd3k', 'id': 'Q2hhdDo3NDM5NjAyMA==', 'title': 'Greeting'}]}
 
-# Get chat ids of a bot
+# Get chat data of a bot
 print(client.get_chat_history("a2"))
 # Output:
 # {'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}]}
@@ -262,6 +249,7 @@ for message in previous_messages:
 # Output:
 # {'author': 'human', 'text': 'hi there', 'messageId': 2861363514}
 # {'author': 'code_llama_34b_instruct', 'text': " Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?", 'messageId': 2861363530}
+# {'author': 'chat_break', 'text': "", 'messageId': 2872383991}
 # {'author': 'human', 'text': 'nice to meet you', 'messageId': 2861709279}
 # {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help", 'messageId': 2861873125}
 ```

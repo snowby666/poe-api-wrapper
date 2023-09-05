@@ -1,1 +1,2 @@
-from .api import Poe, PoeApi
+from .api import PoeApi
+from .example import Poe

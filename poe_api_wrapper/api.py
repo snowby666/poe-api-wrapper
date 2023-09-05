@@ -2,7 +2,7 @@ from re import search
 from time import sleep, time
 from httpx import Client
 from requests_toolbelt import MultipartEncoder
-import os, secrets, string, random, websocket, json, threading, queue, keyboard
+import os, secrets, string, random, websocket, json, threading, queue
 from urllib.parse import urlparse
 from .queries import generate_payload
 from .proxies import fetch_proxy
@@ -339,13 +339,13 @@ class PoeApi:
             if response_json['data']['chats']['pageInfo']['hasNextPage']:
                 cursor = response_json['data']['chats']['pageInfo']['endCursor']
             edges = response_json['data']['chats']['edges']
-            print('-'*38+' \033[38;5;121mChat History\033[0m '+'-'*38)
-            print('\033[38;5;121mChat ID\033[0m  |     \033[38;5;121mChat Code\033[0m       |           \033[38;5;121mBot Name\033[0m            |       \033[38;5;121mChat Title\033[0m')
-            print('-' * 90)
+            # print('-'*38+' \033[38;5;121mChat History\033[0m '+'-'*38)
+            # print('\033[38;5;121mChat ID\033[0m  |     \033[38;5;121mChat Code\033[0m       |           \033[38;5;121mBot Name\033[0m            |       \033[38;5;121mChat Title\033[0m')
+            # print('-' * 90)
             for edge in edges:
                 chat = edge['node']
                 model = bot_map(chat["defaultBotObject"]["displayName"])
-                print(f'{chat["chatId"]} | {chat["chatCode"]} | {model}' + (30-len(model))*' ' + f'| {chat["title"]}')
+                # print(f'{chat["chatId"]} | {chat["chatCode"]} | {model}' + (30-len(model))*' ' + f'| {chat["title"]}')
                 if model in chat_bots:
                     chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]})
                 else:
@@ -357,13 +357,13 @@ class PoeApi:
                 for edge in edges:
                     chat = edge['node']
                     model = bot_map(chat["defaultBotObject"]["displayName"])
-                    print(f'{chat["chatId"]} | {chat["chatCode"]} | {model}' + (30-len(model))*' ' + f'| {chat["title"]}')
+                    # print(f'{chat["chatId"]} | {chat["chatCode"]} | {model}' + (30-len(model))*' ' + f'| {chat["title"]}')
                     if model in chat_bots:
                         chat_bots[model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]})
                     else:
                         chat_bots[model] = [{"chatId": chat["chatId"], "chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]}]    
                 cursor = response_json['data']['chats']['pageInfo']['endCursor']            
-            print('-' * 90)  
+            # print('-' * 90)  
         else:
             model = bot.lower().replace(' ', '')
             handle = model
@@ -372,6 +372,10 @@ class PoeApi:
                     handle = key
                     break
             response_json = self.send_request('gql_POST', 'ChatHistoryFilteredListPaginationQuery', {'count': interval, 'handle': handle, 'cursor': None})
+            if response_json['data'] == None and response_json["errors"]:
+                raise ValueError(
+                    f"Bot {bot} not found. Make sure the bot exists before creating new chat."
+                )
             if response_json['data']['filteredChats']['pageInfo']['hasNextPage']:
                 cursor = response_json['data']['filteredChats']['pageInfo']['endCursor']
             edges = response_json['data']['filteredChats']['edges']
@@ -571,7 +575,7 @@ class PoeApi:
                 del self.message_queues[human_message_id]
                 try:
                     self.retry_attempts -= 1
-                    print(f"Retrying request {3-self.retry_attempts}/3 times...")
+                    print(f"\nRetrying request {3-self.retry_attempts}/3 times...")
                     if self.retry_attempts < 0:
                         self.retry_attempts = 3
                         raise RuntimeError("Timed out waiting for response.")
@@ -688,6 +692,8 @@ class PoeApi:
             chatCode = chatdata['chatCode']
         variables = {'chatCode': chatCode}
         response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
+        if response_json['data'] == None and response_json["errors"]:
+            raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
         edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
         
         if del_all == True:
@@ -993,196 +999,3 @@ class PoeApi:
         else:
             print('An error occurred while importing the chat')
             return None
-        
-class Poe:
-    @staticmethod
-    def select_bot():
-        bots = {
-            1: 'capybara',
-            2: 'a2_100k',
-            3: 'a2_2',
-            4: 'a2',
-            5: 'chinchilla',
-            6: 'agouti',
-            7: 'beaver',
-            8: 'vizcacha',
-            9: 'acouchy',
-            10: 'llama_2_7b_chat',
-            11: 'llama_2_13b_chat',
-            12: 'llama_2_70b_chat',
-            13: 'code_llama_7b_instruct',
-            14: 'code_llama_13b_instruct',
-            15: 'code_llama_34b_instruct'
-        }
-        while True:
-            choice = input('Who do you want to talk to?\n'
-                        '[1] Assistant (capybara)\n'
-                        '[2] Claude-instant-100k (a2_100k)\n'
-                        '[3] Claude-2-100k (a2_2)\n'
-                        '[4] Claude-instant (a2)\n'
-                        '[5] ChatGPT (chinchilla)\n'
-                        '[6] ChatGPT-16k (agouti)\n'
-                        '[7] GPT-4 (beaver)\n'
-                        '[8] GPT-4-32k (vizcacha)\n'
-                        '[9] Google-PaLM (acouchy)\n'
-                        '[10] Llama-2-7b (llama_2_7b_chat)\n'
-                        '[11] Llama-2-13b (llama_2_13b_chat)\n'
-                        '[12] Llama-2-70b (llama_2_70b_chat)\n'
-                        '[13] Code-Llama-7b (code_llama_7b_instruct)\n'
-                        '[14] Code-Llama-13b (code_llama_13b_instruct)\n'
-                        '[15] Code-Llama-34b (code_llama_34b_instruct)\n'
-                        '[16] Add you own bot\n\n'
-                        'Your choice: ')
-            if choice.isdigit() and 1 <= int(choice) <= 16:
-                if choice == '16':
-                    bot = input('Enter the bot name: ')
-                else:
-                    bot = bots[int(choice)]
-                break
-            else:
-                print('Invalid choice. Please select a valid option.\n')
-        return bot
-    
-    @staticmethod
-    def chat_thread(threads, cookie, client):
-        while True:
-            print('\nChoose a Thread to chat with:\n'
-                '\033[38;5;121m[1]\033[0m Return to Bot selection\n'
-                '\033[38;5;121m[2]\033[0m Create a new Thread')
-            for i,k in enumerate(threads):
-                i += 3    
-                print(f'\033[38;5;121m[{i}]\033[0m Thread {k["chatCode"]} | {k["title"]}')
-                
-            choice = input('\nYour choice: ')
-            if choice.isdigit() and 1 <= int(choice) <= len(threads)+2:
-                if choice == '1':
-                    Poe.chat_with_bot(cookie, new_thread=True, client=client)
-                elif choice == '2':
-                    return None
-                else:
-                    response = threads[int(choice)-3]     
-                break
-            else:
-                print('Invalid choice. Please select a valid option.')        
-        return response
-    
-    @classmethod
-    def chat_with_bot(cls, cookie, new_thread=False, client=None):
-        
-        while True:
-            try:
-                if not new_thread:
-                    client = PoeApi(cookie=cookie)
-                bot = cls.select_bot()
-                break            
-            except:
-                print('Invalid cookie. Please try again.\n')
-                continue
-            
-        print(f'The selected bot is: {bot}')
-        try:
-            threads = client.get_chat_history(bot=bot)[bot]
-            thread = cls.chat_thread(threads, cookie, client)
-        except KeyError:
-            thread = None
-        
-        if (thread != None):
-            chatId = thread["chatId"]
-            print(f'The selected thread is: {thread["chatCode"]}')
-        else:
-            chatId = None
-            
-        print('\n🔰 Type \033[38;5;121m!help\033[0m for more commands 🔰\n')
-        
-        while True:
-            message = input('\033[38;5;121mYou\033[0m : ').lower() 
-            if message == '':
-                continue
-            elif message == '!help':
-                print('--------------------------- \033[38;5;121mCMDS\033[0m ---------------------------\n'
-                    '\033[38;5;121m!upload --query_here --url1|url2|url3|...\033[0m : Add attachments\n'
-                    '\033[38;5;121m!load\033[0m : Load previous messages\n'
-                    '\033[38;5;121m!clear\033[0m : Clear the context\n'
-                    '\033[38;5;121m!purge\033[0m : Delete the last 50 messages\n'
-                    '\033[38;5;121m!purgeall\033[0m : Delete all the messages\n'
-                    '\033[38;5;121m!delete\033[0m : Delete the conversation\n'
-                    '\033[38;5;121m!history\033[0m : Show the chat history\n'
-                    '\033[38;5;121m!switch\033[0m : Switch to another Thread\n'
-                    '\033[38;5;121m!reset\033[0m : Choose a new Bot\n'
-                    '\033[38;5;121m!exit\033[0m : Exit the program\n'
-                    '\033[38;5;121mPress Q key\033[0m : Stop message generation\n'
-                    '------------------------------------------------------------\n') 
-            elif message == '!switch':
-                try:
-                    threads = client.get_chat_history(bot=bot)[bot]
-                    thread = cls.chat_thread(threads, cookie, client)
-                except KeyError:
-                    thread = None
-                    print('No threads found. Please type a message to create a new thread first.\n')
-                if (thread != None):
-                    chatId = thread["chatId"]
-                    print(f'The selected thread is: {thread["chatCode"]}')
-                else:
-                    chatId = None
-            elif message == '!clear':
-                client.chat_break(bot, chatId)
-                print("Context is now cleared")
-            elif message == '!exit':
-                break
-            elif message == '!reset':
-                print('\n')
-                Poe.chat_with_bot(cookie, new_thread=True, client=client)
-            elif message == '!purge':
-                client.purge_conversation(bot, chatId)
-                print("Conversation is now purged")
-            elif message == '!purgeall':
-                client.purge_all_conversations()
-                print("All conversations are now purged\n")
-                Poe.chat_with_bot(cookie, new_thread=True, client=client)
-            elif message == '!delete':
-                client.delete_chat(bot, chatId)
-                print('\n')
-                Poe.chat_with_bot(cookie, new_thread=True, client=client)
-            elif message == '!history':
-                client.get_chat_history()
-            elif message == '!load':
-                if chatId is None:
-                    print("Please type a message to create a new thread first.\n")
-                    continue
-                previous_messages = client.get_previous_messages(bot=bot, chatId=chatId, get_all=True)
-                for message in previous_messages:
-                    if message['author'] == 'human':
-                        print(f'\033[38;5;121mYou\033[0m : {message["text"]}')
-                    else:
-                        print(f'\033[38;5;20m{bot}\033[0m : {message["text"]}')
-            else:
-                print(f'\033[38;5;20m{bot}\033[0m : ', end='')
-                
-                if message == '!suggest 1':
-                    message =  chunk["suggestedReplies"][0]
-                elif message == '!suggest 2':
-                    message =  chunk["suggestedReplies"][1]
-                elif message == '!suggest 3':
-                    message =  chunk["suggestedReplies"][2]
-                    
-                if message.startswith('!upload'):
-                    try:
-                        file_urls = message.split('--')[2].strip().split('|')
-                        message = message.split('--')[1].split('--')[0].strip()
-                    except:
-                        print("Invalid command. Please try again.\n")
-                        continue  
-                else:
-                    file_urls = []
-                for chunk in client.send_message(bot, message, chatId, suggest_replies=True, file_path=file_urls):
-                    print(chunk["response"], end="", flush=True)
-                    if keyboard.is_pressed('q'):
-                        client.cancel_message(chunk)
-                        print("\nMessage is now cancelled")
-                        break 
-                print("\n")
-                if chunk["suggestedReplies"] != []:
-                    for reply in range(len(chunk["suggestedReplies"])):
-                        print(f"\033[38;2;255;203;107m[Type !suggest {reply+1}] : {chunk['suggestedReplies'][reply]}\033[0m\n")
-                if chatId is None:
-                    chatId = chunk["chatId"]
