@@ -56,30 +56,31 @@ pip install -U poe-api-wrapper
 ```
 - You can run an example of this library:
 ```py
-from poe_api_wrapper import Poe
+from poe_api_wrapper import PoeExample
 token = "TOKEN_HERE"
-Poe.chat_with_bot(token)
+PoeExample(token).chat_with_bot()
 ```
 
 ## Documentation:
 ### Available Default Bots:
-| Display Name        | Model                   | Token Limit | Words | Access Type                                                     |
-| ------------------- | ----------------------- | ----------- | ----- | --------------------------------------------------------------- |
-| Assistant           | capybara                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Claude-instant-100k | a2_100k                 | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
-| Claude-2-100k       | a2_2                    | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
-| Claude-instant      | a2                      | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| ChatGPT             | chinchilla              | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| ChatGPT-16k         | agouti                  | 16K         | 12K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
-| GPT-4               | beaver                  | 4K          | 3K    | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
-| GPT-4-32k           | vizcacha                | 32K         | 24K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
-| Google-PaLM         | acouchy                 | 8K          | 6K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-7b          | llama_2_7b_chat         | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-13b         | llama_2_13b_chat        | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-70b         | llama_2_70b_chat        | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-7b       | code_llama_7b_instruct  | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-13b      | code_llama_13b_instruct | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-34b      | code_llama_34b_instruct | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Display Name        | Model                     | Token Limit | Words | Access Type                                                     |
+| ------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
+| Assistant           | capybara                  | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-instant-100k | a2_100k                   | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
+| Claude-2-100k       | a2_2                      | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
+| Claude-instant      | a2                        | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| ChatGPT             | chinchilla                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| ChatGPT-16k         | agouti                    | 16K         | 12K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| GPT-4               | beaver                    | 4K          | 3K    | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| GPT-4-32k           | vizcacha                  | 32K         | 24K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| Google-PaLM         | acouchy                   | 8K          | 6K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Llama-2-7b          | llama_2_7b_chat           | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Llama-2-13b         | llama_2_13b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Llama-2-70b         | llama_2_70b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Code-Llama-7b       | code_llama_7b_instruct    | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Code-Llama-13b      | code_llama_13b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Code-Llama-34b      | code_llama_34b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Solar-0-70b         | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 >**Important**
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 ### How to get your Token:
@@ -102,18 +103,49 @@ client = PoeApi("TOKEN_HERE", proxy=True)
 ```
 - Getting Chat Ids & Chat Codes
 ```py
-# Get chat data of all bots
-print(client.get_chat_history())
+# Get chat data of all bots (this will fetch all available threads)
+print(client.get_chat_history()['data'])
 # Output:
 # {'chinchilla': [{'chatId': 74397929, 'chatCode': '2ith0h11zfyvsta1u3z', 'id': 'Q2hhdDo3NDM5NzkyOQ==', 'title': 'Comparison'}], 'code_llama_7b_instruct': [{'chatId': 74397392, 'chatCode': '2ithbduzsysy3g178hb', 'id': 'Q2hhdDo3NDM5NzM5Mg==', 'title': 'Decent Programmers'}], 'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}], 'leocooks': [{'chatId': 74396246, 'chatCode': '2ith82wj0tjrggj46no', 'id': 'Q2hhdDo3NDM5NjI0Ng==', 'title': 'Pizza perfection'}], 'capybara': [{'chatId': 74396020, 'chatCode': '2ith5o3p8c5ajkdwd3k', 'id': 'Q2hhdDo3NDM5NjAyMA==', 'title': 'Greeting'}]}
 
-# Get chat data of a bot
-print(client.get_chat_history("a2"))
+# Get chat data of a bot (this will fetch all available threads)
+print(client.get_chat_history("a2")['data'])
 # Output:
 # {'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}]}
+
+# Get a defined number of most recent chat threads (using count param will ignore interval param)
+# Fetching all bots
+print(client.get_chat_history(count=20)['data'])
+# Fetching 1 bot
+print(client.get_chat_history(bot="a2", count=20)['data'])
+
+# You can pass the number of bots fetched for each interval to both functions. (default is 50)
+# Fetching 200 chat threads of all bots each interval
+print(client.get_chat_history(interval=200)['data'])
+# Fetching 200 chat threads of a bot each interval
+print(client.get_chat_history(bot="a2", interval=200)['data'])
+
+# Pagination Example:
+# Fetch the first 20 chat threads
+history = client.get_chat_history(count=20)
+pages = [history['data']]
+new_cursor = history['cursor']
+
+# Set a while loop with a condition of your choice
+while new_cursor != None:
+    # Fetch the next 20 chat threads with new_cursor
+    new_history = client.get_chat_history(count=20, cursor=new_cursor)
+    # Append the next 20 chat threads 
+    new_cursor = new_history['cursor']
+    pages.append(new_history['data'])
+
+# Print the pages (20 chat threads each page)
+for page in range(len(pages)):
+    print(f'This is page {page+1}')
+    for bot, value in pages[page].items():
+        for thread in value:
+            print({bot: thread})
 ```
->**Note**
-> You can pass the number of bots fetched for each interval to both functions `client.get_chat_history(interval)` and `client.get_chat_history(bot, interval)` (default is 50)
 - Sending messages & Streaming responses 
 ```py
 bot = "a2"
@@ -174,6 +206,7 @@ for reply in chunk["suggestedReplies"]:
 ```py
 # You can use an event to trigger this function
 # Example:
+# Note that keyboard library may not be compatible with MacOS, Linux, Ubuntu
 import keyboard
 for chunk in client.send_message(bot, message):
     print(chunk["response"], end="", flush=True)

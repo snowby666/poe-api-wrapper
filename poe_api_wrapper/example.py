@@ -1,9 +1,11 @@
 from .api import PoeApi
-import keyboard
 
-class Poe:
-    @staticmethod
-    def select_bot(cls, cookie, client):
+class PoeExample:
+    def __init__(self, cookie):
+        self.cookie = cookie
+        self.client = PoeApi(cookie=self.cookie)
+        
+    def select_bot(self):
         bots = {
             1: 'capybara',
             2: 'a2_100k',
@@ -19,7 +21,8 @@ class Poe:
             12: 'llama_2_70b_chat',
             13: 'code_llama_7b_instruct',
             14: 'code_llama_13b_instruct',
-            15: 'code_llama_34b_instruct'
+            15: 'code_llama_34b_instruct',
+            16: 'upstage_solar_0_70b_16bit'
         }
         while True:
             choice = input('Who do you want to talk to?\n'
@@ -39,13 +42,15 @@ class Poe:
                         '[13] Code-Llama-7b (code_llama_7b_instruct)\n'
                         '[14] Code-Llama-13b (code_llama_13b_instruct)\n'
                         '[15] Code-Llama-34b (code_llama_34b_instruct)\n'
-                        '[16] Add you own bot\n\n'
+                        '[16] Solar-0-70b (upstage_solar_0_70b_16bit)\n'
+                        '[17] Add you own bot\n\n'
                         'Your choice: ')
             if choice == '0':
-                cls.continue_thread(cls, client.get_chat_history(), '!history 1', cookie, client)
+                data = self.client.get_chat_history(interval=500)
+                self.continue_thread(data['data'], '!history 1')
                 
-            elif choice.isdigit() and 1 <= int(choice) <= 16:
-                if choice == '16':
+            elif choice.isdigit() and 1 <= int(choice) <= 17:
+                if choice == '17':
                     bot = input('Enter the bot name: ')
                 else:
                     bot = bots[int(choice)]
@@ -54,32 +59,71 @@ class Poe:
                 print('Invalid choice. Please select a valid option.\n')
         return bot
     
-    @staticmethod
-    def chat_thread(threads, cookie, client):
+    def chat_thread(self, threads, cursor, page=0):
+        if cursor == None:
+            has_next_page = False
+            pagination = False
+        else:
+            has_next_page = True
+            pagination = True  
         while True:
             print('\nChoose a Thread to chat with:\n'
-                '\033[38;5;121m[1]\033[0m Return to Bot selection\n'
-                '\033[38;5;121m[2]\033[0m Create a new Thread')
-            for i,k in enumerate(threads):
-                i += 3    
+                '\033[38;5;121m[0]\033[0m Return to Bot selection\n'
+                '\033[38;5;121m[1]\033[0m Create a new Thread')
+            for i,k in enumerate(threads[page]):
+                i += 2  
                 print(f'\033[38;5;121m[{i}]\033[0m Thread {k["chatCode"]} | {k["title"]}')
+            if pagination:
+                if page+1 == len(threads):
+                    print(
+                        '\n'
+                        '\033[38;5;121m[>]\033[0m : Load 20 more threads\n'
+                        '\033[38;5;121m[<]\033[0m : Previous page\n'
+                    )
+                else:
+                    print(
+                        '\n'
+                        '\033[38;5;121m[>]\033[0m : Next page\n'
+                        '\033[38;5;121m[<]\033[0m : Previous page\n'
+                    )
+                
+                print(f"You are on page {page+1} of {len(threads)}")
                 
             choice = input('\nYour choice: ')
-            if choice.isdigit() and 1 <= int(choice) <= len(threads)+2:
-                if choice == '1':
-                    Poe.chat_with_bot(cookie, new_thread=True, client=client)
-                elif choice == '2':
+            if choice.isdigit() and 0 <= int(choice) <= len(threads[page])+1:
+                if choice == '0':
+                    self.chat_with_bot()
+                elif choice == '1':
                     return None
                 else:
-                    response = threads[int(choice)-3]     
+                    response = threads[page][int(choice)-2]     
                 break
+            elif pagination and choice == '<':
+                has_next_page = True
+                if page > 0:
+                    page -= 1
+                    continue
+                else:
+                    print('\n\033[38;2;255;203;107mYou are already on the first page\033[0m')
+                    continue
+            elif pagination and choice == '>':
+                if has_next_page:
+                    page += 1
+                    new_data = self.client.get_chat_history(bot=self.bot, count=20, cursor=cursor)
+                    if new_data['data'][self.bot] == [] or new_data['cursor'] == None:
+                        has_next_page = False
+                    if page == len(threads):
+                        threads.append(new_data['data'][self.bot])
+                    cursor = new_data['cursor']
+                    continue
+                else:
+                    print('\n\033[38;2;255;203;107mYou are already on the last page\033[0m')
+                    continue
             else:
                 print('Invalid choice. Please select a valid option.')        
         return response
     
-    @staticmethod
-    def continue_thread(cls, bots, message, cookie, client):
-        
+    def continue_thread(self, bots, message):
         if len(message.split(' ')) == 2 and (message.split(' ')[1].isdigit() or (message.split(' ')[1].startswith('-') and message.split(' ')[1][1:].isdigit())):
             page = int(message.split(' ')[1])
             if message.split(' ')[1].startswith('-'):
@@ -102,7 +146,7 @@ class Poe:
                 page = start_cursor // pagination + (start_cursor % pagination > 0)
                 message = f'!history {page}'
                 print('\n\033[38;2;255;203;107mPage number is out of range. Redirecting to the last page...\033[0m\n')
-                cls.continue_thread(cls, bots, message, cookie, client)
+                self.continue_thread(bots, message)
                 return
         else:
             new_bots = bots
@@ -139,7 +183,7 @@ class Poe:
                 if page > 1:
                     page -= 1
                     message = f'!history {page}'
-                    cls.continue_thread(cls, bots, message, cookie, client)
+                    self.continue_thread(bots, message)
                     break
                 else:
                     print('\n\033[38;2;255;203;107mYou are already on the first page\033[0m\n')
@@ -148,7 +192,7 @@ class Poe:
                 if page < start_cursor // pagination + (start_cursor % pagination > 0):
                     page += 1
                     message = f'!history {page}'
-                    cls.continue_thread(cls, bots, message, cookie, client)
+                    self.continue_thread(bots, message)
                     break
                 else:
                     print('\n\033[38;2;255;203;107mYou are already on the last page\033[0m\n')
@@ -156,40 +200,43 @@ class Poe:
             
             elif choice.isdigit() and 1 <= int(choice) <= len(orders):
                 selected_order = orders[int(choice) - 1]
-                Poe.chat_with_bot(cookie, new_thread=True, client=client, bot=selected_order[0], chatId=selected_order[1], chatCode=selected_order[2])
+                self.chat_with_bot(bot=selected_order[0], chatId=selected_order[1], chatCode=selected_order[2])
                 break
             else:
                 print('Invalid choice. Please select a valid option.\n')
                 continue
 
-    @classmethod
-    def chat_with_bot(cls, cookie, new_thread=False, client=None, bot=None, chatId=None, chatCode=None):
+    def chat_with_bot(self, bot=None, chatId=None, chatCode=None):
         
-        while chatCode == None:
+        self.bot = bot
+        self.chatId = chatId
+        self.chatCode = chatCode
+        
+        while self.chatCode == None:
             try:
-                if not new_thread:
-                    client = PoeApi(cookie=cookie)
-                bot = cls.select_bot(cls, cookie, client)
+                self.bot = self.select_bot()
                 break            
             except:
                 print('Invalid cookie. Please try again.\n')
                 continue
         
-        if (chatCode == None):
-            print(f'The selected bot is: {bot}')
+        if (self.chatCode == None):
+            print(f'The selected bot is: {self.bot}')
             try:
-                threads = client.get_chat_history(bot=bot)[bot]
-                thread = cls.chat_thread(threads, cookie, client)
+                data = self.client.get_chat_history(bot=self.bot, count=20)
+                threads = [data['data'][self.bot]]
+                cursor = data['cursor']
+                thread = self.chat_thread(threads, cursor)
             except KeyError:
                 thread = None
             
             if (thread != None):
-                chatId = thread["chatId"]
+                self.chatId = thread["chatId"]
                 print(f'The selected thread is: {thread["chatCode"]}')
             else:
-                chatId = None
+                self.chatId = None
         else:
-            print(f'Continue chatting with {bot} | {chatCode}')
+            print(f'Continue chatting with {self.bot} | {self.chatCode}')
     
         print('\n🔰 Type \033[38;5;121m!help\033[0m for more commands 🔰\n')
         
@@ -210,60 +257,63 @@ class Poe:
                     '\033[38;5;121m!delete\033[0m : Delete the conversation\n'
                     '\033[38;5;121m!reset\033[0m : Choose a new Bot\n'
                     '\033[38;5;121m!exit\033[0m : Exit the program\n'
-                    '\033[38;5;121mPress Q key\033[0m : Stop message generation\n'
                     '------------------------------------------------------------\n') 
             elif message == '!switch':
                 try:
-                    threads = client.get_chat_history(bot=bot)[bot]
-                    thread = cls.chat_thread(threads, cookie, client)
+                    data = self.client.get_chat_history(bot=self.bot, count=20)
+                    threads = [data['data'][self.bot]]
+                    cursor = data['cursor']
+                    thread = self.chat_thread(threads, cursor)
                 except KeyError:
                     thread = None
                     print('No threads found. Please type a message to create a new thread first.\n')
                 if (thread != None):
-                    chatId = thread["chatId"]
+                    self.chatId = thread["chatId"]
                     print(f'The selected thread is: {thread["chatCode"]}')
                 else:
-                    chatId = None
+                    self.chatId = None
             elif message == '!clear':
-                client.chat_break(bot, chatId)
+                self.client.chat_break(self.bot, self.chatId)
                 print("Context is now cleared")
             elif message == '!exit':
                 break
             elif message == '!reset':
                 print('\n')
-                Poe.chat_with_bot(cookie, new_thread=True, client=client)
+                self.chat_with_bot()
             elif message == '!purge':
-                client.purge_conversation(bot, chatId)
+                self.client.purge_conversation(self.bot, self.chatId)
                 print("Conversation is now purged")
             elif message == '!purgeall':
-                client.purge_all_conversations()
+                self.client.purge_all_conversations()
                 print("All conversations are now purged\n")
-                Poe.chat_with_bot(cookie, new_thread=True, client=client)
+                self.chat_with_bot()
             elif message == '!delete':
-                client.delete_chat(bot, chatId)
+                self.client.delete_chat(self.bot, self.chatId)
                 print('\n')
-                Poe.chat_with_bot(cookie, new_thread=True, client=client)
+                self.chat_with_bot()
             elif message.startswith('!history'):
-                bots = client.get_chat_history()
+                chat_data = self.client.get_chat_history(interval=500)
+                bots = chat_data['data']
+                # cursor = chat_data['cursor']
                 if not bots:
                     print("No history found. Please type a message to create a new thread first.\n")
                     continue
                 else:
-                    cls.continue_thread(cls, bots, message, cookie, client)
+                    self.continue_thread(bots, message)
             elif message == '!load':
-                if chatId is None:
+                if self.chatId is None:
                     print("Please type a message to create a new thread first.\n")
                     continue
-                previous_messages = client.get_previous_messages(bot=bot, chatId=chatId, get_all=True)
+                previous_messages = self.client.get_previous_messages(bot=self.bot, chatId=self.chatId, get_all=True)
                 for message in previous_messages:
                     if message['author'] == 'human':
                         print(f'\033[38;5;121mYou\033[0m : {message["text"]}\n')
                     elif message['author'] == 'chat_break':
                         print('--------------------------------------- Context cleared ---------------------------------------\n')
                     else:
-                        print(f'\033[38;5;20m{bot}\033[0m : {message["text"]}\n')
+                        print(f'\033[38;5;20m{self.bot}\033[0m : {message["text"]}\n')
             else:
-                print(f'\033[38;5;20m{bot}\033[0m : ', end='')
+                print(f'\033[38;5;20m{self.bot}\033[0m : ', end='')
                 
                 if message == '!suggest 1':
                     message =  chunk["suggestedReplies"][0]
@@ -281,15 +331,11 @@ class Poe:
                         continue  
                 else:
                     file_urls = []
-                for chunk in client.send_message(bot, message, chatId, suggest_replies=True, file_path=file_urls):
+                for chunk in self.client.send_message(self.bot, message, self.chatId, suggest_replies=True, file_path=file_urls):
                     print(chunk["response"], end="", flush=True)
-                    if keyboard.is_pressed('q'):
-                        client.cancel_message(chunk)
-                        print("\nMessage is now cancelled")
-                        break 
                 print("\n")
                 if chunk["suggestedReplies"] != []:
                     for reply in range(len(chunk["suggestedReplies"])):
                         print(f"\033[38;2;255;203;107m[Type !suggest {reply+1}] : {chunk['suggestedReplies'][reply]}\033[0m\n")
-                if chatId is None:
-                    chatId = chunk["chatId"]
+                if self.chatId is None:
+                    self.chatId = chunk["chatId"]
