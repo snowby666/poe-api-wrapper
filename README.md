@@ -54,6 +54,10 @@
 ```sh
 pip install -U poe-api-wrapper
 ```
+Or you can install a proxy-support version of this library:
+```sh
+pip install -U poe-api-wrapper[proxy]
+```
 - You can run an example of this library:
 ```py
 from poe_api_wrapper import PoeExample

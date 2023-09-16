@@ -1,18 +1,23 @@
-from ballyregan import ProxyFetcher
-from ballyregan.models import Protocols, Anonymities
+try:
+    from ballyregan import ProxyFetcher
+    from ballyregan.models import Protocols, Anonymities
+    PROXY = True
+except:
+    PROXY = False
 
-def fetch_proxy():
-    fetcher = ProxyFetcher()
-    try:
-        proxies = fetcher.get(
-        limit=10,
-        protocols=[Protocols.HTTP],
-        anonymities=[Anonymities.ANONYMOUS],
-        )
-    except:
-        print("No Anonymous proxies found. Switching to normal proxies ...") 
-        proxies = fetcher.get(
-        limit=10,
-        protocols=[Protocols.HTTP],
-        )
-    return proxies
+if PROXY:
+    def fetch_proxy():
+        fetcher = ProxyFetcher()
+        try:
+            proxies = fetcher.get(
+            limit=10,
+            protocols=[Protocols.HTTP],
+            anonymities=[Anonymities.ANONYMOUS],
+            )
+        except:
+            print("No Anonymous proxies found. Switching to normal proxies ...") 
+            proxies = fetcher.get(
+            limit=10,
+            protocols=[Protocols.HTTP],
+            )
+        return proxies

@@ -5,7 +5,9 @@ from requests_toolbelt import MultipartEncoder
 import os, secrets, string, random, websocket, json, threading, queue
 from urllib.parse import urlparse
 from .queries import generate_payload
-from .proxies import fetch_proxy
+from .proxies import PROXY
+if PROXY:
+    from .proxies import fetch_proxy
 
 """
 This API is modified and maintained by @snowby666
@@ -104,7 +106,7 @@ class PoeApi:
 
     def __init__(self, cookie: str, proxy: bool=False):
         self.cookie = cookie
-        if proxy == True:
+        if proxy == True and PROXY == True:
             proxies = fetch_proxy()
             for p in range(len(proxies)):
                 try:
@@ -218,7 +220,7 @@ class PoeApi:
         if not self.ws.sock:
             kwargs = {}
             self.ws.run_forever(**kwargs)
-
+             
     def connect_ws(self, timeout=5):
         if self.ws_connected:
             return
