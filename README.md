@@ -54,7 +54,7 @@
 ```sh
 pip install -U poe-api-wrapper
 ```
-Or you can install a proxy-support version of this library:
+- Or you can install a proxy-support version of this library:
 ```sh
 pip install -U poe-api-wrapper[proxy]
 ```
