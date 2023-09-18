@@ -9,7 +9,7 @@
 
 <p align="center">
 <a href="https://pypi.org/project/poe-api-wrapper/"><img src="https://img.shields.io/pypi/v/poe-api-wrapper"></a>
-<img alt="Python Version" src="https://img.shields.io/badge/python-3.9+-blue.svg" alt="python">
+<img alt="Python Version" src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="python">
 <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/poe-api-wrapper">
 <br>
 </p>
@@ -54,7 +54,7 @@
 ```sh
 pip install -U poe-api-wrapper
 ```
-- Or you can install a proxy-support version of this library:
+Or you can install a proxy-support version of this library for **Python 3.9+**
 ```sh
 pip install -U poe-api-wrapper[proxy]
 ```
@@ -96,6 +96,9 @@ F12 for Devtools (Right-click + Inspect)
 - Safari: Devtools > Storage > Cookies
 
 Copy the value of `m-b` cookie
+
+>**Note**
+> Make sure you have logged in poe.com using **the same email** which registered on quora.com.
 ### Basic Usage:
 - Connecting to the API
 ```py
