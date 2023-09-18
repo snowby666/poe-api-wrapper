@@ -1,0 +1,9 @@
+httpx==0.24.1
+websocket-client
+requests_toolbelt
+loguru
+
+[proxy]
+
+[proxy:python_version >= "3.9"]
+ballyregan
