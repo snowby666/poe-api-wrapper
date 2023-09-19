@@ -1,4 +1,4 @@
-httpx==0.24.1
+httpx
 websocket-client
 requests_toolbelt
 loguru

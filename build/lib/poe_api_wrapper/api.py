@@ -178,7 +178,7 @@ class PoeApi:
         response = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, follow_redirects=True)
         self.tchannel_data = response.json()["tchannelData"]
         self.client.headers["Quora-Tchannel"] = self.tchannel_data["channel"]
-        self.channel_url = f'ws://{self.ws_domain}.tch.{self.tchannel_data["baseHost"]}/up/{self.tchannel_data["boxName"]}/updates?min_seq={self.tchannel_data["minSeq"]}&channel={self.tchannel_data["channel"]}&hash={self.tchannel_data["channelHash"]}'
+        self.channel_url = f'wss://{self.ws_domain}.tch.{self.tchannel_data["baseHost"]}/up/{self.tchannel_data["boxName"]}/updates?min_seq={self.tchannel_data["minSeq"]}&channel={self.tchannel_data["channel"]}&hash={self.tchannel_data["channelHash"]}'
         return self.channel_url
     
     def subscribe(self):
@@ -244,7 +244,7 @@ class PoeApi:
         except:
             raise RuntimeError("Rate limit exceeded for sending requests to poe.com. Please try again later.")
 
-        ws = websocket.WebSocketApp(self.channel_url, on_message=self.on_message, on_open=self.on_ws_connect, on_error=self.on_ws_error, on_close=self.on_ws_close)
+        ws = websocket.WebSocketApp(self.channel_url, header=self.HEADERS, on_message=self.on_message, on_open=self.on_ws_connect, on_error=self.on_ws_error, on_close=self.on_ws_close)
         
         self.ws = ws
 

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: poe-api-wrapper
-Version: 1.2.4
+Version: 1.2.5
 Summary: A simple API wrapper for Poe.com using Httpx
 Home-page: https://github.com/snowby666/poe-api-wrapper
 Author: snowby666
@@ -129,13 +129,13 @@ client = PoeApi("TOKEN_HERE", proxy=True)
 ```py
 # Get chat data of all bots (this will fetch all available threads)
 print(client.get_chat_history()['data'])
-# Output:
-# {'chinchilla': [{'chatId': 74397929, 'chatCode': '2ith0h11zfyvsta1u3z', 'id': 'Q2hhdDo3NDM5NzkyOQ==', 'title': 'Comparison'}], 'code_llama_7b_instruct': [{'chatId': 74397392, 'chatCode': '2ithbduzsysy3g178hb', 'id': 'Q2hhdDo3NDM5NzM5Mg==', 'title': 'Decent Programmers'}], 'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}], 'leocooks': [{'chatId': 74396246, 'chatCode': '2ith82wj0tjrggj46no', 'id': 'Q2hhdDo3NDM5NjI0Ng==', 'title': 'Pizza perfection'}], 'capybara': [{'chatId': 74396020, 'chatCode': '2ith5o3p8c5ajkdwd3k', 'id': 'Q2hhdDo3NDM5NjAyMA==', 'title': 'Greeting'}]}
+>> Output:
+{'chinchilla': [{'chatId': 74397929, 'chatCode': '2ith0h11zfyvsta1u3z', 'id': 'Q2hhdDo3NDM5NzkyOQ==', 'title': 'Comparison'}], 'code_llama_7b_instruct': [{'chatId': 74397392, 'chatCode': '2ithbduzsysy3g178hb', 'id': 'Q2hhdDo3NDM5NzM5Mg==', 'title': 'Decent Programmers'}], 'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}], 'leocooks': [{'chatId': 74396246, 'chatCode': '2ith82wj0tjrggj46no', 'id': 'Q2hhdDo3NDM5NjI0Ng==', 'title': 'Pizza perfection'}], 'capybara': [{'chatId': 74396020, 'chatCode': '2ith5o3p8c5ajkdwd3k', 'id': 'Q2hhdDo3NDM5NjAyMA==', 'title': 'Greeting'}]}
 
 # Get chat data of a bot (this will fetch all available threads)
 print(client.get_chat_history("a2")['data'])
-# Output:
-# {'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}]}
+>> Output:
+{'a2': [{'chatId': 74396838, 'chatCode': '2ith9nikybn4ksn51l8', 'id': 'Q2hhdDo3NDM5NjgzOA==', 'title': 'Reverse Engineering'}, {'chatId': 74396452, 'chatCode': '2ith79n4x0p0p8w5yue', 'id': 'Q2hhdDo3NDM5NjQ1Mg==', 'title': 'Clean Code'}]}
 
 # Get a defined number of most recent chat threads (using count param will ignore interval param)
 # Fetching all bots
@@ -292,9 +292,9 @@ previous_messages = client.get_previous_messages('code_llama_34b_instruct', chat
 previous_messages = client.get_previous_messages('code_llama_34b_instruct', chatId=74411139, count=2)
 for message in previous_messages:
     print(message)
-# Output:
-# {'author': 'human', 'text': 'nice to meet you', 'messageId': 2861709279}
-# {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help", 'messageId': 2861873125}
+>> Output:
+{'author': 'human', 'text': 'nice to meet you', 'messageId': 2861709279}
+{'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help", 'messageId': 2861873125}
 
 # Get all previous messages
 # Using chatCode
@@ -303,12 +303,12 @@ previous_messages = client.get_previous_messages('code_llama_34b_instruct', chat
 previous_messages = client.get_previous_messages('code_llama_34b_instruct', chatId=74411139, get_all=True)
 for message in previous_messages:
     print(message)
-# Output:
-# {'author': 'human', 'text': 'hi there', 'messageId': 2861363514}
-# {'author': 'code_llama_34b_instruct', 'text': " Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?", 'messageId': 2861363530}
-# {'author': 'chat_break', 'text': "", 'messageId': 2872383991}
-# {'author': 'human', 'text': 'nice to meet you', 'messageId': 2861709279}
-# {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help", 'messageId': 2861873125}
+>> Output:
+{'author': 'human', 'text': 'hi there', 'messageId': 2861363514}
+{'author': 'code_llama_34b_instruct', 'text': " Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?", 'messageId': 2861363530}
+{'author': 'chat_break', 'text': "", 'messageId': 2872383991}
+{'author': 'human', 'text': 'nice to meet you', 'messageId': 2861709279}
+{'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help", 'messageId': 2861873125}
 ```
 >**Note**
 > It will fetch messages from the latest to the oldest, but the order to be displayed is reversed.
@@ -355,8 +355,8 @@ shareCode = client.share_chat(bot)
 # Set up the 2nd Client and import messages from the shareCode
 client2 = PoeApi("2nd_TOKEN_HERE")
 print(client2.import_chat(bot, shareCode))
-# Output:
-# {'chatId': 72929127, 'chatCode': '2iw0xcem7a18wy1avd3'}
+>> Output:
+{'chatId': 72929127, 'chatCode': '2iw0xcem7a18wy1avd3'}
 ```
 
 ### Misc:
