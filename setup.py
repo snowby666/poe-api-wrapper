@@ -17,7 +17,7 @@ setup(
     long_description=long_description,
     packages=find_packages(),
     python_requires=">=3.7",
-    install_requires=['httpx==0.24.1','websocket-client', 'requests_toolbelt', 'loguru'],
+    install_requires=['httpx', 'websocket-client', 'requests_toolbelt', 'loguru'],
     extras_require={
         'proxy': ['ballyregan; python_version>="3.9"']
     },

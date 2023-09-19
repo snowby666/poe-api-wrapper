@@ -244,7 +244,7 @@ class PoeApi:
         except:
             raise RuntimeError("Rate limit exceeded for sending requests to poe.com. Please try again later.")
 
-        ws = websocket.WebSocketApp(self.channel_url, on_message=self.on_message, on_open=self.on_ws_connect, on_error=self.on_ws_error, on_close=self.on_ws_close)
+        ws = websocket.WebSocketApp(self.channel_url, header=self.HEADERS, on_message=self.on_message, on_open=self.on_ws_connect, on_error=self.on_ws_error, on_close=self.on_ws_close)
         
         self.ws = ws
 
