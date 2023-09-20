@@ -1,9 +1,0 @@
-httpx
-websocket-client
-requests_toolbelt
-loguru
-
-[proxy]
-
-[proxy:python_version >= "3.9"]
-ballyregan

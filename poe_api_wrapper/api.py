@@ -1,4 +1,3 @@
-from re import search
 from time import sleep, time
 from httpx import Client
 from requests_toolbelt import MultipartEncoder
@@ -107,6 +106,7 @@ class PoeApi:
 
     def __init__(self, cookie: str, proxy: bool=False):
         self.cookie = cookie
+        self.formkey = None
         if proxy == True and PROXY == True:
             proxies = fetch_proxy()
             for p in range(len(proxies)):
@@ -122,8 +122,12 @@ class PoeApi:
             self.proxy = None
             self.client = Client(headers=self.HEADERS, timeout=180)
         self.client.cookies.set('m-b', self.cookie)
+        self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
+        
+        self.get_channel_settings()
+        
         self.client.headers.update({
-            'Quora-Formkey': self.get_formkey,
+            'Quora-Formkey': self.formkey,
         })
         
         self.ws_connecting = False
@@ -134,11 +138,8 @@ class PoeApi:
         self.current_thread = {}
         self.retry_attempts = 3
         self.message_generating = True
-        self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
         
         # Check if cookie is valid
-        
-        self.get_channel_settings()
         try:
             self.subscribe()
         except:
@@ -149,11 +150,11 @@ class PoeApi:
     def __del__(self):
         self.client.close()
 
-    @property
-    def get_formkey(self):
-        response = self.client.get(self.BASE_URL, headers=self.HEADERS, follow_redirects=True)
-        formkey = search(self.FORMKEY_PATTERN, response.text)[1]
-        return formkey
+    # @property
+    # def get_formkey(self):
+    #     response = self.client.get(self.BASE_URL, headers=self.HEADERS, follow_redirects=True)
+    #     formkey = search(self.FORMKEY_PATTERN, response.text)[1]
+    #     return formkey
     
     def send_request(self, path: str, query_name: str="", variables: dict={}, file_form: list=[]):
         payload = generate_payload(query_name, variables)
@@ -175,8 +176,9 @@ class PoeApi:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response.text}")
     
     def get_channel_settings(self):
-        response = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, follow_redirects=True)
-        self.tchannel_data = response.json()["tchannelData"]
+        response_json = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, follow_redirects=True).json()
+        self.formkey = response_json["formkey"]
+        self.tchannel_data = response_json["tchannelData"]
         self.client.headers["Quora-Tchannel"] = self.tchannel_data["channel"]
         self.channel_url = f'wss://{self.ws_domain}.tch.{self.tchannel_data["baseHost"]}/up/{self.tchannel_data["boxName"]}/updates?min_seq={self.tchannel_data["minSeq"]}&channel={self.tchannel_data["channel"]}&hash={self.tchannel_data["channelHash"]}'
         return self.channel_url
@@ -244,9 +246,11 @@ class PoeApi:
         except:
             raise RuntimeError("Rate limit exceeded for sending requests to poe.com. Please try again later.")
 
-        ws = websocket.WebSocketApp(self.channel_url, header=self.HEADERS, on_message=self.on_message, on_open=self.on_ws_connect, on_error=self.on_ws_error, on_close=self.on_ws_close)
-        
-        self.ws = ws
+        self.ws = websocket.WebSocketApp(self.channel_url, 
+                                         on_message=lambda ws, msg: self.on_message(ws, msg), 
+                                         on_open=lambda ws: self.on_ws_connect(ws), 
+                                         on_error=lambda ws, error: self.on_ws_error(ws, error), 
+                                         on_close=lambda ws, close_status_code,close_message: self.on_ws_close(ws, close_status_code, close_message))
 
         t = threading.Thread(target=self.ws_run_thread, daemon=True)
         t.start()
@@ -259,7 +263,7 @@ class PoeApi:
                 self.ws_connecting = False
                 self.ws_connected = False
                 self.ws_error = True
-                ws.close()
+                self.ws.close()
                 raise RuntimeError("Timed out waiting for websocket to connect.")
 
     def disconnect_ws(self):
@@ -287,18 +291,10 @@ class PoeApi:
     def on_message(self, ws, msg):
         try:
             data = json.loads(msg)
-            if 'error' in data and data['error'] == 'missed_messages':
-                self.disconnect_ws()
-                self.connect_ws()
-                return
             if not "messages" in data:
                 return
             for message_str in data["messages"]:
                 message_data = json.loads(message_str)
-                if message_data['message_type'] == 'refetchChannel':
-                    self.disconnect_ws()
-                    self.connect_ws()
-                    return
                 if message_data["message_type"] != "subscriptionUpdate" or message_data["payload"]["subscription_name"] != "messageAdded":
                     continue
                 message = message_data["payload"]["data"]["messageAdded"]
@@ -510,6 +506,7 @@ class PoeApi:
         
         while self.ws_error:
             sleep(0.01)
+        self.connect_ws()
         
         attachments = []
         if file_path == []:
@@ -705,6 +702,7 @@ class PoeApi:
         
         del self.active_messages[human_message_id]
         del self.message_queues[human_message_id]
+        self.retry_attempts = 3
         
     def cancel_message(self, chunk: dict):
         self.message_generating = False
