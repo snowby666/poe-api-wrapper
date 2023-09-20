@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: poe-api-wrapper
-Version: 1.2.6
+Version: 1.2.7
 Summary: A simple API wrapper for Poe.com using Httpx
 Home-page: https://github.com/snowby666/poe-api-wrapper
 Author: snowby666

@@ -138,12 +138,7 @@ class PoeApi:
         self.current_thread = {}
         self.retry_attempts = 3
         self.message_generating = True
-        
-        # Check if cookie is valid
-        try:
-            self.subscribe()
-        except:
-            raise RuntimeError(f"Cookie {self.cookie} is invalid or expired. Please try again with a different cookie.")
+        self.ws_refresh = 3
         
         self.connect_ws()
         
@@ -239,12 +234,20 @@ class PoeApi:
 
         self.ws_connecting = True
         self.ws_connected = False
-
-        self.get_channel_settings()
-        try:
-            self.subscribe()
-        except:
-            raise RuntimeError("Rate limit exceeded for sending requests to poe.com. Please try again later.")
+        self.ws_refresh = 3
+        
+        while True:
+            self.ws_refresh -= 1
+            if self.ws_refresh == 0:
+                self.ws_refresh = 3
+                raise RuntimeError("Rate limit exceeded for sending requests to poe.com. Please try again later.")
+            self.get_channel_settings()
+            try:
+                self.subscribe()
+                sleep(1)
+                break
+            except:
+                continue
 
         self.ws = websocket.WebSocketApp(self.channel_url, 
                                          on_message=lambda ws, msg: self.on_message(ws, msg), 
@@ -686,13 +689,11 @@ class PoeApi:
             
         t1 = threading.Thread(target=recv_post_thread, daemon=True)
         t1.start()
-        t1.join()
         
         if suggest_replies:
             self.suggestions_queue = queue.Queue()
             t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 5), daemon=True)
             t2.start()
-            t2.join()
             try:
                 suggestions = self.suggestions_queue.get(timeout=5)
                 yield suggestions
