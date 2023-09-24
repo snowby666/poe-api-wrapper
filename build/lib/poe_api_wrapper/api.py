@@ -20,6 +20,7 @@ BOTS_LIST = {
     'Claude-2-100k': 'a2_2',
     'Claude-instant': 'a2',
     'ChatGPT': 'chinchilla',
+    'GPT-3.5-Turbo-Instruct': 'chinchilla_instruct',
     'ChatGPT-16k': 'agouti',
     'GPT-4': 'beaver',
     'GPT-4-32k': 'vizcacha',
@@ -30,7 +31,7 @@ BOTS_LIST = {
     'Code-Llama-7b': 'code_llama_7b_instruct',
     'Code-Llama-13b': 'code_llama_13b_instruct',
     'Code-Llama-34b': 'code_llama_34b_instruct',
-    'Solar-0-70b': 'upstage_solar_0_70b_16bit'
+    'Solar-0-70b':'upstage_solar_0_70b_16bit'
 }
 
 EXTENSIONS = {
@@ -122,7 +123,6 @@ class PoeApi:
             self.proxy = None
             self.client = Client(headers=self.HEADERS, timeout=180)
         self.client.cookies.set('m-b', self.cookie)
-        self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
         
         self.get_channel_settings()
         
@@ -172,6 +172,7 @@ class PoeApi:
     
     def get_channel_settings(self):
         response_json = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, follow_redirects=True).json()
+        self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
         self.formkey = response_json["formkey"]
         self.tchannel_data = response_json["tchannelData"]
         self.client.headers["Quora-Tchannel"] = self.tchannel_data["channel"]
@@ -244,9 +245,9 @@ class PoeApi:
             self.get_channel_settings()
             try:
                 self.subscribe()
-                sleep(1)
                 break
             except:
+                sleep(1)
                 continue
 
         self.ws = websocket.WebSocketApp(self.channel_url, 
@@ -283,6 +284,7 @@ class PoeApi:
         self.ws_connecting = False
         self.ws_connected = False
         if self.ws_error:
+            logger.warning("Connection to remote host was lost. Reconnecting...")
             self.ws_error = False
             self.connect_ws()
 
@@ -467,6 +469,9 @@ class PoeApi:
         return {'chatCode': chatCode, 'chatId': chatId, 'id': id, 'title': title}
                 
     def retry_request(self, chatCode, apiPath, variables, file_form):
+        while self.ws_error:
+            sleep(0.01)
+        self.connect_ws()
         message_ids = []
         variablesData = {'chatCode': chatCode}
         response_json = self.send_request('gql_POST', 'ChatPageQuery', variablesData)
@@ -479,7 +484,9 @@ class PoeApi:
                     if edges[edge+1]['node']['author'] == 'human' and edges[edge+1]['node']['state'] == 'complete':
                         message_ids.append(edges[edge+1]['node']['messageId'])
         self.delete_message(message_ids)
+        logger.info(f'Deleted {len(message_ids)} error messages')
         sleep(2)
+        logger.info('Resending message...')
         response_json = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
         if response_json['data'] == None and response_json["errors"]:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
@@ -496,8 +503,8 @@ class PoeApi:
             self.message_queues[human_message_id] = queue.Queue()
             return human_message_id
 
-    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout: int=20) -> dict:
-        bot = bot.lower().replace(' ', '')
+    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout: int=10) -> dict:
+        bot = bot_map(bot)
         self.retry_attempts = 3
         timer = 0
         while None in self.active_messages.values():
@@ -526,25 +533,27 @@ class PoeApi:
         if (chatId == None and chatCode == None):
             try:
                 variables = {"chatId": None, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments}
-                response_json = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
-                if response_json["data"] == None and response_json["errors"]:
+                message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+        
+                if message_data["data"] == None and message_data["errors"]:
                     raise ValueError(
                         f"Bot {bot} not found. Make sure the bot exists before creating new chat."
                     )
-                if response_json['data']['messageEdgeCreate']['status'] == 'reached_limit':
-                    raise RuntimeError(f"Daily limit reached for {bot}.")
-                logger.info(f"New Thread created | {response_json['data']['messageEdgeCreate']['chat']['chatCode']}")
-                
-                if file_form != []:
-                    status = response_json['data']['messageEdgeCreate']['status']
-                    if status == 'success':
+                else:
+                    status = message_data['data']['messageEdgeCreate']['status']
+                    if status == 'success' and file_path != []:
                         for file in file_form:
                             logger.info(f"File {file[0]} uploaded successfully")
-                    elif status == 'unsupported_file_type':
+                    elif status == 'unsupported_file_type' and file_path != []:
                         logger.warning("This file type is not supported. Please try again with a different file.")
-                    else:
-                        logger.error("An unknown error occurred. Please try again.")
-                message_data = response_json['data']['messageEdgeCreate']['chat']
+                    elif status == 'reached_limit':
+                        raise RuntimeError(f"Daily limit reached for {bot}.")
+                    elif status == 'too_many_tokens':
+                        raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
+                        
+                    logger.info(f"New Thread created | {message_data['data']['messageEdgeCreate']['chat']['chatCode']}")
+                
+                message_data = message_data['data']['messageEdgeCreate']['chat']
                 chatCode = message_data['chatCode']
                 chatId = message_data['chatId']
                 title = message_data['title']
@@ -572,31 +581,29 @@ class PoeApi:
             
             try:
                 message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
-                if file_path != []:
+                if message_data["data"] == None and message_data["errors"]:
+                    raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
+                else:
                     status = message_data['data']['messageEdgeCreate']['status']
-                    if status == 'success':
+                    if status == 'success' and file_path != []:
                         for file in file_form:
                             logger.info(f"File {file[0]} uploaded successfully")
-                    elif status == 'unsupported_file_type':
+                    elif status == 'unsupported_file_type' and file_path != []:
                         logger.warning("This file type is not supported. Please try again with a different file.")
-                    else:
-                        logger.error(f"An unknown error occurred. Raw response data: {message_data}")
-                        
+                    elif status == 'reached_limit':
+                        raise RuntimeError(f"Daily limit reached for {bot}.")
+                    elif status == 'too_many_tokens':
+                        raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
                 del self.active_messages["pending"]
             except Exception as e:
                 del self.active_messages["pending"]
                 raise e
-            
-            if message_data["data"] == None and message_data["errors"]:
+                    
+            try:
+                human_message = message_data["data"]["messageEdgeCreate"]["message"]
+                human_message_id = human_message["node"]["messageId"]
+            except TypeError:
                 raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
-            else:
-                if message_data['data']['messageEdgeCreate']['status'] == 'reached_limit':
-                    raise RuntimeError(f"Daily limit reached for {bot}.")
-                try:
-                    human_message = message_data["data"]["messageEdgeCreate"]["message"]
-                    human_message_id = human_message["node"]["messageId"]
-                except TypeError:
-                    raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
         
         self.message_generating = True
         self.active_messages[human_message_id] = None
@@ -686,20 +693,21 @@ class PoeApi:
                 else:
                     break
             queue.put({'text': message["text"], 'response':'', 'suggestedReplies': suggestions, 'state': state, 'chatCode': chatCode, 'chatId': chatId, 'title': title})
-            
-        t1 = threading.Thread(target=recv_post_thread, daemon=True)
-        t1.start()
         
-        if suggest_replies:
-            self.suggestions_queue = queue.Queue()
-            t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 5), daemon=True)
-            t2.start()
-            try:
-                suggestions = self.suggestions_queue.get(timeout=5)
-                yield suggestions
-            except queue.Empty:
-                yield {'text': message["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
-            del self.suggestions_queue
+        if message["state"] != "error_user_message_too_long": 
+            t1 = threading.Thread(target=recv_post_thread, daemon=True)
+            t1.start()
+            
+            if suggest_replies:
+                self.suggestions_queue = queue.Queue()
+                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 5), daemon=True)
+                t2.start()
+                try:
+                    suggestions = self.suggestions_queue.get(timeout=5)
+                    yield suggestions
+                except queue.Empty:
+                    yield {'text': message["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
+                del self.suggestions_queue
         
         del self.active_messages[human_message_id]
         del self.message_queues[human_message_id]
@@ -711,7 +719,7 @@ class PoeApi:
         self.send_request('gql_POST', 'ChatHelpers_messageCancel_Mutation', variables)
         
     def chat_break(self, bot: str, chatId: int=None, chatCode: str=None):
-        bot = bot.lower().replace(' ', '')
+        bot = bot_map(bot)
         chatdata = self.get_threadData(bot, chatCode, chatId)
         chatId = chatdata['chatId']
         id = chatdata['id']
@@ -725,7 +733,7 @@ class PoeApi:
         self.send_request('gql_POST', 'DeleteMessageMutation', variables)
     
     def purge_conversation(self, bot: str, chatId: int=None, chatCode: str=None, count: int=50, del_all: bool=False):
-        bot = bot.lower().replace(' ', '')
+        bot = bot_map(bot)
         if chatId != None and chatCode == None:
             chatdata = self.get_threadData(bot, chatCode, chatId)
             chatCode = chatdata['chatCode']
@@ -768,11 +776,11 @@ class PoeApi:
         self.send_request('gql_POST', 'DeleteUserMessagesMutation', {})
     
     def delete_chat(self, bot: str, chatId: any=None, chatCode: any=None, del_all: bool=False):
-        bot = bot.lower().replace(' ', '')
+        bot = bot_map(bot)
         try:
             chatdata = self.get_chat_history(bot=bot)['data'][bot]
         except:
-            raise RuntimeError(f"Bot {bot} not found. Make sure the bot exists before deleting chat.")
+            raise RuntimeError(f"No chat found for {bot}. Make sure the bot has a chat history before deleting.")
         if chatId != None and not isinstance(chatId, list):
             if bot in self.current_thread:
                 for thread in range(len(self.current_thread[bot])):
@@ -822,7 +830,7 @@ class PoeApi:
                 logger.info(f"Chat {chat} deleted")  
                 
     def get_previous_messages(self, bot: str, chatId: int = None, chatCode: str = None, count: int = 50, get_all: bool = False):
-        bot = bot.lower().replace(' ', '')
+        bot = bot_map(bot)
         try:
             getchatdata = self.get_threadData(bot, chatCode, chatId)
         except:
@@ -858,6 +866,17 @@ class PoeApi:
 
         logger.info(f"Found {len(messages)} messages of {chatCode}")
         return messages[::-1]
+    
+    def get_user_bots(self, user: str):
+        variables = {'handle': user}
+        response_json = self.send_request('gql_POST', 'HandleProfilePageQuery', variables)
+        if response_json['data'] == None and response_json["errors"]:
+            raise RuntimeError(f"User {user} not found. Make sure the user exists before getting bots.")
+        userData = response_json['data']['user']
+        logger.info(f"Found {userData['createdBotCount']} bots of {user}")
+        botsData = userData['createdBots']
+        bots = [each['handle'] for each in botsData]
+        return bots
         
     def complete_profile(self, handle: str=None):
         if handle == None:
@@ -959,15 +978,29 @@ class PoeApi:
         else:
             logger.info(f"Bot deleted successfully | {handle}")
             
-    def explore_bots(self, search: str=None, count: int = 50, explore_all: bool = False):
+    def get_available_categories(self):
+        categories = []
+        response_json = self.send_request('gql_POST', 'ExploreBotsIndexPageQuery', {"categoryName":"defaultCategory"})
+        if response_json['data'] == None and response_json["errors"]:
+            raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
+        else:
+            for category in response_json['data']['exploreBotsCategoryObjects']:
+                categories.append(category['categoryName'])
+        return categories
+                
+    def explore(self, categoryName: str='defaultCategory', search: str=None, entity_type: str = "bot", count: int = 50, explore_all: bool = False):
+        if entity_type not in ["bot", "user"]:
+            raise ValueError(f"Entity type {entity_type} not found. Make sure the entity type is either bot or user.")
+        if categoryName != 'defaultCategory' and categoryName not in self.get_available_categories():
+            raise ValueError(f"Category {categoryName} not found. Make sure the category exists before exploring.")
         bots = []
         if search == None:
             query_name = "ExploreBotsListPaginationQuery"
-            variables = {"count": count}
+            variables = {"categoryName": categoryName, "count": count}
             connectionType = "exploreBotsConnection"
         else:
             query_name = "SearchResultsListPaginationQuery"
-            variables = {"query": search, "entityType":"bot", "count": 50}
+            variables = {"query": search, "entityType": entity_type, "count": 50}
             connectionType = "searchEntityConnection"
             
         result = self.send_request("gql_POST", query_name, variables)
@@ -975,35 +1008,55 @@ class PoeApi:
             new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
         else:
             new_cursor = 60
-        bots += [
-            each["node"] for each in result["data"][connectionType]["edges"]
-        ]
+            
+        if entity_type == "bot":
+            bots += [
+                each["node"]['handle'] for each in result["data"][connectionType]["edges"]
+            ]
+        else:
+            bots += [
+                each["node"]['nullableHandle'] for each in result["data"][connectionType]["edges"]
+            ]
         if len(bots) >= count and not explore_all:
+            if entity_type == "bot":
+                logger.info("Succeed to explore bots")
+            else:
+                logger.info("Succeed to explore users")
             return bots[:count]
         while len(bots) < count or explore_all:
             if search == None:
-                result = self.send_request("gql_POST", query_name, {"count": count, "cursor": new_cursor})
+                result = self.send_request("gql_POST", query_name, {"categoryName": categoryName, "count": count, "cursor": new_cursor})
             else:
-                result = self.send_request("gql_POST", query_name, {"query": search, "entityType":"bot", "count": 50, "cursor": new_cursor})
+                result = self.send_request("gql_POST", query_name, {"query": search, "entityType": entity_type, "count": 50, "cursor": new_cursor})
             if len(result["data"][connectionType]["edges"]) == 0:
                 if not explore_all:
-                    logger.info(f"No more bots could be explored, only {len(bots)} bots found.")
+                    if entity_type == "bot":
+                        logger.info(f"No more bots could be explored, only {len(bots)} bots found.")
+                    else:
+                        logger.info(f"No more users could be explored, only {len(bots)} users found.")
                 return bots
             if search == None:
                 new_cursor = result["data"][connectionType]["edges"][-1]["cursor"]
             else:
                 new_cursor += 50
-            new_bots = [
-                each["node"]
-                for each in result["data"][connectionType]["edges"]
-            ]
+            if entity_type == "bot":
+                new_bots = [
+                    each["node"]['handle'] for each in result["data"][connectionType]["edges"]
+                ]
+            else:
+                new_bots = [
+                    each["node"]['nullableHandle'] for each in result["data"][connectionType]["edges"]
+                ]
             bots += new_bots
-            
-        logger.info("Succeed to explore bots")
+        
+        if entity_type == "bot":
+            logger.info("Succeed to explore bots")
+        else:
+            logger.info("Succeed to explore users")
         return bots[:count]
     
     def share_chat(self, bot: str, chatId: int=None, chatCode: str=None, count: int=None):
-        bot = bot.lower().replace(' ', '')
+        bot = bot_map(bot)
         chatdata = self.get_threadData(bot, chatCode, chatId)
         chatCode = chatdata['chatCode']
         chatId = chatdata['chatId']
@@ -1026,7 +1079,7 @@ class PoeApi:
             return None
         
     def import_chat(self, bot:str="", shareCode: str=""):
-        bot = bot.lower().replace(' ', '')
+        bot = bot_map(bot)
         variables = {'botName': bot, 'shareCode': shareCode, 'postId': None}
         response_json = self.send_request('gql_POST', 'ContinueChatCTAButton_continueChatFromPoeShare_Mutation', variables)
         if response_json['data']['continueChatFromPoeShare']['status'] == 'success':

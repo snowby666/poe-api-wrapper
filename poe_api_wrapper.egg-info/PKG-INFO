@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: poe-api-wrapper
-Version: 1.2.7
+Version: 1.2.8
 Summary: A simple API wrapper for Poe.com using Httpx
 Home-page: https://github.com/snowby666/poe-api-wrapper
 Author: snowby666
@@ -62,7 +62,9 @@ License-File: LICENSE
  - Edit custom bot
  - Delete a custom bot
  - Get available bots
- - Explore 3rd party bots
+ - Get a user's bots
+ - Get available categories
+ - Explore 3rd party bots and users
  - Share and import messages
  - Support multi-chat threads
 
@@ -84,24 +86,25 @@ PoeExample(token).chat_with_bot()
 
 ## Documentation:
 ### Available Default Bots:
-| Display Name        | Model                     | Token Limit | Words | Access Type                                                     |
-| ------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
-| Assistant           | capybara                  | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Claude-instant-100k | a2_100k                   | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
-| Claude-2-100k       | a2_2                      | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
-| Claude-instant      | a2                        | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| ChatGPT             | chinchilla                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| ChatGPT-16k         | agouti                    | 16K         | 12K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
-| GPT-4               | beaver                    | 4K          | 3K    | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
-| GPT-4-32k           | vizcacha                  | 32K         | 24K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
-| Google-PaLM         | acouchy                   | 8K          | 6K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-7b          | llama_2_7b_chat           | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-13b         | llama_2_13b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-70b         | llama_2_70b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-7b       | code_llama_7b_instruct    | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-13b      | code_llama_13b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-34b      | code_llama_34b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Solar-0-70b         | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Display Name           | Model                     | Token Limit | Words | Access Type                                                     |
+| ---------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
+| Assistant              | capybara                  | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-instant-100k    | a2_100k                   | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
+| Claude-2-100k          | a2_2                      | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
+| Claude-instant         | a2                        | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| ChatGPT                | chinchilla                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| GPT-4                  | beaver                    | 4K          | 3K    | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| GPT-4-32k              | vizcacha                  | 32K         | 24K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| Google-PaLM            | acouchy                   | 8K          | 6K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Llama-2-7b             | llama_2_7b_chat           | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Llama-2-13b            | llama_2_13b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Llama-2-70b            | llama_2_70b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Code-Llama-7b          | code_llama_7b_instruct    | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Code-Llama-13b         | code_llama_13b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Code-Llama-34b         | code_llama_34b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Solar-0-70b            | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 >**Important**
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 ### How to get your Token:
@@ -331,19 +334,42 @@ print(client.get_available_bots(count=10))
 # Get all available bots
 print(client.get_available_bots(get_all=True))
 ```
-- Exploring 3rd party bots
+- Get a user's bots
+```py
+handle = 'poe'
+print(client.get_user_bots(user=handle))
+```
+- Get available categories
+```py
+categories = client.get_available_categories()
+>> Output:
+['Official', 'Popular', 'New', 'Mind', 'Funny', 'AI', 'Roleplay', 'Utilities', 'History', 'Sports', 'Travel', 'Music', 'Advice', 'Games', 'Cooking', 'Programming', 'Writing', 'Learning', 'Professional']
+```
+- Exploring 3rd party bots and users
 ```py
 # Explore section example:
 # Get a defined number of bots (default is 50)
-print(client.explore_bots(count=10))
+print(client.explore(count=10))
 # Get all available bots
-print(client.explore_bots(explore_all=True))
+print(client.explore(explore_all=True))
 
-# Search section example:
+# Search for bots by query example:
 # Get a defined number of bots (default is 50)
-print(client.explore_bots(search="Midjourney", count=30))
+print(client.explore(search="Midjourney", count=30))
 # Get all available bots
-print(client.explore_bots(search="Midjourney", explore_all=True))
+print(client.explore(search="Midjourney", explore_all=True))
+
+# Search for bots by category example (default is defaultCategory):
+# Get a defined number of bots (default is 50)
+print(client.explore(categoryName="Popular", count=30))
+# Get all available bots
+print(client.explore(categoryName="AI", explore_all=True))
+
+# Search for people example:
+# Get a defined number of people (default is 50)
+print(client.explore(search="Poe", entity_type='user', count=30))
+# Get all available people
+print(client.explore(search="Poe", entity_type='user', explore_all=True))
 ```
 - Sharing & Importing messages
 ```py

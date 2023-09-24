@@ -1,59 +1,172 @@
 from .api import PoeApi
+BANNER = """ 
 
+$$$$$$$\                             $$$$$$\  $$$$$$$\ $$$$$$\ 
+$$  __$$\                           $$  __$$\ $$  __$$\\_$$  _|
+$$ |  $$ | $$$$$$\   $$$$$$\        $$ /  $$ |$$ |  $$ | $$ |  
+$$$$$$$  |$$  __$$\ $$  __$$\       $$$$$$$$ |$$$$$$$  | $$ |  
+$$  ____/ $$ /  $$ |$$$$$$$$ |      $$  __$$ |$$  ____/  $$ |  
+$$ |      $$ |  $$ |$$   ____|      $$ |  $$ |$$ |       $$ |  
+$$ |      \$$$$$$  |\$$$$$$$\       $$ |  $$ |$$ |     $$$$$$\ 
+\__|       \______/  \_______|      \__|  \__|\__|     \______|
+                                                                     
+""" 
 class PoeExample:
     def __init__(self, cookie):
         self.cookie = cookie
         self.client = PoeApi(cookie=self.cookie)
         
     def select_bot(self):
-        bots = {
-            1: 'capybara',
-            2: 'a2_100k',
-            3: 'a2_2',
-            4: 'a2',
-            5: 'chinchilla',
-            6: 'agouti',
-            7: 'beaver',
-            8: 'vizcacha',
-            9: 'acouchy',
-            10: 'llama_2_7b_chat',
-            11: 'llama_2_13b_chat',
-            12: 'llama_2_70b_chat',
-            13: 'code_llama_7b_instruct',
-            14: 'code_llama_13b_instruct',
-            15: 'code_llama_34b_instruct',
-            16: 'upstage_solar_0_70b_16bit'
-        }
+        bots = {}
         while True:
-            choice = input('Who do you want to talk to?\n'
-                        '[0] See the chat history\n'
-                        '[1] Assistant (capybara)\n'
-                        '[2] Claude-instant-100k (a2_100k)\n'
-                        '[3] Claude-2-100k (a2_2)\n'
-                        '[4] Claude-instant (a2)\n'
-                        '[5] ChatGPT (chinchilla)\n'
-                        '[6] ChatGPT-16k (agouti)\n'
-                        '[7] GPT-4 (beaver)\n'
-                        '[8] GPT-4-32k (vizcacha)\n'
-                        '[9] Google-PaLM (acouchy)\n'
-                        '[10] Llama-2-7b (llama_2_7b_chat)\n'
-                        '[11] Llama-2-13b (llama_2_13b_chat)\n'
-                        '[12] Llama-2-70b (llama_2_70b_chat)\n'
-                        '[13] Code-Llama-7b (code_llama_7b_instruct)\n'
-                        '[14] Code-Llama-13b (code_llama_13b_instruct)\n'
-                        '[15] Code-Llama-34b (code_llama_34b_instruct)\n'
-                        '[16] Solar-0-70b (upstage_solar_0_70b_16bit)\n'
-                        '[17] Add you own bot\n\n'
-                        'Your choice: ')
-            if choice == '0':
+            print(BANNER)
+            print(
+                "This is an example of how to use the PoeApi wrapper.\n\n"
+                "[0] : Exit the program\n"
+                "[1] : Add a bot directly\n"
+                "[2] : Search for a bot by category\n"
+                "[3] : Search for a bot by query\n"
+                "[4] : Search for a user's bots\n"
+                "[5] : Search for users and their bots\n"
+                "[6] : See the chat history\n"
+            )
+            
+            selection = input('Your choice: ')
+            
+            if selection == '0':
+                return 'exit'
+            elif selection == '1':
+                bot = input('Enter the bot name: ')
+                return bot
+            elif selection == '2':
+                self.categories = self.client.get_available_categories()
+                print('\nAvailable categories:\n')
+                for category in self.categories:
+                    print(f'[{self.categories.index(category)+1}] {category}')
+                while True:
+                    cateChoice = input('\nYour choice: ')
+                    if cateChoice.isdigit() and 1 <= int(cateChoice) <= len(self.categories):
+                        category = self.categories[int(cateChoice)-1]
+                        break
+                    else:
+                        print('Invalid choice. Please select a valid option.\n')
+                        continue
+                    
+                print('\nEnter the number of bots you want to explore or type \033[38;5;121mall\033[0m to explore all the bots in this category.\n')
+                
+                while True:
+                    exploreChoice = input('Your choice: ')
+                    if exploreChoice.isdigit() and int(exploreChoice) > 0:
+                        available_bots = self.client.explore(categoryName=category, count=int(exploreChoice))
+                        break
+                    elif exploreChoice == 'all':
+                        available_bots = self.client.explore(categoryName=category, explore_all=True)
+                        break
+                    else:
+                        print('Invalid choice. Please select a valid option.\n')
+                        continue
+                    
+                if available_bots == []:
+                    print('No bots found. Please try again.\n')
+                    continue         
+                break
+            elif selection == '3': 
+                while True:
+                    query = input('\nEnter the search query: ')
+                    if query == '':
+                        print('Invalid query. Please try again.\n')
+                        continue
+                    else:
+                        while True:
+                            exploreChoice = input('\nEnter the number of bots you want to explore or type \033[38;5;121mall\033[0m to explore all the bots.\nYour choice: ')
+                            if exploreChoice.isdigit() and int(exploreChoice) > 0:
+                                available_bots = self.client.explore(search=query, count=int(exploreChoice))
+                                break
+                            elif exploreChoice == 'all':
+                                available_bots = self.client.explore(search=query, explore_all=True)
+                                break
+                            else:
+                                print('Invalid choice. Please select a valid option.\n')
+                                continue
+                        break
+                    
+                if available_bots == []:
+                    print('No bots found. Please try again.\n')
+                    continue
+                break
+            elif selection == '4':
+                while True:
+                    username = input('\nEnter the username: ')
+                    if username == '':
+                        print('Invalid username. Please try again.\n')
+                        continue
+                    else:
+                        available_bots = self.client.get_user_bots(user=username)
+                        break
+                    
+                if available_bots == []:
+                    print('No bots found. Please try again.\n')
+                    continue
+                break
+            elif selection == '5':
+                while True:
+                    user_query = input('\nEnter the user query: ')
+                    if user_query == '':
+                        print('Invalid user query. Please try again.\n')
+                        continue
+                    else:
+                        while True:
+                            userChoice = input('\nEnter the number of users you want to explore or type \033[38;5;121mall\033[0m to explore all the users.\nYour choice: ')
+                            if userChoice.isdigit() and int(userChoice) > 0:
+                                people = self.client.explore(search=user_query, entity_type='user', count=int(userChoice))
+                                break
+                            elif userChoice == 'all':
+                                people = self.client.explore(search=user_query, entity_type='user', explore_all=True)
+                                break
+                            else:
+                                print('Invalid choice. Please select a valid option.\n')
+                                continue
+
+                        if people == []:
+                            print('No users found. Please try again.\n')
+                            continue
+                        break
+                    
+                while True:
+                    print('\nAvailable users:\n')
+                    for person in range(len(people)):
+                        print(f'[{person+1}] {people[person]}')
+                    user_choice = input('\nChoose a user: ')
+                    if user_choice.isdigit() and 1 <= int(user_choice) <= len(people):
+                        user = people[int(user_choice)-1]
+                        available_bots = self.client.get_user_bots(user=user)
+                        break
+                    else:
+                        print('Invalid choice. Please select a valid option.\n')
+                        continue
+                    
+                if available_bots == []:
+                    print('No bots found. Please try again.\n')
+                    continue
+                break
+            elif selection == '6':
                 data = self.client.get_chat_history(interval=500)
                 self.continue_thread(data['data'], '!history 1')
-                
-            elif choice.isdigit() and 1 <= int(choice) <= 17:
-                if choice == '17':
-                    bot = input('Enter the bot name: ')
-                else:
-                    bot = bots[int(choice)]
+                break
+            else:
+                print('Invalid choice. Please select a valid option.\n')
+                continue
+
+        for bot in range(len(available_bots)):
+            bots[bot+1] = available_bots[bot]
+        
+        while True:
+            print('Who do you want to talk to?\n')
+            for index, bot in bots.items():
+                print(f'[{index}] {bot}')       
+            choice = input('\nYour choice: ')
+            if choice.isdigit() and 1 <= int(choice) <= len(bots):
+                bot = bots[int(choice)]
                 break
             else:
                 print('Invalid choice. Please select a valid option.\n')
@@ -67,7 +180,7 @@ class PoeExample:
             has_next_page = True
             pagination = True  
         while True:
-            print('\nChoose a Thread to chat with:\n'
+            print('\nChoose a Thread to chat with:\n\n'
                 '\033[38;5;121m[0]\033[0m Return to Bot selection\n'
                 '\033[38;5;121m[1]\033[0m Create a new Thread')
             for i,k in enumerate(threads[page]):
@@ -120,7 +233,8 @@ class PoeExample:
                     print('\n\033[38;2;255;203;107mYou are already on the last page\033[0m')
                     continue
             else:
-                print('Invalid choice. Please select a valid option.')        
+                print('Invalid choice. Please select a valid option.')   
+                     
         return response
     
     def continue_thread(self, bots, message):
@@ -153,14 +267,14 @@ class PoeExample:
             valid_page = False
             
         print('-' * 38 + ' \033[38;5;121mChat History\033[0m ' + '-' * 38)
-        print(' \033[38;5;121mNo.\033[0m | \033[38;5;121mChat ID\033[0m  |     \033[38;5;121mChat Code\033[0m       |           \033[38;5;121mBot Name\033[0m             |    \033[38;5;121mChat Title\033[0m')
+        print(' \033[38;5;121mNo.\033[0m|  \033[38;5;121mChat ID\033[0m   |     \033[38;5;121mChat Code\033[0m       |           \033[38;5;121mBot Name\033[0m             |    \033[38;5;121mChat Title\033[0m')
         print('-' * 90)
         
         orders = {}
         for index, (bot, bot_chats) in enumerate(new_bots.items()):
             for chat in bot_chats:
                 orders[len(orders)] = [bot, chat["chatId"], chat["chatCode"], chat["title"]]
-                print(f' [{len(orders)}] | {chat["chatId"]} | {chat["chatCode"]} | {bot:<30} | {chat["title"]}')
+                print(f'[{len(orders)}] | {chat["chatId"]}'+ (11-len(str(chat["chatId"])))*' ' +f'| {chat["chatCode"]} | {bot:<30} | {chat["title"]}')
         
         print('-' * 90)
         
@@ -215,6 +329,9 @@ class PoeExample:
         while self.chatCode == None:
             try:
                 self.bot = self.select_bot()
+                if self.bot == 'exit':
+                    print('Poe Example is now closed.')
+                    return
                 break            
             except:
                 print('Invalid cookie. Please try again.\n')
@@ -276,6 +393,7 @@ class PoeExample:
                 self.client.chat_break(self.bot, self.chatId)
                 print("Context is now cleared")
             elif message == '!exit':
+                print('Poe Example is now closed.')
                 break
             elif message == '!reset':
                 print('\n')
