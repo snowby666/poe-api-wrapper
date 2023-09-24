@@ -317,12 +317,12 @@ print(client.get_available_bots(count=10))
 # Get all available bots
 print(client.get_available_bots(get_all=True))
 ```
-- Get a user's bots
+- Getting a user's bots
 ```py
 handle = 'poe'
 print(client.get_user_bots(user=handle))
 ```
-- Get available categories
+- Getting available categories
 ```py
 categories = client.get_available_categories()
 >> Output:
