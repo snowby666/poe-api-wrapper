@@ -391,16 +391,29 @@ client.create_group(group_name='Hangout', bots=bots)
 > `name` arg is the one you'd mention them in group chat.
 - Sending messages and Streaming responses in group chat
 ```py
+# User engagement example:
 while True: 
     message = str(input('\n\033[38;5;121mYou : \033[0m'))
     prev_bot = ""
-    for chunk in client.send_message_to_group('test', message= message):
+    for chunk in client.send_message_to_group('Hangout', message=message):
+        if chunk['bot'] != prev_bot:
+            print(f"\n\033[38;5;121m{chunk['bot']} : \033[0m", end='', flush=True)
+            prev_bot = chunk['bot']
+        print(chunk['response'], end='', flush=True)
+    print('\n')
+
+# Auto-play example:
+while True:
+    prev_bot = ""
+    for chunk in client.send_message_to_group('Hangout', message='', autoplay=True):
         if chunk['bot'] != prev_bot:
             print(f"\n\033[38;5;121m{chunk['bot']} : \033[0m", end='', flush=True)
             prev_bot = chunk['bot']
         print(chunk['response'], end='', flush=True)
     print('\n')
 ```
+> Note:
+> You can also change your name in group chat by passing a new one to the above function: `client.send_message_to_group('Hangout', message=message, user='Danny')`
 - Deleting a group chat
 ```py
 client.delete_group(group_name='Hangout')
