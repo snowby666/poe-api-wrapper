@@ -386,7 +386,7 @@ bots = [
 
 client.create_group(group_name='Hangout', bots=bots) 
 ```
-> Note:
+> **Note**
 > `bot` arg is the model/displayName.
 > `name` arg is the one you'd mention them in group chat.
 - Sending messages and Streaming responses in group chat
@@ -412,7 +412,7 @@ while True:
         print(chunk['response'], end='', flush=True)
     print('\n')
 ```
-> Note:
+> **Note**
 > You can also change your name in group chat by passing a new one to the above function: `client.send_message_to_group('Hangout', message=message, user='Danny')`
 - Deleting a group chat
 ```py
