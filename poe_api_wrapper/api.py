@@ -20,6 +20,7 @@ BOTS_LIST = {
     'Claude-2-100k': 'a2_2',
     'Claude-instant': 'a2',
     'ChatGPT': 'chinchilla',
+    'GPT-3.5-Turbo': 'gpt3_5',
     'GPT-3.5-Turbo-Instruct': 'chinchilla_instruct',
     'ChatGPT-16k': 'agouti',
     'GPT-4': 'beaver',
@@ -33,6 +34,16 @@ BOTS_LIST = {
     'Code-Llama-34b': 'code_llama_34b_instruct',
     'Solar-0-70b':'upstage_solar_0_70b_16bit'
 }
+
+BOT_CREATION_MODELS = [
+    'chinchilla',
+    'stablediffusionxl',
+    'a2',
+    'llama_2_70b_chat',
+    'beaver',
+    'a2_2',
+    'a2_100k'
+]
 
 EXTENSIONS = {
     '.pdf': 'application/pdf',
@@ -126,10 +137,6 @@ class PoeApi:
         
         self.get_channel_settings()
         
-        self.client.headers.update({
-            'Quora-Formkey': self.formkey,
-        })
-        
         self.ws_connecting = False
         self.ws_connected = False
         self.ws_error = False
@@ -139,6 +146,7 @@ class PoeApi:
         self.retry_attempts = 3
         self.message_generating = True
         self.ws_refresh = 3
+        self.groups = {}
         
         self.connect_ws()
         
@@ -174,6 +182,9 @@ class PoeApi:
         response_json = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, follow_redirects=True).json()
         self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
         self.formkey = response_json["formkey"]
+        self.client.headers.update({
+            'Quora-Formkey': self.formkey,
+        })
         self.tchannel_data = response_json["tchannelData"]
         self.client.headers["Quora-Tchannel"] = self.tchannel_data["channel"]
         self.channel_url = f'wss://{self.ws_domain}.tch.{self.tchannel_data["baseHost"]}/up/{self.tchannel_data["boxName"]}/updates?min_seq={self.tchannel_data["minSeq"]}&channel={self.tchannel_data["channel"]}&hash={self.tchannel_data["channelHash"]}'
@@ -286,6 +297,7 @@ class PoeApi:
         if self.ws_error:
             logger.warning("Connection to remote host was lost. Reconnecting...")
             self.ws_error = False
+            self.get_channel_settings()
             self.connect_ws()
 
     def on_ws_error(self, ws, error):
@@ -467,42 +479,182 @@ class PoeApi:
                     title = chat['title']
                     break
         return {'chatCode': chatCode, 'chatId': chatId, 'id': id, 'title': title}
-                
-    def retry_request(self, chatCode, apiPath, variables, file_form):
+    
+    def retry_message(self, chatCode: str, suggest_replies: bool=False, timeout: int=10):
+        self.retry_attempts = 3
+        timer = 0
+        while None in self.active_messages.values():
+            sleep(0.01)
+            timer += 0.01
+            if timer > timeout:
+                raise RuntimeError("Timed out waiting for other messages to send.")
+        self.active_messages["pending"] = None
+        
         while self.ws_error:
             sleep(0.01)
         self.connect_ws()
-        message_ids = []
-        variablesData = {'chatCode': chatCode}
-        response_json = self.send_request('gql_POST', 'ChatPageQuery', variablesData)
-        edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
-        edges.reverse()
-        for edge in range(len(edges)):
-            if edge < (len(edges)-1):
-                if edges[edge]['node']['state'] == 'error':
-                    message_ids.append(edges[edge]['node']['messageId'])
-                    if edges[edge+1]['node']['author'] == 'human' and edges[edge+1]['node']['state'] == 'complete':
-                        message_ids.append(edges[edge+1]['node']['messageId'])
-        self.delete_message(message_ids)
-        logger.info(f'Deleted {len(message_ids)} error messages')
-        sleep(2)
-        logger.info('Resending message...')
-        response_json = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+        
+        variables = {"chatCode": chatCode}
+        response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
         if response_json['data'] == None and response_json["errors"]:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
-        else:
-            if response_json['data']['messageEdgeCreate']['status'] == 'reached_limit':
-                    raise RuntimeError(f"Daily limit reached for {variables['bot']}.")
-            try:
-                human_message = response_json["data"]["messageEdgeCreate"]["message"]
-                human_message_id = human_message["node"]["messageId"]
-            except TypeError:
+        elif response_json['data']['viewer']['retryButtonEnabled'] != True:
+            raise RuntimeError(f"Retry button is not enabled. Raw response data: {response_json}")
+        edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
+        edges.reverse()
+        
+        chatId = response_json['data']['chatOfCode']['chatId']
+        title = response_json['data']['chatOfCode']['title']
+        last_message = edges[0]['node']
+        
+        if last_message['author'] == 'human':
+            raise RuntimeError(f"Last message is not from bot. Raw response data: {response_json}")
+        
+        bot = bot_map(last_message['author'])
+        
+        status = last_message['state']
+        if status == 'error_user_message_too_long':
+            raise RuntimeError(f"Last message is too long. Raw response data: {response_json}")
+        while status != 'complete':
+            sleep(0.5)
+            response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
+            if response_json['data'] == None and response_json["errors"]:
                 raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
-            self.message_generating = True
-            self.active_messages[human_message_id] = None
-            self.message_queues[human_message_id] = queue.Queue()
-            return human_message_id
+            edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
+            edges.reverse()
+            last_message = edges[0]['node']
+            status = last_message['state']
+            if status == 'error_user_message_too_long':
+                raise RuntimeError(f"Last message is too long. Raw response data: {response_json}")
+        
+        bot_message_id = last_message['messageId']
+        human_message_id = edges[1]['node']['messageId']
+        
+        response_json = self.send_request('gql_POST', 'RegenerateMessageMutation', {'messageId': bot_message_id})
+        if response_json['data'] == None and response_json["errors"]:
+            logger.error(f"Failed to retry message {bot_message_id} of Thread {chatCode}. Raw response data: {response_json}")
+        else:
+            logger.info(f"Message {bot_message_id} of Thread {chatCode} has been retried.")
+            
+        self.message_generating = True
+        self.active_messages[human_message_id] = None
+        self.message_queues[human_message_id] = queue.Queue()
 
+        last_text = ""
+        message_id = None
+        
+        stateChange = False
+        
+        while True:
+            try:
+                response = self.message_queues[human_message_id].get(timeout=timeout)
+            except queue.Empty:
+                try:
+                    if self.retry_attempts > 0:
+                        self.retry_attempts -= 1
+                        logger.warning(f"Retrying request {3-self.retry_attempts}/3 times...")
+                    else:
+                        self.retry_attempts = 3
+                        del self.active_messages[human_message_id]
+                        del self.message_queues[human_message_id]
+                        raise RuntimeError("Timed out waiting for response.")
+                    self.connect_ws()
+                    continue
+                except Exception as e:
+                    raise e
+            
+            response["chatCode"] = chatCode
+            response["chatId"] = chatId
+            response["title"] = title
+
+            if response["state"] == "error_user_message_too_long":
+                response["response"]  = 'Message too long. Please try again!'
+                yield response
+                break
+            
+            if (response['author'] == 'pacarana' and response['text'].strip() == last_text.strip()):
+                response["response"] = ''
+            elif response['author'] == 'pacarana' and (last_text == '' or bot == 'stablediffusionxl'):
+                response["response"] = f'{response["text"]}\n'
+            else:
+                if stateChange == False:
+                    response["response"] = response["text"]
+                    stateChange = True
+                else:
+                    response["response"] = response["text"][len(last_text):]
+            
+            yield response
+            
+            if response["state"] == "complete" or not self.message_generating:
+                if last_text and response["messageId"] == message_id:
+                    break
+                else:
+                    continue
+            
+            last_text = response["text"]
+            message_id = response["messageId"]
+            
+        def recv_post_thread():
+            bot_message_id = self.active_messages[human_message_id]
+            sleep(2.5)
+            self.send_request("receive_POST", "recv", {
+                "bot_name": bot,
+                "time_to_first_typing_indicator": 300, # randomly select
+                "time_to_first_subscription_response": 600,
+                "time_to_full_bot_response": 1100,
+                "full_response_length": len(last_text) + 1,
+                "full_response_word_count": len(last_text.split(" ")) + 1,
+                "human_message_id": human_message_id,
+                "bot_message_id": bot_message_id,
+                "chat_id": chatId,
+                "bot_response_status": "success",
+            })
+            sleep(0.5)
+            
+        def get_suggestions(queue, chatCode: str=None, timeout: int=5):
+            variables = {'chatCode': chatCode}
+            state = 'incomplete'
+            suggestions = []
+            start_time = time()
+            while True:
+                elapsed_time = time() - start_time
+                if elapsed_time >= timeout:
+                    break
+                sleep(0.5)
+                response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
+                hasSuggestedReplies = response_json['data']['chatOfCode']['defaultBotObject']['hasSuggestedReplies']
+                edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
+                if hasSuggestedReplies and edges:
+                    latest_message = edges[-1]['node']
+                    suggestions = latest_message['suggestedReplies']
+                    state = latest_message['state']
+                    if state == 'complete' and suggestions:
+                        break
+                    if state == 'error_user_message_too_long':
+                        break
+                else:
+                    break
+            queue.put({'text': response["text"], 'response':'', 'suggestedReplies': suggestions, 'state': state, 'chatCode': chatCode, 'chatId': chatId, 'title': title})
+        
+        if response["state"] != "error_user_message_too_long": 
+            t1 = threading.Thread(target=recv_post_thread, daemon=True)
+            t1.start()
+            
+            if suggest_replies:
+                self.suggestions_queue = queue.Queue()
+                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 5), daemon=True)
+                t2.start()
+                try:
+                    suggestions = self.suggestions_queue.get(timeout=5)
+                    yield suggestions
+                except queue.Empty:
+                    yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
+                del self.suggestions_queue
+        
+        del self.active_messages[human_message_id]
+        del self.message_queues[human_message_id]
+        self.retry_attempts = 3
+        
     def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout: int=10) -> dict:
         bot = bot_map(bot)
         self.retry_attempts = 3
@@ -612,45 +764,57 @@ class PoeApi:
         last_text = ""
         message_id = None
         
+        stateChange = False
+        
         while True:
             try:
-                message = self.message_queues[human_message_id].get(timeout=timeout)
+                response = self.message_queues[human_message_id].get(timeout=timeout)
             except queue.Empty:
-                del self.active_messages[human_message_id]
-                del self.message_queues[human_message_id]
                 try:
                     if self.retry_attempts > 0:
                         self.retry_attempts -= 1
                         logger.warning(f"Retrying request {3-self.retry_attempts}/3 times...")
                     else:
                         self.retry_attempts = 3
+                        del self.active_messages[human_message_id]
+                        del self.message_queues[human_message_id]
                         raise RuntimeError("Timed out waiting for response.")
-                    human_message_id = self.retry_request(chatCode, apiPath, variables, file_form)
+                    self.connect_ws()
                     continue
                 except Exception as e:
                     raise e
             
-            message["chatCode"] = chatCode
-            message["chatId"] = chatId
-            message["title"] = title
+            response["chatCode"] = chatCode
+            response["chatId"] = chatId
+            response["title"] = title
 
-            if message["state"] == "error_user_message_too_long":
-                message["response"]  = 'Message too long. Please try again!'
-                yield message
+            if response["state"] == "error_user_message_too_long":
+                response["response"]  = 'Message too long. Please try again!'
+                yield response
                 break
             
-            message["response"] = message["text"][len(last_text):]
+            if (response['author'] == 'pacarana' and response['text'].strip() == last_text.strip()):
+                response["response"] = ''
+            elif response['author'] == 'pacarana' and (last_text == '' or bot == 'stablediffusionxl'):
+                response["response"] = f'{response["text"]}\n'
+            else:
+                if stateChange == False:
+                    response["response"] = response["text"]
+                    stateChange = True
+                else:
+                    response["response"] = response["text"][len(last_text):]
             
-            yield message
+            yield response
             
-            if message["state"] == "complete" or not self.message_generating:
-                if last_text and message["messageId"] == message_id:
+            if response["state"] == "complete" or not self.message_generating:
+                if last_text and response["messageId"] == message_id:
                     break
                 else:
                     continue
-            
-            last_text = message["text"]
-            message_id = message["messageId"]
+                
+            # if esponse['author'] == 'pacarana' the first text will be replaced with new one instead of appending, but then the message will work as usual
+            last_text = response["text"]
+            message_id = response["messageId"]
             
         def recv_post_thread():
             bot_message_id = self.active_messages[human_message_id]
@@ -692,9 +856,9 @@ class PoeApi:
                         break
                 else:
                     break
-            queue.put({'text': message["text"], 'response':'', 'suggestedReplies': suggestions, 'state': state, 'chatCode': chatCode, 'chatId': chatId, 'title': title})
+            queue.put({'text': response["text"], 'response':'', 'suggestedReplies': suggestions, 'state': state, 'chatCode': chatCode, 'chatId': chatId, 'title': title})
         
-        if message["state"] != "error_user_message_too_long": 
+        if response["state"] != "error_user_message_too_long": 
             t1 = threading.Thread(target=recv_post_thread, daemon=True)
             t1.start()
             
@@ -706,7 +870,7 @@ class PoeApi:
                     suggestions = self.suggestions_queue.get(timeout=5)
                     yield suggestions
                 except queue.Empty:
-                    yield {'text': message["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
+                    yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
                 del self.suggestions_queue
         
         del self.active_messages[human_message_id]
@@ -886,6 +1050,8 @@ class PoeApi:
         self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
     
     def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, linkification=False,  markdown_rendering=True, suggested_replies=False, private=False, temperature=None):
+        if base_model not in BOT_CREATION_MODELS:
+            raise ValueError(f"Invalid base model {base_model}. Please choose from {BOT_CREATION_MODELS}")
         # Auto complete profile
         try:
             self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
@@ -929,7 +1095,9 @@ class PoeApi:
     def edit_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="",
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
-                markdown_rendering=True, suggested_replies=False, temperature=None):     
+                markdown_rendering=True, suggested_replies=False, temperature=None):   
+        if base_model not in BOT_CREATION_MODELS:
+            raise ValueError(f"Invalid base model {base_model}. Please choose from {BOT_CREATION_MODELS}")  
         variables = {
         "baseBot": base_model,
         "botId": self.get_botData(handle)['botId'],
@@ -1091,3 +1259,154 @@ class PoeApi:
         else:
             logger.error(f'An error occurred while importing the chat')
             return None
+        
+    def create_group(self, group_name: str=None, bots: list = []): 
+        if group_name == None:
+            group_name = ''.join(secrets.choice(string.ascii_letters + string.digits) for i in range(10))
+        else:
+            group_name = group_name.replace(" ", "_")
+            
+        if bots == []:
+            raise ValueError(f"Please provide at least one bot to create a group.")
+            
+        if group_name in self.groups:
+            raise ValueError(f"Group {group_name} already exists. Please try again with a different group name.")
+        
+        bots_list = []
+        for bot in bots:
+            if 'name' not in bot:
+                bot['name'] = bot['bot']
+            if 'talkativeness' not in bot:
+                bot['talkativeness'] = 0.5
+            bots_list.append({'bot': bot_map(bot['bot']), 'name': bot['name'].lower(), 'chatId': None, 'chatCode': None, 'priority': 0, 'bot_log': [], 'talkativeness': bot['talkativeness']})
+        self.groups[group_name] = {'bots': bots_list, 'conversation_log': [], 'previous_bot': '', 'dual_lock': ['','']}
+        logger.info(f"Group {group_name} created with the following bots: {bots}")
+        return group_name
+    
+    def delete_group(self, group_name: str):
+        if group_name not in self.groups:
+            raise ValueError(f"Group {group_name} not found. Make sure the group exists before deleting.")
+        if self.groups[group_name]['bots'] != {}:
+            for bot, chatdata in self.groups[group_name]['bots'].items():
+                if chatdata['chatId'] != None:
+                    self.delete_chat(bot, chatdata['chatId'])
+        del self.groups[group_name]
+        logger.info(f"Group {group_name} deleted")
+        
+    def get_available_groups(self):
+        return self.groups
+    
+    def get_group(self, group_name: str):
+        if group_name not in self.groups:
+            raise ValueError(f"Group {group_name} not found. Make sure the group exists before getting.")
+        return self.groups[group_name]
+    
+    def save_group_history(self, group_name: str, filename: str=None):
+        # file is json format   
+        return
+    def load_group_history(self, group_name: str, filename: str=None):
+        # file is json format   
+        return
+    
+    def get_most_mentioned(self, group_name: str, message: str):
+        mod_message = message.lower()
+        bots = self.groups[group_name]['bots']
+        if any(bot['name'] in mod_message for bot in bots):
+            for bot in bots:
+                bot['priority'] = 0
+            for bot in bots:
+                bot_model = bot['bot']
+                bot_name = bot['name']
+                bot['priority'] += mod_message.count(bot_model)
+                bot['priority'] += mod_message.count(bot_name)
+            sorted_bots = sorted(bots, key=lambda k: k['priority'], reverse=True)
+            if sorted_bots[0]['name'] != self.groups[group_name]['previous_bot']:
+                topBot = sorted_bots[0]
+            else:
+                topBot = sorted_bots[1]
+        else:
+            topBot = random.choice(bots)
+            while topBot['name'] == self.groups[group_name]['previous_bot']:
+                topBot = random.choice(bots)
+        self.groups[group_name]['previous_bot'] = topBot['name']
+        return topBot
+        
+    
+    def send_message_to_group(self, group_name: str, message: str, timeout: int=60, user: str="User", autosave:bool=False, autoplay:bool=False):
+        if group_name not in self.groups:
+            raise ValueError(f"Group {group_name} not found. Make sure the group exists before sending message.")
+        
+        bots = self.groups[group_name]['bots']
+        bot_names = [bot['name'] for bot in bots]
+        
+        last_text = ""
+        if self.groups[group_name]['conversation_log'] != []:
+            # load all the messages in the conversation log from oldest to newest
+            old_logs = self.groups[group_name]['conversation_log'][1:]
+            for text in old_logs:
+                if text.split(":")[0].strip() in bot_names:
+                    last_text += text
+                    last_text += "\n"
+        
+        if autoplay == False:
+            previous_text = ""
+            current_bot = self.get_most_mentioned(group_name, message)
+            if self.groups[group_name]['conversation_log'] != []:
+                next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between {user}, and other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start.]\nChat history updated with new responses:\n\n" + f"{last_text}\n" + f"{user} : {message}\n"
+            else:
+                next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between {user}, and other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start. You will start with a greeting to {user}.]\nChat history updated with new responses:\n\n" + f"{user} : {message}\n"
+        else:
+            previous_text = self.groups[group_name]['conversation_log'][-1].split(":")[1].strip()
+            current_bot = self.get_most_mentioned(group_name, previous_text)
+            if self.groups[group_name]['conversation_log'] != []:
+                next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start.]\nChat history updated with new responses:\n\n" + f"{last_text}\n"
+            else:
+                next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start. You will start with a greeting to everyone.]\n\n"
+        
+        self.groups[group_name]['conversation_log'] = []
+        
+        max_turns = random.randint(len(bots), int(len(bots)*2))
+        for _ in range(max_turns):
+            sleep(1)
+
+            for chunk in self.send_message(current_bot['bot'], next_message, chatCode=current_bot['chatCode']):
+                yield {'bot': current_bot['name'], 'response': chunk['response']}
+                
+            current_bot['chatCode'] = chunk['chatCode']
+            current_bot['chatId'] = chunk['chatId']
+            
+            self.groups[group_name]['conversation_log'].append(f"{current_bot['name']} : {chunk['text']}\n")
+            previous_text = chunk['text']
+            prev_bot = current_bot
+
+            if current_bot['name'] not in self.groups[group_name]['dual_lock']:
+                self.groups[group_name]['dual_lock'][0] = current_bot['name']
+                 
+            # Fetch the next most mentioned bot
+            current_bot = self.get_most_mentioned(group_name, previous_text)
+            
+            # Append the second bot to dual lock  
+            if current_bot['name'] in self.groups[group_name]['dual_lock']:
+                # The same dual lock
+                current_bot['bot_log'] = [self.groups[group_name]['conversation_log'][-1]]
+            else:
+                # New dual lock
+                if len(self.groups[group_name]['conversation_log']) > 10:
+                    current_bot['bot_log'] = self.groups[group_name]['conversation_log'][-10:]
+                else:
+                    current_bot['bot_log'] = self.groups[group_name]['conversation_log']  
+                    
+                for index in range(len(self.groups[group_name]['dual_lock'])):
+                    if self.groups[group_name]['dual_lock'][index] != prev_bot['name']:
+                        self.groups[group_name]['dual_lock'][index] = current_bot['name']
+                        break
+                    
+            if autoplay == False:
+                next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between {user}, and other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start.]\nChat history updated with new responses:\n\n"
+            else:
+                next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start.]\nChat history updated with new responses:\n\n"
+
+            for text in current_bot['bot_log']:
+                if text.split(":")[0].strip() in bot_names:
+                    next_message += text
+                    next_message += "\n"

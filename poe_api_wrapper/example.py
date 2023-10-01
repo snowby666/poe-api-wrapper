@@ -1,15 +1,15 @@
 from .api import PoeApi
 BANNER = """ 
-
+\033[38;2;140;84;228m
 $$$$$$$\                             $$$$$$\  $$$$$$$\ $$$$$$\ 
-$$  __$$\                           $$  __$$\ $$  __$$\\_$$  _|
+$$  __$$\                           $$  __$$\ $$  __$$\\ _$$  _|
 $$ |  $$ | $$$$$$\   $$$$$$\        $$ /  $$ |$$ |  $$ | $$ |  
 $$$$$$$  |$$  __$$\ $$  __$$\       $$$$$$$$ |$$$$$$$  | $$ |  
 $$  ____/ $$ /  $$ |$$$$$$$$ |      $$  __$$ |$$  ____/  $$ |  
 $$ |      $$ |  $$ |$$   ____|      $$ |  $$ |$$ |       $$ |  
 $$ |      \$$$$$$  |\$$$$$$$\       $$ |  $$ |$$ |     $$$$$$\ 
 \__|       \______/  \_______|      \__|  \__|\__|     \______|
-                                                                     
+\033[0m                                                                  
 """ 
 class PoeExample:
     def __init__(self, cookie):
@@ -101,7 +101,11 @@ class PoeExample:
                         print('Invalid username. Please try again.\n')
                         continue
                     else:
-                        available_bots = self.client.get_user_bots(user=username)
+                        try:
+                            available_bots = self.client.get_user_bots(user=username)
+                        except:
+                            print('User does not exist. Please try again.\n')
+                            continue
                         break
                     
                 if available_bots == []:

@@ -1,6 +1,7 @@
 import json, random
 
 QUERIES = {
+  "RegenerateMessageMutation": "e47594b6c7e06d4f957f998f60e7d57e7dc68d0fe80ce6d1447a24fd72598568",
   "AddEmailMutation": "6d9ff3c8ed7badced30cfdad97492d4c21719931e8c44c5601abfa429b62ded7",
   "ChatHelpers_addMessageBreakEdgeMutation_Mutation": "9450e06185f46531eca3e650c26fa8524f876924d1a8e9a3fb322305044bdac3",
   "AddPhoneNumber": "26ae865f0686a910a86759c069eb1c0085d78b55a8abf64444ec63b03c76fb58",

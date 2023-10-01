@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 base_path = Path(__file__).parent
-long_description = (base_path / "README.md").read_text()
+long_description = (base_path / "README.md").read_text(encoding='utf-8')
 
-VERSION = '1.2.8'
+VERSION = '1.2.9'
 DESCRIPTION = 'A simple API wrapper for Poe.com using Httpx'
 LONG_DESCRIPTION = '👾 A Python API wrapper for Poe.com, using Httpx. With this, you will have free access to ChatGPT, Claude, Llama, Google-PaLM and more! 🚀'
 

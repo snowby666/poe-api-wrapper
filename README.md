@@ -10,29 +10,31 @@
 <p align="center">
 <a href="https://pypi.org/project/poe-api-wrapper/"><img src="https://img.shields.io/pypi/v/poe-api-wrapper"></a>
 <img alt="Python Version" src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="python">
-<img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/poe-api-wrapper">
+<img alt="PyPI - Downloads" src="https://pepy.tech/badge/poe-api-wrapper">
 <br>
 </p>
 
-## Table of Contents:
-- [Table of Contents:](#table-of-contents)
-- [Highlights:](#highlights)
-- [Installation:](#installation)
-- [Documentation:](#documentation)
+## 🚀 Table of Contents:
+- [🚀 Table of Contents:](#-table-of-contents)
+- [✨ Highlights:](#-highlights)
+- [🔧 Installation:](#-installation)
+- [🦄 Documentation:](#-documentation)
   - [Available Default Bots:](#available-default-bots)
   - [How to get your Token:](#how-to-get-your-token)
   - [Basic Usage:](#basic-usage)
+  - [Bots Group Chat (beta):](#bots-group-chat-beta)
   - [Misc:](#misc)
-- [Copyright:](#copyright)
+- [🤝 Copyright:](#-copyright)
   - [Copyright Notice:](#copyright-notice)
 
-## Highlights:
+## ✨ Highlights:
  - Log in with your Quora's token
  - Auto Proxy requests
  - Get Chat Ids & Chat Codes of bot(s)
  - Create new chat thread
  - Send messages
  - Stream bot responses
+ - Retry the last message
  - Support file attachments
  - Retrieve suggested replies
  - Stop message generation
@@ -49,9 +51,9 @@
  - Get available categories
  - Explore 3rd party bots and users
  - Share and import messages
- - Support multi-chat threads
+ - Support bots group chat **(beta)**
 
-## Installation:
+## 🔧 Installation:
 - First, install this library with the following command:
 ```sh
 pip install -U poe-api-wrapper
@@ -67,7 +69,7 @@ token = "TOKEN_HERE"
 PoeExample(token).chat_with_bot()
 ```
 
-## Documentation:
+## 🦄 Documentation:
 ### Available Default Bots:
 | Display Name           | Model                     | Token Limit | Words | Access Type                                                     |
 | ---------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
@@ -76,6 +78,7 @@ PoeExample(token).chat_with_bot()
 | Claude-2-100k          | a2_2                      | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
 | Claude-instant         | a2                        | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | ChatGPT                | chinchilla                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| GPT-3.5-Turbo          | gpt3_5                    | 2k          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
 | GPT-4                  | beaver                    | 4K          | 3K    | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
@@ -188,6 +191,11 @@ for chunk in client.send_message(bot, message, chatId=59726162):
 ```
 > **Note**
 > Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
+- Retrying the last message
+```py
+for chunk in client.retry_message(chatCode):
+    print(chunk['response'], end='', flush=True)
+```
 - Adding file attachments
 ```py
 # Web urls example:
@@ -310,7 +318,7 @@ client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla')
 ```py
 client.delete_bot("BOT_NAME")
 ```
-- Getting available Bots
+- Getting available bots (your bots section)
 ```py
 # Get a defined number of bots (default is 25)
 print(client.get_available_bots(count=10))
@@ -367,6 +375,44 @@ print(client2.import_chat(bot, shareCode))
 >> Output:
 {'chatId': 72929127, 'chatCode': '2iw0xcem7a18wy1avd3'}
 ```
+### Bots Group Chat (beta):
+- Creating a group chat
+```py
+bots = [
+    {'bot': 'yayayayaeclaude', 'name': 'Yae'}, 
+    {'bot': 'gepardL', 'name': 'gepard'}, 
+    {'bot': 'SayukiTokihara', 'name': 'Sayuki'}
+]
+
+client.create_group(group_name='Hangout', bots=bots) 
+```
+> Note:
+> `bot` arg is the model/displayName.
+> `name` arg is the one you'd mention them in group chat.
+- Sending messages and Streaming responses in group chat
+```py
+while True: 
+    message = str(input('\n\033[38;5;121mYou : \033[0m'))
+    prev_bot = ""
+    for chunk in client.send_message_to_group('test', message= message):
+        if chunk['bot'] != prev_bot:
+            print(f"\n\033[38;5;121m{chunk['bot']} : \033[0m", end='', flush=True)
+            prev_bot = chunk['bot']
+        print(chunk['response'], end='', flush=True)
+    print('\n')
+```
+- Deleting a group chat
+```py
+client.delete_group(group_name='Hangout')
+```
+- Getting created groups
+```py
+print(client.get_available_groups())
+```
+- Getting group data
+```py
+print(client.get_group(group_name='Hangout'))
+```
 
 ### Misc:
 - How to find chatCode manually?
@@ -383,7 +429,7 @@ Currently, this API only supports these file types for adding attachments
 | - | - | - | - | - | - | - | - | - | - | - | - |
 |                                               |
 
-## Copyright:
+## 🤝 Copyright:
 This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). All code has been written by me, [snowby666](https://github.com/snowby666).
 
 ### Copyright Notice:
