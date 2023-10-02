@@ -1301,12 +1301,51 @@ class PoeApi:
             raise ValueError(f"Group {group_name} not found. Make sure the group exists before getting.")
         return self.groups[group_name]
     
-    def save_group_history(self, group_name: str, filename: str=None):
-        # file is json format   
-        return
-    def load_group_history(self, group_name: str, filename: str=None):
-        # file is json format   
-        return
+    def save_group_history(self, group_name: str, file_path: str=None):
+        try:
+            oldData = self.load_group_history(group_name, file_path=file_path)
+            oldData = oldData['group_data']['conversation_log']
+        except:
+            oldData = None
+        
+        groupData = self.groups[group_name]
+        if oldData != None:
+            new_conversation_log = oldData + groupData['conversation_log']
+        saveData = {
+            'bots' : groupData['bots'],
+            'conversation_log' : new_conversation_log,
+            'previous_bot' : groupData['previous_bot'],
+            'dual_lock' : groupData['dual_lock']
+        }
+        if file_path == None:
+            file_path = group_name + '.json'
+        else:
+            # check if file path is valid and is a json file
+            if not os.path.exists(file_path):
+                raise ValueError(f"File path {file_path} is invalid.")
+            if not file_path.endswith('.json'):
+                raise ValueError(f"File path {file_path} is not a json file.")
+        with open(file_path, 'w') as f:
+            json.dump(saveData, f)
+        logger.info(f"Group {group_name} saved to {file_path}")
+        return file_path
+        
+    def load_group_history(self, file_path: str=None):
+        if file_path == None:
+            raise ValueError(f"Please provide a valid file path.")
+        else:
+            if not os.path.exists(file_path):
+                raise ValueError(f"File path {file_path} is invalid.")
+            if not file_path.endswith('.json'):
+                raise ValueError(f"File path {file_path} is not a json file.")
+            if os.stat(file_path).st_size == 0:
+                raise ValueError(f"File path {file_path} is empty.")
+        with open(file_path, 'r') as f:
+            groupData = json.load(f)
+        group_name = file_path.split('.')[0]
+        self.groups[group_name] = groupData
+        logger.info(f"Group {group_name} loaded from {file_path}")
+        return {'group_name': group_name, 'group_data': groupData}
     
     def get_most_mentioned(self, group_name: str, message: str):
         mod_message = message.lower()
@@ -1332,21 +1371,29 @@ class PoeApi:
         return topBot
         
     
-    def send_message_to_group(self, group_name: str, message: str, timeout: int=60, user: str="User", autosave:bool=False, autoplay:bool=False):
+    def send_message_to_group(self, group_name: str, message: str='', timeout: int=60, user: str="User", autosave:bool=False, autoplay:bool=False, preset_history: str=''):
         if group_name not in self.groups:
             raise ValueError(f"Group {group_name} not found. Make sure the group exists before sending message.")
         
+        last_text = ""
+        if preset_history == '':
+            if self.groups[group_name]['conversation_log'] != []:
+                # load all the messages in the conversation log from oldest to newest
+                old_logs = self.groups[group_name]['conversation_log'][1:]
+                for text in old_logs:
+                    if text.split(":")[0].strip() in bot_names:
+                        last_text += text
+                        last_text += "\n"
+        else:
+            preset_log = self.load_group_history(file_path=preset_history)['group_data']['conversation_log']
+            if preset_log != []:
+                for text in preset_log:
+                    if text.split(":")[0].strip() in bot_names:
+                        last_text += text
+                        last_text += "\n"
+            
         bots = self.groups[group_name]['bots']
         bot_names = [bot['name'] for bot in bots]
-        
-        last_text = ""
-        if self.groups[group_name]['conversation_log'] != []:
-            # load all the messages in the conversation log from oldest to newest
-            old_logs = self.groups[group_name]['conversation_log'][1:]
-            for text in old_logs:
-                if text.split(":")[0].strip() in bot_names:
-                    last_text += text
-                    last_text += "\n"
         
         if autoplay == False:
             previous_text = ""
@@ -1356,7 +1403,10 @@ class PoeApi:
             else:
                 next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between {user}, and other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start. You will start with a greeting to {user}.]\nChat history updated with new responses:\n\n" + f"{user} : {message}\n"
         else:
-            previous_text = self.groups[group_name]['conversation_log'][-1].split(":")[1].strip()
+            try:
+                previous_text = self.groups[group_name]['conversation_log'][-1].split(":")[1].strip()
+            except:
+                previous_text = ""
             current_bot = self.get_most_mentioned(group_name, previous_text)
             if self.groups[group_name]['conversation_log'] != []:
                 next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start.]\nChat history updated with new responses:\n\n" + f"{last_text}\n"
@@ -1367,7 +1417,7 @@ class PoeApi:
         
         max_turns = random.randint(len(bots), int(len(bots)*2))
         for _ in range(max_turns):
-            sleep(1)
+            sleep(random.randint(3, 5))
 
             for chunk in self.send_message(current_bot['bot'], next_message, chatCode=current_bot['chatCode']):
                 yield {'bot': current_bot['name'], 'response': chunk['response']}
@@ -1410,3 +1460,6 @@ class PoeApi:
                 if text.split(":")[0].strip() in bot_names:
                     next_message += text
                     next_message += "\n"
+                    
+        if autosave:
+            self.save_group_history(group_name)

@@ -205,7 +205,7 @@ for chunk in client.send_message(bot, "Compare 2 files and describe them in 300 
     print(chunk["response"], end="", flush=True)
     
 # Local paths example:
-local_paths = ["c:\users\snowby666\hello_world.py"]
+local_paths = ["c:\\users\\snowby666\\hello_world.py"]
 for chunk in client.send_message(bot, "What is this file about?", file_path=local_paths):
     print(chunk["response"], end="", flush=True)
 ```
@@ -395,7 +395,7 @@ client.create_group(group_name='Hangout', bots=bots)
 while True: 
     message = str(input('\n\033[38;5;121mYou : \033[0m'))
     prev_bot = ""
-    for chunk in client.send_message_to_group('Hangout', message=message):
+    for chunk in client.send_message_to_group(group_name='Hangout', message=message):
         if chunk['bot'] != prev_bot:
             print(f"\n\033[38;5;121m{chunk['bot']} : \033[0m", end='', flush=True)
             prev_bot = chunk['bot']
@@ -405,7 +405,24 @@ while True:
 # Auto-play example:
 while True:
     prev_bot = ""
-    for chunk in client.send_message_to_group('Hangout', message='', autoplay=True):
+    for chunk in client.send_message_to_group(group_name='Hangout', autoplay=True):
+        if chunk['bot'] != prev_bot:
+            print(f"\n\033[38;5;121m{chunk['bot']} : \033[0m", end='', flush=True)
+            prev_bot = chunk['bot']
+        print(chunk['response'], end='', flush=True)
+    print('\n')
+
+# Preset history example:
+preset_path = "c:\\users\\snowby666\\preset.json"
+prev_bot = ""
+for chunk in client.send_message_to_group(group_name='Hangout', autoplay=True, preset_history=preset_path):
+    if chunk['bot'] != prev_bot:
+        print(f"\n\033[38;5;121m{chunk['bot']} : \033[0m", end='', flush=True)
+        prev_bot = chunk['bot']
+    print(chunk['response'], end='', flush=True)
+print('\n')
+while True:
+    for chunk in client.send_message_to_group(group_name='Hangout', autoplay=True):
         if chunk['bot'] != prev_bot:
             print(f"\n\033[38;5;121m{chunk['bot']} : \033[0m", end='', flush=True)
             prev_bot = chunk['bot']
@@ -414,6 +431,7 @@ while True:
 ```
 > **Note**
 > You can also change your name in group chat by passing a new one to the above function: `client.send_message_to_group('Hangout', message=message, user='Danny')`
+> If you want to auto save the conversation_log, just simply set this to true: `client.send_message_to_group('Hangout', message=message, autosave=True)`
 - Deleting a group chat
 ```py
 client.delete_group(group_name='Hangout')
@@ -425,6 +443,18 @@ print(client.get_available_groups())
 - Getting group data
 ```py
 print(client.get_group(group_name='Hangout'))
+```
+- Saving group chat history
+```py
+# Save as json in the same directory
+client.save_group_history(group_name='Hangout')
+# Save with a local path (json only)
+local_path = "c:\\users\\snowby666\\log.json"
+client.save_group_history(group_name='Hangout', file_path=local_path)
+```
+- Loading group chat history
+```py
+print(client.load_group_history(file_path=local_path))
 ```
 
 ### Misc:
