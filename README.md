@@ -334,7 +334,7 @@ print(client.get_user_bots(user=handle))
 ```py
 categories = client.get_available_categories()
 >> Output:
-['Official', 'Popular', 'New', 'Mind', 'Funny', 'AI', 'Roleplay', 'Utilities', 'History', 'Sports', 'Travel', 'Music', 'Advice', 'Games', 'Cooking', 'Programming', 'Writing', 'Learning', 'Professional']
+['Official', 'Popular', 'New', 'ImageGen', 'AI', 'Professional', 'Funny', 'History', 'Cooking', 'Advice', 'Mind', 'Programming', 'Travel', 'Writing', 'Games', 'Learning', 'Roleplay', 'Utilities', 'Sports', 'Music']
 ```
 - Exploring 3rd party bots and users
 ```py
