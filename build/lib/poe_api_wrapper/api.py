@@ -1375,6 +1375,9 @@ class PoeApi:
         if group_name not in self.groups:
             raise ValueError(f"Group {group_name} not found. Make sure the group exists before sending message.")
         
+        bots = self.groups[group_name]['bots']
+        bot_names = [bot['name'] for bot in bots]
+        
         last_text = ""
         if preset_history == '':
             if self.groups[group_name]['conversation_log'] != []:
@@ -1391,9 +1394,6 @@ class PoeApi:
                     if text.split(":")[0].strip() in bot_names:
                         last_text += text
                         last_text += "\n"
-            
-        bots = self.groups[group_name]['bots']
-        bot_names = [bot['name'] for bot in bots]
         
         if autoplay == False:
             previous_text = ""
