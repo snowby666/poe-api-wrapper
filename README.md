@@ -15,20 +15,19 @@
 <br>
 </p>
 
-## 🚀 Table of Contents:
-- [🚀 Table of Contents:](#-table-of-contents)
-- [✨ Highlights:](#-highlights)
-- [🔧 Installation:](#-installation)
-- [🦄 Documentation:](#-documentation)
-  - [Available Default Bots:](#available-default-bots)
-  - [How to get your Token:](#how-to-get-your-token)
-  - [Basic Usage:](#basic-usage)
-  - [Bots Group Chat (beta):](#bots-group-chat-beta)
-  - [Misc:](#misc)
-- [🤝 Copyright:](#-copyright)
-  - [Copyright Notice:](#copyright-notice)
+## 📚 Table of Contents
+- [Highlights](https://github.com/snowby666/poe-api-wrapper#-highlights)
+- [Installation](https://github.com/snowby666/poe-api-wrapper#-installation)
+- [Documentation](https://github.com/snowby666/poe-api-wrapper#-documentation)
+  - [Available Default Bots](https://github.com/snowby666/poe-api-wrapper#available-default-bots)
+  - [How to get your Token](https://github.com/snowby666/poe-api-wrapper#how-to-get-your-token)
+  - [Basic Usage](https://github.com/snowby666/poe-api-wrapper#basic-usage)
+  - [Bots Group Chat (beta)](https://github.com/snowby666/poe-api-wrapper#bots-group-chat-beta)
+  - [Misc](https://github.com/snowby666/poe-api-wrapper#misc)
+- [Copyright](https://github.com/snowby666/poe-api-wrapper#-copyright)
+  - [Copyright Notice](https://github.com/snowby666/poe-api-wrapper#copyright-notice)
 
-## ✨ Highlights:
+## ✨ Highlights
  - Log in with your Quora's token
  - Auto Proxy requests
  - Get Chat Ids & Chat Codes of bot(s)
@@ -54,7 +53,7 @@
  - Share and import messages
  - Support bots group chat **(beta)**
 
-## 🔧 Installation:
+## 🔧 Installation
 - First, install this library with the following command:
 ```sh
 pip install -U poe-api-wrapper
@@ -70,8 +69,8 @@ token = "TOKEN_HERE"
 PoeExample(token).chat_with_bot()
 ```
 
-## 🦄 Documentation:
-### Available Default Bots:
+## 🦄 Documentation
+### Available Default Bots
 | Display Name           | Model                     | Token Limit | Words | Access Type                                                     |
 | ---------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
 | Assistant              | capybara                  | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
@@ -94,7 +93,7 @@ PoeExample(token).chat_with_bot()
 | Solar-0-70b            | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 >**Important**
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
-### How to get your Token:
+### How to get your Token
 Sign in at https://www.quora.com/
 
 F12 for Devtools (Right-click + Inspect)
@@ -106,7 +105,7 @@ Copy the value of `m-b` cookie
 
 >**Note**
 > Make sure you have logged in poe.com using **the same email** which registered on quora.com.
-### Basic Usage:
+### Basic Usage
 - Connecting to the API
 ```py
 from poe_api_wrapper import PoeApi
@@ -376,7 +375,7 @@ print(client2.import_chat(bot, shareCode))
 >> Output:
 {'chatId': 72929127, 'chatCode': '2iw0xcem7a18wy1avd3'}
 ```
-### Bots Group Chat (beta):
+### Bots Group Chat (beta)
 - Creating a group chat
 ```py
 bots = [
@@ -458,7 +457,7 @@ client.save_group_history(group_name='Hangout', file_path=local_path)
 print(client.load_group_history(file_path=local_path))
 ```
 
-### Misc:
+### Misc
 - How to find chatCode manually?
 
 Here is an example, the chatCode is 2i5bego6rzetfsevv5g
@@ -473,10 +472,10 @@ Currently, this API only supports these file types for adding attachments
 | - | - | - | - | - | - | - | - | - | - | - | - |
 |                                               |
 
-## 🤝 Copyright:
+## 🤝 Copyright
 This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). All code has been written by me, [snowby666](https://github.com/snowby666).
 
-### Copyright Notice:
+### Copyright Notice
 ```
 snowby666/poe-api-wrapper: A simple API wrapper for poe.com using Httpx
 Copyright (C) 2023 snowby666
