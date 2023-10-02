@@ -574,7 +574,7 @@ class PoeApi:
             
             if (response['author'] == 'pacarana' and response['text'].strip() == last_text.strip()):
                 response["response"] = ''
-            elif response['author'] == 'pacarana' and (last_text == '' or bot == 'stablediffusionxl'):
+            elif response['author'] == 'pacarana' and (last_text == '' or bot == 'web-search'):
                 response["response"] = f'{response["text"]}\n'
             else:
                 if stateChange == False:
@@ -795,7 +795,7 @@ class PoeApi:
             
             if (response['author'] == 'pacarana' and response['text'].strip() == last_text.strip()):
                 response["response"] = ''
-            elif response['author'] == 'pacarana' and (last_text == '' or bot == 'stablediffusionxl'):
+            elif response['author'] == 'pacarana' and (last_text == '' or bot != 'web-search'):
                 response["response"] = f'{response["text"]}\n'
             else:
                 if stateChange == False:
