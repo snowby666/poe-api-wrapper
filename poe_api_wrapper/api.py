@@ -136,7 +136,6 @@ class PoeApi:
         else:
             self.proxy = None
             self.client = Client(headers=self.HEADERS, timeout=180)
-            self.client.headers.update(self.HEADERS)
         self.client.cookies.update({'m-b': self.cookie})
         
         self.get_channel_settings()
