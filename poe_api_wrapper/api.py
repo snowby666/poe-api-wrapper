@@ -36,6 +36,7 @@ BOTS_LIST = {
 }
 
 BOT_CREATION_MODELS = [
+    'dalle3'
     'chinchilla',
     'stablediffusionxl',
     'a2',
@@ -90,6 +91,7 @@ def generate_file(file_path: list, proxy: dict=None):
                 response = fetcher.get(file)
                 file_data = response.read()
             file_size += len(file_data)
+            files.append((file_name, file_data, content_type))
         else: 
             file_extension = os.path.splitext(file)[1].lower()
             if file_extension in EXTENSIONS:
@@ -99,7 +101,8 @@ def generate_file(file_path: list, proxy: dict=None):
             file_name = os.path.basename(file)
             file_data = open(file, 'rb')
             file_size += os.path.getsize(file)
-        files.append((file_name, file_data, content_type))
+            files.append((file_name, file_data, content_type))
+            file_data.close()
     return files, file_size
 
 class PoeApi:
@@ -133,7 +136,8 @@ class PoeApi:
         else:
             self.proxy = None
             self.client = Client(headers=self.HEADERS, timeout=180)
-        self.client.cookies.set('m-b', self.cookie)
+            self.client.headers.update(self.HEADERS)
+        self.client.cookies.update({'m-b': self.cookie})
         
         self.get_channel_settings()
         
@@ -265,7 +269,7 @@ class PoeApi:
                                          on_message=lambda ws, msg: self.on_message(ws, msg), 
                                          on_open=lambda ws: self.on_ws_connect(ws), 
                                          on_error=lambda ws, error: self.on_ws_error(ws, error), 
-                                         on_close=lambda ws, close_status_code,close_message: self.on_ws_close(ws, close_status_code, close_message))
+                                         on_close=lambda ws, close_status_code, close_message: self.on_ws_close(ws, close_status_code, close_message))
 
         t = threading.Thread(target=self.ws_run_thread, daemon=True)
         t.start()
@@ -1311,6 +1315,8 @@ class PoeApi:
         groupData = self.groups[group_name]
         if oldData != None:
             new_conversation_log = oldData + groupData['conversation_log']
+        else:
+            new_conversation_log = groupData['conversation_log']
         saveData = {
             'bots' : groupData['bots'],
             'conversation_log' : new_conversation_log,
@@ -1350,6 +1356,8 @@ class PoeApi:
     def get_most_mentioned(self, group_name: str, message: str):
         mod_message = message.lower()
         bots = self.groups[group_name]['bots']
+        if len(bots) == 1:
+            return bots[0]
         if any(bot['name'] in mod_message for bot in bots):
             for bot in bots:
                 bot['priority'] = 0
@@ -1379,6 +1387,8 @@ class PoeApi:
         bot_names = [bot['name'] for bot in bots]
         
         last_text = ""
+        preset_log = []
+        
         if preset_history == '':
             if self.groups[group_name]['conversation_log'] != []:
                 # load all the messages in the conversation log from oldest to newest
@@ -1398,7 +1408,7 @@ class PoeApi:
         if autoplay == False:
             previous_text = ""
             current_bot = self.get_most_mentioned(group_name, message)
-            if self.groups[group_name]['conversation_log'] != []:
+            if self.groups[group_name]['conversation_log'] != [] or preset_log != []:
                 next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between {user}, and other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start.]\nChat history updated with new responses:\n\n" + f"{last_text}\n" + f"{user} : {message}\n"
             else:
                 next_message = f"\n[System Notice : You are participating in a role-playing chat. You will act as {current_bot['name']} in a multiway roleplay between {user}, and other parties including {bot_names}, You will only act as {current_bot['name']} and stay in character at all times. As the AI language model, Your role is to portray {current_bot['name']} in this chat using the first-person narrative. Let's engage in immersive roleplay and respond to the previous message without addressing it as a system message or revealing our roles as {current_bot['name']} or the fact that we are roleplaying. You must respond to the previous message without explicitly writing '{current_bot['name']}' at the start. You will start with a greeting to {user}.]\nChat history updated with new responses:\n\n" + f"{user} : {message}\n"
