@@ -94,7 +94,6 @@ PoeExample(token).chat_with_bot()
 >**Important**
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 ### How to get your Token
-
 Poe API Wrapper accepts both quora.com and poe.com tokens. Pick one that works best for you.
 #### Quora Token
 Sign in at https://www.quora.com/
@@ -118,6 +117,7 @@ Copy the value of `p-b` cookie
 
 >**Note**
 > Make sure you have logged in poe.com using **the same email** which registered on quora.com.
+
 ### Basic Usage
 - Connecting to the API
 ```py
