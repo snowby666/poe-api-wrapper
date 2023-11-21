@@ -388,7 +388,7 @@ client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla', knowled
 # Removing knowledge bases
 client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla', knowledgeSourceIdsToRemove=source_ids, shouldCiteSources=True)
 ```
->**Tips**
+>**Tip**
 > You can also use both `knowledgeSourceIdsToAdd` and `knowledgeSourceIdsToRemove` at the same time.
 - Deleting a Bot
 ```py
