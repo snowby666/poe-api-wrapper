@@ -94,7 +94,7 @@ PoeExample(token).chat_with_bot()
 | Code-Llama-13b         | code_llama_13b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | Code-Llama-34b         | code_llama_34b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | Solar-0-70b            | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
->**Important**
+> [!IMPORTANT]  
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 ### How to get your Token
 Poe API Wrapper accepts both quora.com and poe.com tokens. Pick one that works best for you.
@@ -118,7 +118,7 @@ F12 for Devtools (Right-click + Inspect)
 
 Copy the value of `p-b` cookie
 
->**Note**
+> [!NOTE]
 > Make sure you have logged in poe.com using **the same email** which registered on quora.com.
 
 ### Basic Usage
@@ -205,7 +205,7 @@ for chunk in client.send_message(bot, message, chatCode="2i58ciex72dom7im83r"):
 for chunk in client.send_message(bot, message, chatId=59726162):
     print(chunk["response"], end="", flush=True)
 ```
-> **Note**
+> [!NOTE]
 > Display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message(bot, message)`
 - Retrying the last message
 ```py
@@ -225,7 +225,7 @@ local_paths = ["c:\\users\\snowby666\\hello_world.py"]
 for chunk in client.send_message(bot, "What is this file about?", file_path=local_paths):
     print(chunk["response"], end="", flush=True)
 ```
-> **Note**
+> [!NOTE]
 > The files size limit is different for each model.
 - Retrieving suggested replies 
 ```py
@@ -320,7 +320,7 @@ for message in previous_messages:
 {'author': 'human', 'text': 'nice to meet you', 'messageId': 2861709279}
 {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help", 'messageId': 2861873125}
 ```
->**Note**
+> [!NOTE]
 > It will fetch messages from the latest to the oldest, but the order to be displayed is reversed.
 - Getting available knowledge bases
 ```py
@@ -388,7 +388,7 @@ client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla', knowled
 # Removing knowledge bases
 client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla', knowledgeSourceIdsToRemove=source_ids, shouldCiteSources=True)
 ```
->**Tip**
+> [!TIP]
 > You can also use both `knowledgeSourceIdsToAdd` and `knowledgeSourceIdsToRemove` at the same time.
 - Deleting a Bot
 ```py
@@ -462,7 +462,7 @@ bots = [
 
 client.create_group(group_name='Hangout', bots=bots) 
 ```
-> **Note**
+> [!NOTE]
 > `bot` arg is the model/displayName.
 > `name` arg is the one you'd mention them in group chat.
 - Sending messages and Streaming responses in group chat
@@ -505,7 +505,7 @@ while True:
         print(chunk['response'], end='', flush=True)
     print('\n')
 ```
-> **Note**
+> [!NOTE]
 > You can also change your name in group chat by passing a new one to the above function: `client.send_message_to_group('Hangout', message=message, user='Danny')`
 > If you want to auto save the conversation_log, just simply set this to true: `client.send_message_to_group('Hangout', message=message, autosave=True)`
 - Deleting a group chat
