@@ -1,7 +1,7 @@
 from time import sleep, time
 from httpx import Client
 from requests_toolbelt import MultipartEncoder
-import os, secrets, string, random, websocket, json, threading, queue
+import os, secrets, string, random, websocket, json, threading, queue, ssl
 from loguru import logger
 from urllib.parse import urlparse
 from .queries import generate_payload
@@ -162,14 +162,17 @@ class PoeApi:
     #     formkey = search(self.FORMKEY_PATTERN, response.text)[1]
     #     return formkey
     
-    def send_request(self, path: str, query_name: str="", variables: dict={}, file_form: list=[]):
+    def send_request(self, path: str, query_name: str="", variables: dict={}, file_form: list=[], knowledge: bool=False):
         payload = generate_payload(query_name, variables)
         if file_form == []:
             headers= {'Content-Type': 'application/x-www-form-urlencoded'}
         else:
             fields = {'queryInfo': payload}
-            for i in range(len(file_form)):
-                fields[f'file{i}'] = file_form[i]
+            if not knowledge:
+                for i in range(len(file_form)):
+                    fields[f'file{i}'] = file_form[i]
+            else:
+                fields['file'] = file_form[0]
             payload = MultipartEncoder(
                 fields=fields
                 )
@@ -190,7 +193,7 @@ class PoeApi:
         })
         self.tchannel_data = response_json["tchannelData"]
         self.client.headers["Quora-Tchannel"] = self.tchannel_data["channel"]
-        self.channel_url = f'wss://{self.ws_domain}.tch.{self.tchannel_data["baseHost"]}/up/{self.tchannel_data["boxName"]}/updates?min_seq={self.tchannel_data["minSeq"]}&channel={self.tchannel_data["channel"]}&hash={self.tchannel_data["channelHash"]}'
+        self.channel_url = f'ws://{self.ws_domain}.tch.{self.tchannel_data["baseHost"]}/up/{self.tchannel_data["boxName"]}/updates?min_seq={self.tchannel_data["minSeq"]}&channel={self.tchannel_data["channel"]}&hash={self.tchannel_data["channelHash"]}'
         return self.channel_url
     
     def subscribe(self):
@@ -198,34 +201,44 @@ class PoeApi:
             {
                 "subscriptions": [
                     {
-                        "subscriptionName": "messageAdded",
-                        "query": None,
-                        "queryHash": "6d5ff500e4390c7a4ee7eeed01cfa317f326c781decb8523223dd2e7f33d3698",
+                        "subscriptionName":"messageAdded",
+                        "query":None,
+                        "queryHash":"0b8de439cec33e6b2a248117241e2d3e166629c777462d0b3332e3a417d952ed"
                     },
                     {
-                        "subscriptionName": "messageCancelled",
-                        "query": None,
-                        "queryHash": "dfcedd9e0304629c22929725ff6544e1cb32c8f20b0c3fd54d966103ccbcf9d3",
+                        "subscriptionName":"messageCancelled",
+                        "query":None,
+                        "queryHash":"14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff"
                     },
                     {
-                        "subscriptionName": "messageDeleted",
-                        "query": None,
-                        "queryHash": "91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3",
+                        "subscriptionName":"messageDeleted",
+                        "query":None,
+                        "queryHash":"91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3"
                     },
                     {
-                        "subscriptionName": "viewerStateUpdated",
-                        "query": None,
-                        "queryHash": "ee640951b5670b559d00b6928e20e4ac29e33d225237f5bdfcb043155f16ef54",
+                        "subscriptionName":"messageCreated",
+                        "query":None,
+                        "queryHash":"26847fdf99c61144d75b62d3c6a6e959667a6d48190256bbef2e90d41ce3b931"
                     },
                     {
-                        "subscriptionName": "messageLimitUpdated",
-                        "query": None,
-                        "queryHash": "d862b8febb4c058d8ad513a7c118952ad9095c4ec0a5471540133fc0a9bd3797",
+                        "subscriptionName":"viewerStateUpdated",
+                        "query":None,
+                        "queryHash":"5ae4027023f0513bf3a402323333b8b99e931bf9df28390099613e4ab0cde018"
                     },
                     {
-                        "subscriptionName": "chatTitleUpdated",
-                        "query": None,
-                        "queryHash": "740e2c7ab27297b7a8acde39a400b932c71beb7e9b525280fc99c1639f1be93a",
+                        "subscriptionName":"messageLimitUpdated",
+                        "query":None,
+                        "queryHash":"daec317b69fed95fd7bf1202c4eca0850e6a9740bc8412af636940227359a211"
+                    },
+                    {
+                        "subscriptionName":"chatTitleUpdated",
+                        "query":None,
+                        "queryHash":"ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06"
+                    },
+                    {
+                        "subscriptionName":"knowledgeSourceUpdated",
+                        "query":None,
+                        "queryHash":"7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37"
                     },
                 ]
             },
@@ -235,7 +248,7 @@ class PoeApi:
             
     def ws_run_thread(self):
         if not self.ws.sock:
-            kwargs = {}
+            kwargs = {"sslopt": {"cert_reqs": ssl.CERT_NONE}}
             self.ws.run_forever(**kwargs)
              
     def connect_ws(self, timeout=20):
@@ -698,7 +711,7 @@ class PoeApi:
                     status = message_data['data']['messageEdgeCreate']['status']
                     if status == 'success' and file_path != []:
                         for file in file_form:
-                            logger.info(f"File {file[0]} uploaded successfully")
+                            logger.info(f"File '{file[0]}' uploaded successfully")
                     elif status == 'unsupported_file_type' and file_path != []:
                         logger.warning("This file type is not supported. Please try again with a different file.")
                     elif status == 'reached_limit':
@@ -742,7 +755,7 @@ class PoeApi:
                     status = message_data['data']['messageEdgeCreate']['status']
                     if status == 'success' and file_path != []:
                         for file in file_form:
-                            logger.info(f"File {file[0]} uploaded successfully")
+                            logger.info(f"File '{file[0]}' uploaded successfully")
                     elif status == 'unsupported_file_type' and file_path != []:
                         logger.warning("This file type is not supported. Please try again with a different file.")
                     elif status == 'reached_limit':
@@ -889,11 +902,8 @@ class PoeApi:
         bot = bot_map(bot)
         chatdata = self.get_threadData(bot, chatCode, chatId)
         chatId = chatdata['chatId']
-        id = chatdata['id']
-        variables = {"connections": [
-                f"client:{id}:__ChatMessagesView_chat_messagesConnection_connection"],
-                "chatId": chatId}
-        self.send_request('gql_POST', 'ChatHelpers_addMessageBreakEdgeMutation_Mutation', variables)
+        variables = {'chatId': chatId, 'clientNonce': generate_nonce()}
+        self.send_request('gql_POST', 'SendChatBreakMutation', variables)
             
     def delete_message(self, message_ids):
         variables = {'messageIds': message_ids}
@@ -1052,7 +1062,50 @@ class PoeApi:
         self.send_request('gql_POST', 'NuxInitialModal_poeSetHandle_Mutation', variables)
         self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
     
-    def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, linkification=False,  markdown_rendering=True, suggested_replies=False, private=False, temperature=None):
+    def upload_knowledge(self, file_path: list=[], text_knowledge: list=[]):
+        ids = {}
+        if text_knowledge != []:
+            for text in text_knowledge:
+                if text != {} and "title" not in text and "content" not in text:
+                    error_msg = f"Invalid text knowledge {text}. \nPlease make sure the text knowledge is in the format of " + "{'title': <str>, 'content': <str>}"
+                    raise ValueError(error_msg)
+                else:
+                    response = self.send_request('gql_POST', 'Knowledge_CreateKnowledgeSourceMutation', {"sourceInput":{"text_input":{"title":text["title"],"content":text["content"]}}})
+                    if response['data']['knowledgeSourceCreate']['status'] != 'success':
+                        raise RuntimeError(f"Failed to upload text '{text['title']}'. \nRaw response data: {response}")
+                    title = response['data']['knowledgeSourceCreate']['source']['title']
+                    sourceid = response['data']['knowledgeSourceCreate']['source']['knowledgeSourceId']
+                    if title not in ids:
+                        ids[title] = [sourceid]
+                    else:
+                        ids[title].append(sourceid)
+                    logger.info(f"Text '{text['title']}' uploaded successfully")
+                    sleep(2)        
+        if file_path != []:
+            for path in file_path:
+                file_form, file_size = generate_file([path], self.proxy)
+                if file_size > 100000000:
+                    raise RuntimeError("File size too large. Please try again with a smaller file.")
+                response = self.send_request('gql_upload_POST', 'Knowledge_CreateKnowledgeSourceMutation', {"sourceInput":{"file_upload":{"attachment":"file"}}}, file_form, knowledge=True)
+                if response['data']['knowledgeSourceCreate']['status'] != 'success':
+                    raise RuntimeError(f"Failed to upload file '{path}'. \nRaw response data: {response}")
+                title = response['data']['knowledgeSourceCreate']['source']['title']
+                sourceid = response['data']['knowledgeSourceCreate']['source']['knowledgeSourceId']
+                if title not in ids:
+                    ids[title] = [sourceid]
+                else:
+                    ids[title].append(sourceid)
+                for file in file_form:
+                    logger.info(f"File '{file[0]}' uploaded successfully")
+                sleep(2)
+        # log all ids
+        logger.info(f"Knowledge uploaded successfully | {ids}")
+        return ids
+        
+    def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", 
+                   api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, linkification=False,  
+                   markdown_rendering=True, suggested_replies=False, private=False, temperature=None, customMessageLimit=None, 
+                   messagePriceCc=None, shouldCiteSources=True, knowledgeSourceIds:list = []):
         if base_model not in BOT_CREATION_MODELS:
             raise ValueError(f"Invalid base model {base_model}. Please choose from {BOT_CREATION_MODELS}")
         # Auto complete profile
@@ -1060,6 +1113,7 @@ class PoeApi:
             self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
         except:
             self.complete_profile()
+
         variables = {
             "model": base_model,
             "displayName": display_name,
@@ -1076,7 +1130,11 @@ class PoeApi:
             "hasMarkdownRendering": markdown_rendering,
             "hasSuggestedReplies": suggested_replies,
             "isPrivateBot": private,
-            "temperature": temperature
+            "temperature": temperature,
+            "customMessageLimit": customMessageLimit,
+            "knowledgeSourceIds": knowledgeSourceIds,
+            "messagePriceCc": messagePriceCc,
+            "shouldCiteSources": shouldCiteSources
         }
         result = self.send_request('gql_POST', 'PoeBotCreate', variables)['data']['poeBotCreate']
         if result["status"] != "success":
@@ -1098,9 +1156,11 @@ class PoeApi:
     def edit_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="",
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
-                markdown_rendering=True, suggested_replies=False, temperature=None):   
+                markdown_rendering=True, suggested_replies=False, temperature=None, customMessageLimit=None, 
+                knowledgeSourceIdsToAdd:list = [], knowledgeSourceIdsToRemove:list = [], messagePriceCc=None, shouldCiteSources=True):   
         if base_model not in BOT_CREATION_MODELS:
             raise ValueError(f"Invalid base model {base_model}. Please choose from {BOT_CREATION_MODELS}")  
+                
         variables = {
         "baseBot": base_model,
         "botId": self.get_botData(handle)['botId'],
@@ -1117,7 +1177,12 @@ class PoeApi:
         "hasMarkdownRendering": markdown_rendering,
         "hasSuggestedReplies": suggested_replies,
         "isPrivateBot": private,
-        "temperature": temperature
+        "temperature": temperature,
+        "customMessageLimit": customMessageLimit,
+        "knowledgeSourceIdsToAdd": knowledgeSourceIdsToAdd,
+        "knowledgeSourceIdsToRemove": knowledgeSourceIdsToRemove,
+        "messagePriceCc": messagePriceCc,
+        "shouldCiteSources": shouldCiteSources
         }
         result = self.send_request('gql_POST', 'PoeBotEdit', variables)["data"]["poeBotEdit"]
         if result["status"] != "success":

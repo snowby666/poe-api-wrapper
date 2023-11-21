@@ -43,6 +43,7 @@
  - Purge messages of 1 bot
  - Purge all messages of user
  - Fetch previous messages
+ - Upload knowledge bases for custom bots **(New)**
  - Create custom bot
  - Edit custom bot
  - Delete a custom bot
@@ -319,14 +320,64 @@ for message in previous_messages:
 ```
 >**Note**
 > It will fetch messages from the latest to the oldest, but the order to be displayed is reversed.
+- Uploading knowledge bases
+```py
+# Web urls example:
+file_urls = ["https://sweet.ua.pt/jpbarraca/course/er-2122/slides/er-1-intro_to_re.pdf", 
+            "https://www.kcl.ac.uk/warstudies/assets/automation-and-artificial-intelligence.pdf"]
+source_ids = client.upload_knowledge(file_path=file_urls)
+print(source_ids)
+>> Output:
+{'er-1-intro_to_re.pdf': [86344], 'automation-and-artificial-intelligence.pdf': [86345]}
+
+# Local paths example:
+local_paths = ["c:\\users\\snowby666\\hello_world.py"]
+source_ids = client.upload_knowledge(file_path=local_paths)
+print(source_ids)
+>> Output:
+{'hello_world.py': [86523]}
+
+# Plain texts example:
+knowledges = [
+    {
+        "title": "What is Quora?",
+        "content": "Quora is a popular online platform that enables users to ask questions on various topics and receive answers from a diverse community. It covers a wide range of subjects, from academic and professional queries to personal experiences and opinions, fostering knowledge-sharing and meaningful discussions among its users worldwide."
+    },
+    {
+        "title": "Founders of Quora",
+        "content": "Quora was founded by two individuals, Adam D'Angelo and Charlie Cheever. Adam D'Angelo, who previously served as the Chief Technology Officer (CTO) at Facebook, and Charlie Cheever, a former Facebook employee as well, launched Quora in June 2009. They aimed to create a platform that would enable users to ask questions and receive high-quality answers from knowledgeable individuals. Since its inception, Quora has grown into a widely used question-and-answer platform with a large user base and a diverse range of topics covered."
+    },
+]
+source_ids = client.upload_knowledge(text_knowledge=knowledges)
+print(source_ids)
+>> Output:
+{'What is Quora?': [86368], 'Founders of Quora': [86369]}
+
+# Hybrid example:
+source_ids = client.upload_knowledge(file_path=file_urls, text_knowledge=knowledges)
+print(source_ids)
+>> Output:
+{'What is Quora?': [86381], 'Founders of Quora': [86383], 'er-1-intro_to_re.pdf': [86395], 'automation-and-artificial-intelligence.pdf': [86396]}
+```
 - Creating a new Bot
 ```py
 client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2")
+
+# Using knowledge bases (you can use source_ids from uploaded knowledge bases for your custom bot)
+client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2", knowledgeSourceIds=source_ids, shouldCiteSources=True)
 ```
 - Editing a Bot
 ```py
 client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla')
+
+# Adding knowledge bases 
+client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla', knowledgeSourceIdsToAdd=source_ids, shouldCiteSources=True)
+
+# Removing knowledge bases
+client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla', knowledgeSourceIdsToRemove=source_ids, shouldCiteSources=True)
 ```
+>**Tips**
+> You can also use both `knowledgeSourceIdsToAdd` and `knowledgeSourceIdsToRemove` at the same time.
 - Deleting a Bot
 ```py
 client.delete_bot("BOT_NAME")

@@ -374,7 +374,7 @@ class PoeExample:
                     '\033[38;5;121m!load\033[0m : Load previous messages\n'
                     '\033[38;5;121m!clear\033[0m : Clear the context\n'
                     '\033[38;5;121m!purge\033[0m : Delete the last 50 messages\n'
-                    '\033[38;5;121m!purgeall\033[0m : Delete all the messages\n'
+                    '\033[38;5;121m!purgeall\033[0m : Delete all conversations (be careful)\n'
                     '\033[38;5;121m!delete\033[0m : Delete the conversation\n'
                     '\033[38;5;121m!reset\033[0m : Choose a new Bot\n'
                     '\033[38;5;121m!exit\033[0m : Exit the program\n'
