@@ -43,7 +43,9 @@
  - Purge messages of 1 bot
  - Purge all messages of user
  - Fetch previous messages
+ - Get available knowledge bases **(New)**
  - Upload knowledge bases for custom bots **(New)**
+ - Edit knowledge bases for custom bots **(New)**
  - Create custom bot
  - Edit custom bot
  - Delete a custom bot
@@ -320,6 +322,12 @@ for message in previous_messages:
 ```
 >**Note**
 > It will fetch messages from the latest to the oldest, but the order to be displayed is reversed.
+- Getting available knowledge bases
+```py
+print(client.get_available_knowledge(botName="BOT_NAME"))
+>> Output:
+{'What is Quora?': [86698], 'Founders of Quora': [86705]}
+```
 - Uploading knowledge bases
 ```py
 # Web urls example:
@@ -358,6 +366,10 @@ source_ids = client.upload_knowledge(file_path=file_urls, text_knowledge=knowled
 print(source_ids)
 >> Output:
 {'What is Quora?': [86381], 'Founders of Quora': [86383], 'er-1-intro_to_re.pdf': [86395], 'automation-and-artificial-intelligence.pdf': [86396]}
+```
+- Editing knowledge bases (Only for plain texts)
+```py
+client.edit_knowledge(knowledgeSourceId=86381, title='What is Quora?', content='Quora is a question-and-answer platform where users can ask questions, provide answers, and engage in discussions on various topics.')
 ```
 - Creating a new Bot
 ```py

@@ -1062,6 +1062,21 @@ class PoeApi:
         self.send_request('gql_POST', 'NuxInitialModal_poeSetHandle_Mutation', variables)
         self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
     
+    def get_available_knowledge(self, botName: str):
+        variables = {"botName": botName}
+        response = self.send_request('gql_POST', 'EditBotIndexPageQuery', variables)
+        if response['data']['bot']['viewerIsCreator'] == False:
+            raise RuntimeError(f"You are not the creator of {botName}.")
+        edges = response['data']['bot']['knowledgeSourceConnection']['edges']
+        sources_ids = {}
+        for edge in edges:
+            if edge['node']['title'] not in sources_ids:
+                sources_ids[edge['node']['title']] = [edge['node']['knowledgeSourceId']]
+            else:
+                sources_ids[edge['node']['title']].append(edge['node']['knowledgeSourceId'])
+        logger.info(f"Found {len(sources_ids)} knowledge sources of {botName}")
+        return sources_ids
+
     def upload_knowledge(self, file_path: list=[], text_knowledge: list=[]):
         ids = {}
         if text_knowledge != []:
@@ -1098,10 +1113,22 @@ class PoeApi:
                 for file in file_form:
                     logger.info(f"File '{file[0]}' uploaded successfully")
                 sleep(2)
-        # log all ids
         logger.info(f"Knowledge uploaded successfully | {ids}")
         return ids
         
+    def edit_knowledge(self, knowledgeSourceId: int, title: str=None, content: str=None):
+        variables = {"knowledgeSourceId": knowledgeSourceId, 
+                     "sourceInput":{
+                        "text_input":{
+                            "title": title,
+                            "content": content
+                        }
+                    }}
+        response = self.send_request('gql_POST', 'Knowledge_EditKnowledgeSourceMutation', variables)
+        if response['data']['knowledgeSourceEdit']['status'] != 'success':
+            raise RuntimeError(f"Failed to edit knowledge source {knowledgeSourceId}. \nRaw response data: {response}")
+        logger.info(f"Knowledge source {knowledgeSourceId} edited successfully")
+            
     def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", 
                    api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, linkification=False,  
                    markdown_rendering=True, suggested_replies=False, private=False, temperature=None, customMessageLimit=None, 
@@ -1113,7 +1140,7 @@ class PoeApi:
             self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
         except:
             self.complete_profile()
-
+        knowledgeSourceIds = [item for sublist in knowledgeSourceIds.values() for item in sublist]
         variables = {
             "model": base_model,
             "displayName": display_name,
@@ -1160,7 +1187,9 @@ class PoeApi:
                 knowledgeSourceIdsToAdd:list = [], knowledgeSourceIdsToRemove:list = [], messagePriceCc=None, shouldCiteSources=True):   
         if base_model not in BOT_CREATION_MODELS:
             raise ValueError(f"Invalid base model {base_model}. Please choose from {BOT_CREATION_MODELS}")  
-                
+        
+        knowledgeSourceIdsToAdd = [item for sublist in knowledgeSourceIdsToAdd.values() for item in sublist]
+        knowledgeSourceIdsToRemove = [item for sublist in knowledgeSourceIdsToRemove.values() for item in sublist]
         variables = {
         "baseBot": base_model,
         "botId": self.get_botData(handle)['botId'],

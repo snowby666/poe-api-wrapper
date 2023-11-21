@@ -72,6 +72,8 @@ QUERIES = {
   "MarkMultiplayerNuxCompleted": "c1b1f2ce72d9f8e9cd7bbe1eecbf6e3bed3366df6a18b179b07ddfd9f1f8b3b1",
   "MessageAdded": "0b8de439cec33e6b2a248117241e2d3e166629c777462d0b3332e3a417d952ed",
   "Knowledge_CreateKnowledgeSourceMutation": "53a8daf2cb85b0d4f17520a0fbad1ee8c402d4e85a5ba3c5856563299b13ee98",
+  "Knowledge_EditKnowledgeSourceMutation": "627557c27853ba0d52ceb77e58116034f103d60a5b00bf5e0c5edd2af6b21827",
+  "EditBotIndexPageQuery": "4b19c8068312a192bd37aee05adcfbb91e65379a85a6cae3b7f3ffdd0eeed9b1",
   "ChatHelpers_messageCancel_Mutation": "59b10f19930cf95d3120612e72d271e3346a7fc9599e47183a593a05b68c617e",
   "MessageCancelled": "14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff",
   "MessageDeleted": "91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3",
