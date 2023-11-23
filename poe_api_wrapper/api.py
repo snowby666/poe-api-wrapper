@@ -90,8 +90,8 @@ def generate_file(file_path: list, proxy: dict=None):
             with Client(timeout=20, proxies=proxy) as fetcher:
                 response = fetcher.get(file)
                 file_data = response.read()
+                fetcher.close()
             file_size += len(file_data)
-            files.append((file_name, file_data, content_type))
         else: 
             file_extension = os.path.splitext(file)[1].lower()
             if file_extension in EXTENSIONS:
@@ -101,8 +101,7 @@ def generate_file(file_path: list, proxy: dict=None):
             file_name = os.path.basename(file)
             file_data = open(file, 'rb')
             file_size += os.path.getsize(file)
-            files.append((file_name, file_data, content_type))
-            file_data.close()
+        files.append((file_name, file_data, content_type))
     return files, file_size
 
 class PoeApi:
@@ -180,9 +179,12 @@ class PoeApi:
             payload = payload.to_string()
         response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers)
         if response.status_code == 200:
+            for file in file_form:
+                if hasattr(file[1], 'closed') and not file[1].closed:
+                    file[1].close()
             return response.json()
         else:
-            raise RuntimeError(f"An unknown error occurred. Raw response data: {response.text}")
+            raise RuntimeError(f"An unknown error occurred. Raw response data: {response.text}")      
     
     def get_channel_settings(self):
         response_json = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, follow_redirects=True).json()
@@ -251,7 +253,7 @@ class PoeApi:
             kwargs = {"sslopt": {"cert_reqs": ssl.CERT_NONE}}
             self.ws.run_forever(**kwargs)
              
-    def connect_ws(self, timeout=20):
+    def connect_ws(self, timeout=30):
         if self.ws_connected:
             return
 
@@ -496,7 +498,7 @@ class PoeApi:
                     break
         return {'chatCode': chatCode, 'chatId': chatId, 'id': id, 'title': title}
     
-    def retry_message(self, chatCode: str, suggest_replies: bool=False, timeout: int=10):
+    def retry_message(self, chatCode: str, suggest_replies: bool=False, timeout: int=20):
         self.retry_attempts = 3
         timer = 0
         while None in self.active_messages.values():
@@ -627,7 +629,7 @@ class PoeApi:
             })
             sleep(0.5)
             
-        def get_suggestions(queue, chatCode: str=None, timeout: int=5):
+        def get_suggestions(queue, chatCode: str=None, timeout: int=10):
             variables = {'chatCode': chatCode}
             state = 'incomplete'
             suggestions = []
@@ -658,10 +660,10 @@ class PoeApi:
             
             if suggest_replies:
                 self.suggestions_queue = queue.Queue()
-                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 5), daemon=True)
+                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 10), daemon=True)
                 t2.start()
                 try:
-                    suggestions = self.suggestions_queue.get(timeout=5)
+                    suggestions = self.suggestions_queue.get(timeout=10)
                     yield suggestions
                 except queue.Empty:
                     yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
@@ -849,7 +851,7 @@ class PoeApi:
             })
             sleep(0.5)
             
-        def get_suggestions(queue, chatCode: str=None, timeout: int=5):
+        def get_suggestions(queue, chatCode: str=None, timeout: int=10):
             variables = {'chatCode': chatCode}
             state = 'incomplete'
             suggestions = []
@@ -880,10 +882,10 @@ class PoeApi:
             
             if suggest_replies:
                 self.suggestions_queue = queue.Queue()
-                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 5), daemon=True)
+                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 10), daemon=True)
                 t2.start()
                 try:
-                    suggestions = self.suggestions_queue.get(timeout=5)
+                    suggestions = self.suggestions_queue.get(timeout=10)
                     yield suggestions
                 except queue.Empty:
                     yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
