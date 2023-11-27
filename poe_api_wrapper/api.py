@@ -897,7 +897,7 @@ class PoeApi:
         
     def cancel_message(self, chunk: dict):
         self.message_generating = False
-        variables = {"messageId": chunk["messageId"], "textLength": len(chunk["text"]), "linkifiedTextLength": len(chunk["linkifiedText"])}
+        variables = {"messageId": chunk["messageId"], "textLength": len(chunk["text"]))}
         self.send_request('gql_POST', 'ChatHelpers_messageCancel_Mutation', variables)
         
     def chat_break(self, bot: str, chatId: int=None, chatCode: str=None):
