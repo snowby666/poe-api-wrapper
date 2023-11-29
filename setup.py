@@ -4,7 +4,7 @@ from pathlib import Path
 base_path = Path(__file__).parent
 long_description = (base_path / "README.md").read_text(encoding='utf-8')
 
-VERSION = '1.3.5'
+VERSION = '1.3.6'
 DESCRIPTION = 'A simple API wrapper for Poe.com using Httpx'
 LONG_DESCRIPTION = '👾 A Python API wrapper for Poe.com, using Httpx. With this, you will have free access to ChatGPT, Claude, Llama, Google-PaLM and more! 🚀'
 
@@ -19,7 +19,8 @@ setup(
     python_requires=">=3.7",
     install_requires=['httpx', 'websocket-client', 'requests_toolbelt', 'loguru'],
     extras_require={
-        'proxy': ['ballyregan; python_version>="3.9"']
+        'proxy': ['ballyregan; python_version>="3.9"'],
+        'tests': ['tox']
     },
     keywords=['python', 'poe', 'quora', 'chatgpt', 'claude', 'poe-api', 'api'],
     classifiers=[

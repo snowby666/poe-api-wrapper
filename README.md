@@ -24,45 +24,89 @@
   - [Basic Usage](https://github.com/snowby666/poe-api-wrapper#basic-usage)
   - [Bots Group Chat (beta)](https://github.com/snowby666/poe-api-wrapper#bots-group-chat-beta)
   - [Misc](https://github.com/snowby666/poe-api-wrapper#misc)
+- [Contributing](https://github.com/snowby666/poe-api-wrapper#-contributing)
+  - [Run debug](https://github.com/snowby666/poe-api-wrapper#run-debug)
+  - [Ways to contribute](https://github.com/snowby666/poe-api-wrapper#ways-to-contribute)
+  - [Contributors](https://github.com/snowby666/poe-api-wrapper#contributors)
 - [Copyright](https://github.com/snowby666/poe-api-wrapper#-copyright)
   - [Copyright Notice](https://github.com/snowby666/poe-api-wrapper#copyright-notice)
 
 ## ✨ Highlights
- - Log in with your Quora's token
- - Auto Proxy requests
- - Get Chat Ids & Chat Codes of bot(s)
- - Create new chat thread
- - Send messages
- - Stream bot responses
- - Retry the last message
- - Support file attachments
- - Retrieve suggested replies
- - Stop message generation
- - Delete chat threads
- - Clear conversation context
- - Purge messages of 1 bot
- - Purge all messages of user
- - Fetch previous messages
- - Get available knowledge bases **(New)**
- - Upload knowledge bases for custom bots **(New)**
- - Edit knowledge bases for custom bots **(New)**
- - Create custom bot
- - Edit custom bot
- - Delete a custom bot
- - Get available bots
- - Get a user's bots
- - Get available categories
- - Explore 3rd party bots and users
- - Share and import messages
- - Support bots group chat **(beta)**
+<details close>
+<summary>Authentication</summary><br>
+<ul>
+<li>Log in with your Quora's token</li>
+<li>Auto Proxy requests</li>
+</ul>
+</details>
+<details close>
+<summary>Message Automation</summary><br>
+<ul>
+<li>Create new chat thread</li>
+<li>Send messages</li>
+<li>Stream bot responses</li>
+<li>Retry the last message</li>
+<li>Support file attachments</li>
+<li>Retrieve suggested replies</li>
+<li>Stop message generation</li>
+<li>Delete chat threads</li>
+<li>Clear conversation context</li>
+<li>Purge messages of 1 bot</li>
+<li>Purge all messages of user</li>
+<li>Fetch previous messages</li>
+<li>Share and import messages</li>
+</ul>
+</details>
+<details close>
+<summary>Chat Management</summary><br>
+<ul>
+<li>Get Chat Ids & Chat Codes of bot(s)</li>
+</ul>
+</details>
+<details close>
+<summary>Bot Management</summary><br>
+<ul>
+<li>Create custom bot</li>
+<li>Edit custom bot</li>
+<li>Delete a custom bot</li>
+</ul>
+</details>
+<details close>
+<summary>Knowledge Base Customization <b>(New)</b></summary><br>
+<ul>
+<li>Get available knowledge bases</li>
+<li>Upload knowledge bases for custom bots</li>
+<li>Edit knowledge bases for custom bots</li>
+</ul>
+</details>
+<details close>
+<summary>Discovery</summary><br>
+<ul>
+<li>Get available bots</li>
+<li>Get a user's bots</li>
+<li>Get available categories</li>
+<li>Explore 3rd party bots and users</li>
+</ul>
+</details>
+<details close>
+<summary>Bots Group Chat <b>(Beta)</b></summary><br>
+<ul>
+<li>Create a group chat</li>
+<li>Delete a group chat</li>
+<li>Get created groupds</li>
+<li>Get group data</li>
+<li>Save group chat history</li>
+<li>Load group chat history</li>
+</ul>
+</details>
 
 ## 🔧 Installation
 - First, install this library with the following command:
-```sh
+```ShellSession
 pip install -U poe-api-wrapper
 ```
 Or you can install a proxy-support version of this library for **Python 3.9+**
-```sh
+```ShellSession
 pip install -U poe-api-wrapper[proxy]
 ```
 - You can run an example of this library:
@@ -441,9 +485,16 @@ print(client.explore(search="Poe", entity_type='user', explore_all=True))
 - Sharing & Importing messages
 ```py
 # Share a defined number of messages (from the lastest to the oldest)
-shareCode = client.share_chat(bot, count=10)
+# Using chatCode
+shareCode = client.share_chat("a2", chatCode="2roap5g8nd7s28ul836",count=10)
+# Using chatId
+shareCode = client.share_chat("a2", chatId=204052028,count=10)
+
 # Share all messages
-shareCode = client.share_chat(bot)
+# Using chatCode
+shareCode = client.share_chat("a2", chatCode="2roap5g8nd7s28ul836")
+# Using chatId
+shareCode = client.share_chat("a2", chatId=204052028)
 
 # Set up the 2nd Client and import messages from the shareCode
 client2 = PoeApi("2nd_TOKEN_HERE")
@@ -544,9 +595,35 @@ Here is an example, the chatCode is 2i5bego6rzetfsevv5g
 
 Currently, this API only supports these file types for adding attachments
 
-| .pdf | .docx | .txt | .py | .js | .ts | .html | .css | .csv | .c | .cs | .cpp |
-| - | - | - | - | - | - | - | - | - | - | - | - |
-|                                               |
+| .pdf | .docx | .txt | .md | .py | .js | .ts | .html | .css | .csv | .c | .cs | .cpp | .lua | .rs | .rb | .go | .java |
+| - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+|                                                                       |
+
+## 🙌 Contributing
+We would love to develop poe-api-wrapper together with our community! 
+### Run debug
+First, clone this repo:
+```ShellSession
+git clone https://github.com/snowby666/poe-api-wrapper.git
+```
+Then run the test cases:
+```ShellSession
+python -m pip install -e .[tests]
+tox
+```
+### Ways to contribute
+- Try poe-api-wrapper and give feedback
+- Add new integrations with open [PR](https://github.com/snowby666/poe-api-wrapper/pulls)
+- Help with open [issues](https://github.com/snowby666/poe-api-wrapper/issues) or [create your own](https://github.com/snowby666/poe-api-wrapper/issues/new/choose)
+- Share your thoughts and suggestions with us
+- Request a feature by submitting a proposal
+- Report a bug
+- **Improve documentation:** fix incomplete or missing docs, bad wording, examples or explanations.
+
+### Contributors
+<a href="https://github.com/snowby666/poe-api-wrapper/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=snowby666/poe-api-wrapper" />
+</a>
 
 ## 🤝 Copyright
 This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). All code has been written by me, [snowby666](https://github.com/snowby666).

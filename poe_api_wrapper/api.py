@@ -36,7 +36,7 @@ BOTS_LIST = {
 }
 
 BOT_CREATION_MODELS = [
-    'dalle3'
+    'dalle3',
     'chinchilla',
     'stablediffusionxl',
     'a2',
@@ -47,6 +47,12 @@ BOT_CREATION_MODELS = [
 ]
 
 EXTENSIONS = {
+    '.md': 'application/octet-stream',
+    '.lua': 'application/octet-stream',
+    '.rs': 'application/octet-stream',
+    '.rb': 'application/octet-stream',
+    '.go': 'application/octet-stream',
+    '.java': 'application/octet-stream',
     '.pdf': 'application/pdf',
     '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     '.txt': 'text/plain',
@@ -87,7 +93,7 @@ def generate_file(file_path: list, proxy: dict=None):
                 content_type = EXTENSIONS[file_extension]
             else:
                 raise RuntimeError("This file type is not supported. Please try again with a different file.") 
-            with Client(timeout=20, proxies=proxy) as fetcher:
+            with Client(timeout=60, proxies=proxy) as fetcher:
                 response = fetcher.get(file)
                 file_data = response.read()
                 fetcher.close()
@@ -164,7 +170,7 @@ class PoeApi:
     def send_request(self, path: str, query_name: str="", variables: dict={}, file_form: list=[], knowledge: bool=False):
         payload = generate_payload(query_name, variables)
         if file_form == []:
-            headers= {'Content-Type': 'application/x-www-form-urlencoded'}
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         else:
             fields = {'queryInfo': payload}
             if not knowledge:
@@ -177,18 +183,21 @@ class PoeApi:
                 )
             headers = {'Content-Type': payload.content_type}
             payload = payload.to_string()
-        response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers)
+        if isinstance(payload, (bytes, str)):  
+            response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', content=payload, headers=headers)
+        else:
+            response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers)
         if response.status_code == 200:
             for file in file_form:
                 if hasattr(file[1], 'closed') and not file[1].closed:
                     file[1].close()
             return response.json()
         else:
-            raise RuntimeError(f"An unknown error occurred. Raw response data: {response.text}")      
+            raise RuntimeError(f"An unknown error occurred. Raw response data: {response.text}")
     
     def get_channel_settings(self):
         response_json = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, follow_redirects=True).json()
-        self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:9]
+        self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:11]
         self.formkey = response_json["formkey"]
         self.client.headers.update({
             'Quora-Formkey': self.formkey,
@@ -253,7 +262,7 @@ class PoeApi:
             kwargs = {"sslopt": {"cert_reqs": ssl.CERT_NONE}}
             self.ws.run_forever(**kwargs)
              
-    def connect_ws(self, timeout=30):
+    def connect_ws(self, timeout=20):
         if self.ws_connected:
             return
 
@@ -629,7 +638,7 @@ class PoeApi:
             })
             sleep(0.5)
             
-        def get_suggestions(queue, chatCode: str=None, timeout: int=10):
+        def get_suggestions(queue, chatCode: str=None, timeout: int=5):
             variables = {'chatCode': chatCode}
             state = 'incomplete'
             suggestions = []
@@ -660,10 +669,10 @@ class PoeApi:
             
             if suggest_replies:
                 self.suggestions_queue = queue.Queue()
-                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 10), daemon=True)
+                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 5), daemon=True)
                 t2.start()
                 try:
-                    suggestions = self.suggestions_queue.get(timeout=10)
+                    suggestions = self.suggestions_queue.get(timeout=5)
                     yield suggestions
                 except queue.Empty:
                     yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
@@ -695,7 +704,7 @@ class PoeApi:
         else:
             apiPath = 'gql_upload_POST'
             file_form, file_size = generate_file(file_path, self.proxy)
-            if file_size > 100000000:
+            if file_size > 50000000:
                 raise RuntimeError("File size too large. Please try again with a smaller file.")
             for i in range(len(file_form)):
                 attachments.append(f'file{i}')
@@ -829,8 +838,7 @@ class PoeApi:
                     break
                 else:
                     continue
-                
-            # if esponse['author'] == 'pacarana' the first text will be replaced with new one instead of appending, but then the message will work as usual
+            
             last_text = response["text"]
             message_id = response["messageId"]
             
@@ -851,7 +859,7 @@ class PoeApi:
             })
             sleep(0.5)
             
-        def get_suggestions(queue, chatCode: str=None, timeout: int=10):
+        def get_suggestions(queue, chatCode: str=None, timeout: int=5):
             variables = {'chatCode': chatCode}
             state = 'incomplete'
             suggestions = []
@@ -882,10 +890,10 @@ class PoeApi:
             
             if suggest_replies:
                 self.suggestions_queue = queue.Queue()
-                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 10), daemon=True)
+                t2 = threading.Thread(target=get_suggestions, args=(self.suggestions_queue, chatCode, 5), daemon=True)
                 t2.start()
                 try:
-                    suggestions = self.suggestions_queue.get(timeout=10)
+                    suggestions = self.suggestions_queue.get(timeout=5)
                     yield suggestions
                 except queue.Empty:
                     yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
@@ -897,8 +905,8 @@ class PoeApi:
         
     def cancel_message(self, chunk: dict):
         self.message_generating = False
-        variables = {"messageId": chunk["messageId"], "textLength": len(chunk["text"]), "linkifiedTextLength": len(chunk["linkifiedText"])}
-        self.send_request('gql_POST', 'ChatHelpers_messageCancel_Mutation', variables)
+        variables = {"messageId": chunk["messageId"], "textLength": len(chunk["text"])}
+        self.send_request('gql_POST', 'StopMessage_messageCancel_Mutation', variables)
         
     def chat_break(self, bot: str, chatId: int=None, chatCode: str=None):
         bot = bot_map(bot)
@@ -1101,7 +1109,7 @@ class PoeApi:
         if file_path != []:
             for path in file_path:
                 file_form, file_size = generate_file([path], self.proxy)
-                if file_size > 100000000:
+                if file_size > 50000000:
                     raise RuntimeError("File size too large. Please try again with a smaller file.")
                 response = self.send_request('gql_upload_POST', 'Knowledge_CreateKnowledgeSourceMutation', {"sourceInput":{"file_upload":{"attachment":"file"}}}, file_form, knowledge=True)
                 if response['data']['knowledgeSourceCreate']['status'] != 'success':
@@ -1134,7 +1142,7 @@ class PoeApi:
     def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", 
                    api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, linkification=False,  
                    markdown_rendering=True, suggested_replies=False, private=False, temperature=None, customMessageLimit=None, 
-                   messagePriceCc=None, shouldCiteSources=True, knowledgeSourceIds:list = []):
+                   messagePriceCc=None, shouldCiteSources=True, knowledgeSourceIds:dict = {}):
         if base_model not in BOT_CREATION_MODELS:
             raise ValueError(f"Invalid base model {base_model}. Please choose from {BOT_CREATION_MODELS}")
         # Auto complete profile
@@ -1142,7 +1150,10 @@ class PoeApi:
             self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
         except:
             self.complete_profile()
-        knowledgeSourceIds = [item for sublist in knowledgeSourceIds.values() for item in sublist]
+        if knowledgeSourceIds != {}:
+            sourceIds = [item for sublist in knowledgeSourceIds.values() for item in sublist]
+        else:
+            sourceIds = []
         variables = {
             "model": base_model,
             "displayName": display_name,
@@ -1161,7 +1172,7 @@ class PoeApi:
             "isPrivateBot": private,
             "temperature": temperature,
             "customMessageLimit": customMessageLimit,
-            "knowledgeSourceIds": knowledgeSourceIds,
+            "knowledgeSourceIds": sourceIds,
             "messagePriceCc": messagePriceCc,
             "shouldCiteSources": shouldCiteSources
         }
@@ -1173,9 +1184,9 @@ class PoeApi:
         
     # get_bot logic 
     def get_botData(self, handle):
-        variables = {"botHandle": handle}
+        variables = {"useChat":False,"useBotName":True,"useBotId":False,"useShareCode":False,"usePostId":False,"chatCode":0,"botName":handle,"botId":0,"shareCode":"","postId":0}
         try:
-            response_json = self.send_request('gql_POST', 'BotLandingPageQuery', variables)
+            response_json = self.send_request('gql_POST', 'LayoutRightSidebarQuery', variables)
             return response_json['data']['bot']
         except Exception as e:
             raise ValueError(
@@ -1186,12 +1197,18 @@ class PoeApi:
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
                 markdown_rendering=True, suggested_replies=False, temperature=None, customMessageLimit=None, 
-                knowledgeSourceIdsToAdd:list = [], knowledgeSourceIdsToRemove:list = [], messagePriceCc=None, shouldCiteSources=True):   
+                knowledgeSourceIdsToAdd:dict = {}, knowledgeSourceIdsToRemove:dict = {}, messagePriceCc=None, shouldCiteSources=True):   
         if base_model not in BOT_CREATION_MODELS:
             raise ValueError(f"Invalid base model {base_model}. Please choose from {BOT_CREATION_MODELS}")  
         
-        knowledgeSourceIdsToAdd = [item for sublist in knowledgeSourceIdsToAdd.values() for item in sublist]
-        knowledgeSourceIdsToRemove = [item for sublist in knowledgeSourceIdsToRemove.values() for item in sublist]
+        if knowledgeSourceIdsToAdd != {}:
+            addIds = [item for sublist in knowledgeSourceIdsToAdd.values() for item in sublist]
+        else:
+            addIds = []
+        if knowledgeSourceIdsToRemove != {}:
+            removeIds = [item for sublist in knowledgeSourceIdsToRemove.values() for item in sublist]
+        else:
+            removeIds = []
         variables = {
         "baseBot": base_model,
         "botId": self.get_botData(handle)['botId'],
@@ -1210,8 +1227,8 @@ class PoeApi:
         "isPrivateBot": private,
         "temperature": temperature,
         "customMessageLimit": customMessageLimit,
-        "knowledgeSourceIdsToAdd": knowledgeSourceIdsToAdd,
-        "knowledgeSourceIdsToRemove": knowledgeSourceIdsToRemove,
+        "knowledgeSourceIdsToAdd": addIds,
+        "knowledgeSourceIdsToRemove": removeIds,
         "messagePriceCc": messagePriceCc,
         "shouldCiteSources": shouldCiteSources
         }
