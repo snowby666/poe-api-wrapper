@@ -600,7 +600,7 @@ Currently, this API only supports these file types for adding attachments
 |                                                                       |
 
 ## 🙌 Contributing
-We would love to develop poe-api-wrapper together with our community! 
+We would love to develop poe-api-wrapper together with our community! 💕
 ### Run debug
 First, clone this repo:
 ```ShellSession
