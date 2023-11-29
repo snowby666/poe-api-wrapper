@@ -35,7 +35,7 @@
 <details close>
 <summary>Authentication</summary><br>
 <ul>
-<li>Log in with your Quora's token</li>
+<li>Log in with your Quora's token or Poe's token</li>
 <li>Auto Proxy requests</li>
 </ul>
 </details>

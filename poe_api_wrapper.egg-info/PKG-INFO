@@ -4,17 +4,21 @@ Version: 1.3.6
 Summary: A simple API wrapper for Poe.com using Httpx
 Home-page: https://github.com/snowby666/poe-api-wrapper
 Author: snowby666
-License: UNKNOWN
 Keywords: python,poe,quora,chatgpt,claude,poe-api,api
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: GNU General Public License (GPL)
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
-Provides-Extra: proxy
-Provides-Extra: tests
 License-File: LICENSE
+Requires-Dist: httpx
+Requires-Dist: websocket-client
+Requires-Dist: requests_toolbelt
+Requires-Dist: loguru
+Provides-Extra: proxy
+Requires-Dist: ballyregan; python_version >= "3.9" and extra == "proxy"
+Provides-Extra: tests
+Requires-Dist: tox; extra == "tests"
 
 <div align="center">
 <a href="https://github.com/snowby666">
@@ -623,6 +627,7 @@ We would love to develop poe-api-wrapper together with our community! 💕
 First, clone this repo:
 ```ShellSession
 git clone https://github.com/snowby666/poe-api-wrapper.git
+cd poe-api-wrapper
 ```
 Then run the test cases:
 ```ShellSession
@@ -664,4 +669,3 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
-
