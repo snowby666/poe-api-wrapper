@@ -605,6 +605,7 @@ We would love to develop poe-api-wrapper together with our community! 💕
 First, clone this repo:
 ```ShellSession
 git clone https://github.com/snowby666/poe-api-wrapper.git
+cd poe-api-wrapper
 ```
 Then run the test cases:
 ```ShellSession
