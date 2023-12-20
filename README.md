@@ -120,24 +120,24 @@ PoeExample(token).chat_with_bot()
 ### Available Default Bots
 | Display Name           | Model                     | Token Limit | Words | Access Type                                                     |
 | ---------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
-| Assistant              | capybara                  | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Assistant              | capybara                  | 4K          | 3K    | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
 | Claude-instant-100k    | a2_100k                   | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
-| Claude-2-100k          | a2_2                      | 100K        | 75K   | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61) |
-| Claude-instant         | a2                        | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| ChatGPT                | chinchilla                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| GPT-3.5-Turbo          | gpt3_5                    | 2k          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-2-100k          | a2_2                      | 100K        | 75K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
+| Claude-instant         | a2                        | 9K          | 7K    | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| ChatGPT                | chinchilla                | 4K          | 3K    | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| GPT-3.5-Turbo          | gpt3_5                    | 2k          | 1.5K  | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
 | ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
 | GPT-4                  | beaver                    | 4K          | 3K    | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
 | GPT-4-32k              | vizcacha                  | 32K         | 24K   | ![Hard Limit](https://img.shields.io/badge/hard%20limit-fc4747) |
-| Google-PaLM            | acouchy                   | 8K          | 6K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-7b             | llama_2_7b_chat           | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-13b            | llama_2_13b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-70b            | llama_2_70b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-7b          | code_llama_7b_instruct    | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-13b         | code_llama_13b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-34b         | code_llama_34b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Solar-0-70b            | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Google-PaLM            | acouchy                   | 8K          | 6K    | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| Llama-2-7b             | llama_2_7b_chat           | 2K          | 1.5K  | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| Llama-2-13b            | llama_2_13b_chat          | 2K          | 1.5K  | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| Llama-2-70b            | llama_2_70b_chat          | 2K          | 1.5K  | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| Code-Llama-7b          | code_llama_7b_instruct    | 4K          | 3K    | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| Code-Llama-13b         | code_llama_13b_instruct   | 4K          | 3K    | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| Code-Llama-34b         | code_llama_34b_instruct   | 4K          | 3K    | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
+| Solar-0-70b            | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![Soft Limit](https://img.shields.io/badge/soft%20limit-ffea61)     |
 > [!IMPORTANT]  
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 ### How to get your Token
