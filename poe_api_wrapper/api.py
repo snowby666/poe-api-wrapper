@@ -913,7 +913,7 @@ class PoeApi:
         chatdata = self.get_threadData(bot, chatCode, chatId)
         chatId = chatdata['chatId']
         variables = {'chatId': chatId, 'clientNonce': generate_nonce()}
-        self.send_request('gql_POST', 'SendChatBreakMutation', variables)
+        self.send_request('gql_POST', 'ChatHelpers_addMessageBreakEdgeMutation_Mutation', variables)
             
     def delete_message(self, message_ids):
         variables = {'messageIds': message_ids}
