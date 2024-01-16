@@ -1054,6 +1054,11 @@ class PoeApi:
         logger.info(f"Found {len(messages)} messages of {chatCode}")
         return messages[::-1]
     
+    def get_citations(self, message_id: str):
+        variables = {"messageId": message_id }
+        response_json = self.send_request('gql_POST', 'MessageCitationSourceModalQuery', variables)
+        return response_json
+        
     def get_user_bots(self, user: str):
         variables = {'handle': user}
         response_json = self.send_request('gql_POST', 'HandleProfilePageQuery', variables)
