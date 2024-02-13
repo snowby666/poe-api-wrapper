@@ -57,7 +57,7 @@ Requires-Dist: tox; extra == "tests"
 <details close>
 <summary>Authentication</summary><br>
 <ul>
-<li>Log in with your Quora's token</li>
+<li>Log in with your Quora's token or Poe's token</li>
 <li>Auto Proxy requests</li>
 </ul>
 </details>
@@ -322,7 +322,7 @@ for chunk in client.send_message(bot, message):
 # Using chatCode
 client.delete_chat(bot, chatCode="2i58ciex72dom7im83r")
 # Using chatId
-client.delete_chat(bot, chatID=59726162)
+client.delete_chat(bot, chatId=59726162)
 
 # Delete n chats
 # Using chatCode

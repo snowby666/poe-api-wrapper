@@ -78,6 +78,7 @@ QUERIES = {
   "MessageCancelled": "14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff",
   "MessageDeleted": "91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3",
   "MessageCreated": "26847fdf99c61144d75b62d3c6a6e959667a6d48190256bbef2e90d41ce3b931",
+  "MessageCitationSourceModalQuery": "ad19832b5d80a626449366a6b1ff0f43272a4324e5d0bd586dbce67922edbd2c",
   "KnowledgeSourceUpdated": "7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37", 
   "MessageLimitUpdated": "daec317b69fed95fd7bf1202c4eca0850e6a9740bc8412af636940227359a211",
   "MessageUnvoteMutation": "af2b91f09ab2ccf53ba9176a86b9934b98a865adf228b2ac3a548d6397f382f3",

@@ -32,7 +32,7 @@ BOTS_LIST = {
     'Code-Llama-7b': 'code_llama_7b_instruct',
     'Code-Llama-13b': 'code_llama_13b_instruct',
     'Code-Llama-34b': 'code_llama_34b_instruct',
-    'Solar-0-70b':'upstage_solar_0_70b_16bit'
+    'Solar-Mini':'upstage_solar_0_70b_16bit',
 }
 
 BOT_CREATION_MODELS = [
@@ -65,6 +65,16 @@ EXTENSIONS = {
     '.c' : 'text/plain',
     '.cs': 'text/plain',
     '.cpp': 'text/plain',
+}
+
+MEDIA_EXTENSIONS = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.mp4': 'video/mp4',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
 }
 
 def bot_map(bot):
@@ -183,10 +193,7 @@ class PoeApi:
                 )
             headers = {'Content-Type': payload.content_type}
             payload = payload.to_string()
-        if isinstance(payload, (bytes, str)):  
-            response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', content=payload, headers=headers)
-        else:
-            response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers)
+        response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers)
         if response.status_code == 200:
             for file in file_form:
                 if hasattr(file[1], 'closed') and not file[1].closed:
@@ -913,7 +920,7 @@ class PoeApi:
         chatdata = self.get_threadData(bot, chatCode, chatId)
         chatId = chatdata['chatId']
         variables = {'chatId': chatId, 'clientNonce': generate_nonce()}
-        self.send_request('gql_POST', 'SendChatBreakMutation', variables)
+        self.send_request('gql_POST', 'ChatHelpers_addMessageBreakEdgeMutation_Mutation', variables)
             
     def delete_message(self, message_ids):
         variables = {'messageIds': message_ids}
@@ -1138,6 +1145,16 @@ class PoeApi:
         if response['data']['knowledgeSourceEdit']['status'] != 'success':
             raise RuntimeError(f"Failed to edit knowledge source {knowledgeSourceId}. \nRaw response data: {response}")
         logger.info(f"Knowledge source {knowledgeSourceId} edited successfully")
+        
+    def get_citations(self, messageId: int):
+        variables = {"messageId": messageId}
+        response = self.send_request('gql_POST', 'MessageCitationSourceModalQuery', variables)
+        if response['data']['message'] == None:
+            logger.info(f"No citations found for message {messageId}")
+        else:
+            citations = response['data']['message']['citations']
+            logger.info(f"Found {len(citations)} citations for message {messageId}")
+            return citations
             
     def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", 
                    api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, linkification=False,  

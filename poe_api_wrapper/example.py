@@ -1,4 +1,5 @@
 from .api import PoeApi
+import sys
 BANNER = """ 
 \033[38;2;140;84;228m
 $$$$$$$\                             $$$$$$\  $$$$$$$\ $$$$$$\ 
@@ -334,8 +335,7 @@ class PoeExample:
             try:
                 self.bot = self.select_bot()
                 if self.bot == 'exit':
-                    print('Poe Example is now closed.')
-                    return
+                    sys.exit('Poe Example is now closed.')
                 break            
             except:
                 print('Invalid cookie. Please try again.\n')

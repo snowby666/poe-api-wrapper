@@ -93,7 +93,7 @@
 <ul>
 <li>Create a group chat</li>
 <li>Delete a group chat</li>
-<li>Get created groupds</li>
+<li>Get created groups</li>
 <li>Get group data</li>
 <li>Save group chat history</li>
 <li>Load group chat history</li>
@@ -300,7 +300,7 @@ for chunk in client.send_message(bot, message):
 # Using chatCode
 client.delete_chat(bot, chatCode="2i58ciex72dom7im83r")
 # Using chatId
-client.delete_chat(bot, chatID=59726162)
+client.delete_chat(bot, chatId=59726162)
 
 # Delete n chats
 # Using chatCode
@@ -627,7 +627,7 @@ tox
 </a>
 
 ## 🤝 Copyright
-This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). All code has been written by me, [snowby666](https://github.com/snowby666).
+This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). Most code has been written by me, [snowby666](https://github.com/snowby666).
 
 ### Copyright Notice
 ```
