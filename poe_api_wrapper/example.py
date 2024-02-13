@@ -464,8 +464,9 @@ class PoeExample:
                         vertical_overflow='ellipsis',
                     ) as live:
                         for chunk in self.client.send_message(self.bot, message, self.chatId, suggest_replies=True, file_path=file_urls):
+                            content_type:str = chunk.get('contentType',"text_markdown")
                             live.update(
-                                Markdown(chunk['text'], code_theme='monokai') if chunk['contentType']=="text_markdown" else ''
+                                Markdown(chunk['text'], code_theme='monokai') if content_type=="text_markdown" else ''
                             )
                 print("\n")
                 if chunk["suggestedReplies"] != []:
