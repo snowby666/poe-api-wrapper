@@ -6,6 +6,7 @@ from loguru import logger
 from urllib.parse import urlparse
 from .queries import generate_payload
 from .proxies import PROXY
+from typing import Generator
 if PROXY:
     from .proxies import fetch_proxy
 
@@ -689,7 +690,7 @@ class PoeApi:
         del self.message_queues[human_message_id]
         self.retry_attempts = 3
         
-    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout: int=10) -> dict:
+    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout: int=10) -> Generator[dict, None, None]:
         bot = bot_map(bot)
         self.retry_attempts = 3
         timer = 0
@@ -1061,6 +1062,11 @@ class PoeApi:
         logger.info(f"Found {len(messages)} messages of {chatCode}")
         return messages[::-1]
     
+    def get_citations(self, message_id: str):
+        variables = {"messageId": message_id }
+        response_json = self.send_request('gql_POST', 'MessageCitationSourceModalQuery', variables)
+        return response_json
+        
     def get_user_bots(self, user: str):
         variables = {'handle': user}
         response_json = self.send_request('gql_POST', 'HandleProfilePageQuery', variables)

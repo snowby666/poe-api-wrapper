@@ -1,0 +1,5 @@
+build/
+dist/
+playground/
+*.egg-info/
+__pycache__/

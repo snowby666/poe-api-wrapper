@@ -17,7 +17,7 @@ setup(
     long_description=long_description,
     packages=find_packages(),
     python_requires=">=3.7",
-    install_requires=['httpx', 'websocket-client', 'requests_toolbelt', 'loguru'],
+    install_requires=['httpx', 'websocket-client', 'requests_toolbelt', 'loguru', 'rich==13.3.4'],
     extras_require={
         'proxy': ['ballyregan; python_version>="3.9"'],
         'tests': ['tox']
@@ -28,5 +28,11 @@ setup(
         "License :: OSI Approved :: GNU General Public License (GPL)",
         "Operating System :: OS Independent"
     ],
-    url="https://github.com/snowby666/poe-api-wrapper"
+    url="https://github.com/snowby666/poe-api-wrapper",
+    
+    entry_points={
+        "console_scripts": [
+            "poe = poe_api_wrapper.cli:main",
+        ],
+    },
 )

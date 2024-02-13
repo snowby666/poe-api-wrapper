@@ -151,6 +151,7 @@ QUERIES = {
   "WebSubscriptionAnnouncementQuery": "a1b332d7d6816accfccb619e0f0728771ac7c398881fa423051d06551cd0f069",
   "WebSubscriptionPaywallModalQuery": "4d248f3aa4fbf68eb57a1bdda52a6dc5f38dd3b1234c01a95d4b17fdfbd922db",
   "WebSubscriptionPaywallWrapperQuery": "f84fada22609f5dc5933e7ef1e54001fa5e76871836f268e68ad8df7e202f6ca",
+  "MessageCitationSourceModalQuery": "ad19832b5d80a626449366a6b1ff0f43272a4324e5d0bd586dbce67922edbd2c",
 }
 
 def generate_payload(query_name, variables) -> str:
