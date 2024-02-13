@@ -463,11 +463,9 @@ class PoeExample:
                         refresh_per_second=16,
                         vertical_overflow='ellipsis',
                     ) as live:
-                        loading_text:str = ''
                         for chunk in self.client.send_message(self.bot, message, self.chatId, suggest_replies=True, file_path=file_urls):
-                            loading_text += chunk["response"]
                             live.update(
-                                Markdown(loading_text, code_theme='monokai')
+                                Markdown(chunk['text'], code_theme='monokai') if chunk['contentType']=="text_markdown" else ''
                             )
                 print("\n")
                 if chunk["suggestedReplies"] != []:

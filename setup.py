@@ -28,5 +28,11 @@ setup(
         "License :: OSI Approved :: GNU General Public License (GPL)",
         "Operating System :: OS Independent"
     ],
-    url="https://github.com/snowby666/poe-api-wrapper"
+    url="https://github.com/snowby666/poe-api-wrapper",
+    
+    entry_points={
+        "console_scripts": [
+            "poe = poe_api_wrapper.cli:main",
+        ],
+    },
 )
