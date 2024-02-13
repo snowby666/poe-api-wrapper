@@ -2,4 +2,4 @@ build/
 dist/
 playground/
 *.egg-info/
-__pycache__/
+poe_api_wrapper/__pycache__/
