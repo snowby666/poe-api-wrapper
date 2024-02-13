@@ -1,4 +1,8 @@
 from .api import PoeApi
+from rich.markdown import Markdown
+from rich.console import Console
+from rich.live import Live
+
 BANNER = """ 
 \033[38;2;140;84;228m
 $$$$$$$\                             $$$$$$\  $$$$$$$\ $$$$$$\ 
@@ -453,8 +457,17 @@ class PoeExample:
                         continue  
                 else:
                     file_urls = []
-                for chunk in self.client.send_message(self.bot, message, self.chatId, suggest_replies=True, file_path=file_urls):
-                    print(chunk["response"], end="", flush=True)
+                console_ = Console()
+                with Live(
+                        console=console_,
+                        refresh_per_second=16,
+                        vertical_overflow='ellipsis',
+                    ) as live:
+                        for chunk in self.client.send_message(self.bot, message, self.chatId, suggest_replies=True, file_path=file_urls):
+                            content_type:str = chunk.get('contentType',"text_markdown")
+                            live.update(
+                                Markdown(chunk['text'], code_theme='monokai') if content_type=="text_markdown" else ''
+                            )
                 print("\n")
                 if chunk["suggestedReplies"] != []:
                     for reply in range(len(chunk["suggestedReplies"])):
