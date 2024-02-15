@@ -1047,7 +1047,7 @@ class PoeApi:
                 chatdata = response_json['data']['node']
                 edges = chatdata['messagesConnection']['edges'][::-1]
                 for edge in edges:
-                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text'], 'messageId': edge['node']['messageId']})
+                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text'], 'messageId': edge['node']['messageId'], 'contentType': edge['node']['contentType']})
                 cursor = chatdata['messagesConnection']['pageInfo']['startCursor']
         else:
             num = count
@@ -1057,7 +1057,7 @@ class PoeApi:
                 chatdata = response_json['data']['node']
                 edges = chatdata['messagesConnection']['edges'][::-1]
                 for edge in edges:
-                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text'], 'messageId': edge['node']['messageId']})
+                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text'], 'messageId': edge['node']['messageId'], 'contentType': edge['node']['contentType']})
                     num -= 1
                     if len(messages) == count:
                         break

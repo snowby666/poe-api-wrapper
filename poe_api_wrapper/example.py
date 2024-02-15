@@ -368,6 +368,7 @@ class PoeExample:
         print('\n🔰 Type \033[38;5;121m!help\033[0m for more commands 🔰\n')
         
         while True:
+            console_ = Console()
             message = input('\033[38;5;121mYou\033[0m : ').lower() 
             if message == '':
                 continue
@@ -439,9 +440,15 @@ class PoeExample:
                     elif message['author'] == 'chat_break':
                         print('--------------------------------------- Context cleared ---------------------------------------\n')
                     else:
-                        print(f'\033[38;5;20m{self.bot}\033[0m : {message["text"]}\n')
+                        with Live(
+                            console=console_,
+                            refresh_per_second=16,
+                            vertical_overflow='ellipsis',
+                        ) as live:
+                            live.update(
+                                Markdown(f'\033[38;5;20m{self.bot}\033[0m : {message["text"]}', code_theme='monokai')
+                            ) if message['contentType']=="text_markdown" else ''
             else:
-                
                 if message == '!suggest 1':
                     message =  chunk["suggestedReplies"][0]
                 elif message == '!suggest 2':
@@ -458,7 +465,6 @@ class PoeExample:
                         continue  
                 else:
                     file_urls = []
-                console_ = Console()
                 with Live(
                         console=console_,
                         refresh_per_second=16,
