@@ -219,48 +219,52 @@ class PoeApi:
         response_json = self.send_request('gql_POST', "SubscriptionsMutation",
             {
                 "subscriptions": [
-                    {
-                        "subscriptionName":"messageAdded",
-                        "query":None,
-                        "queryHash":"0b8de439cec33e6b2a248117241e2d3e166629c777462d0b3332e3a417d952ed"
-                    },
-                    {
-                        "subscriptionName":"messageCancelled",
-                        "query":None,
-                        "queryHash":"14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff"
-                    },
-                    {
-                        "subscriptionName":"messageDeleted",
-                        "query":None,
-                        "queryHash":"91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3"
-                    },
-                    {
-                        "subscriptionName":"messageCreated",
-                        "query":None,
-                        "queryHash":"26847fdf99c61144d75b62d3c6a6e959667a6d48190256bbef2e90d41ce3b931"
-                    },
-                    {
-                        "subscriptionName":"viewerStateUpdated",
-                        "query":None,
-                        "queryHash":"5ae4027023f0513bf3a402323333b8b99e931bf9df28390099613e4ab0cde018"
-                    },
-                    {
-                        "subscriptionName":"messageLimitUpdated",
-                        "query":None,
-                        "queryHash":"daec317b69fed95fd7bf1202c4eca0850e6a9740bc8412af636940227359a211"
-                    },
-                    {
-                        "subscriptionName":"chatTitleUpdated",
-                        "query":None,
-                        "queryHash":"ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06"
-                    },
-                    {
-                        "subscriptionName":"knowledgeSourceUpdated",
-                        "query":None,
-                        "queryHash":"7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37"
-                    },
-                ]
-            },
+                {
+                    "subscriptionName":"messageAdded",
+                    "query":None,
+                    "queryHash":"ea3e4708530183cb91cbfabc9d9bf4c797f70440dba336fb820ab8764528c922"
+                },
+                {
+                    "subscriptionName":"messageCancelled",
+                    "query":None,
+                    "queryHash":"14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff"
+                },
+                {
+                    "subscriptionName":"messageDeleted",
+                    "query":None,
+                    "queryHash":"91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3"
+                },
+                {
+                    "subscriptionName":"messageCreated",
+                    "query":None,
+                    "queryHash":"d5cdb3b7f34852c4c74e30946098ea3ab9a4bdac99acdb82d7708ad877040d53"
+                },
+                {
+                    "subscriptionName":"viewerStateUpdated",
+                    "query":None,
+                    "queryHash":"846a7a34f9d031f4db9a691fd54aa89f6b3dd2d2b2e1966b2f4fd242404f47b4"
+                },
+                {
+                    "subscriptionName":"messageLimitUpdated",
+                    "query":None,
+                    "queryHash":"daec317b69fed95fd7bf1202c4eca0850e6a9740bc8412af636940227359a211"
+                },
+                {
+                    "subscriptionName":"chatTitleUpdated",
+                    "query":None,
+                    "queryHash":"ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06"
+                },
+                {
+                    "subscriptionName":"knowledgeSourceUpdated",
+                    "query":None,
+                    "queryHash":"7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37"
+                },
+                {
+                    "subscriptionName":"messagePointLimitUpdated",
+                    "query":None,
+                    "queryHash":"94789388515b3c125c4a45d3c5112edffd102f8b72d4f152404f58e2aed9ec6d"
+                }
+            ]},
         )
         if response_json['data'] == None and response_json["errors"]:
             raise RuntimeError(f'Failed to subscribe by sending SubscriptionsMutation. Raw response data: {response_json}')
@@ -657,7 +661,7 @@ class PoeApi:
                     break
                 sleep(0.5)
                 response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
-                hasSuggestedReplies = response_json['data']['chatOfCode']['defaultBotObject']['hasSuggestedReplies']
+                hasSuggestedReplies = response_json['data']['chatOfCode']['defaultBotObject']['mayHaveSuggestedReplies']
                 edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
                 if hasSuggestedReplies and edges:
                     latest_message = edges[-1]['node']
@@ -878,7 +882,7 @@ class PoeApi:
                     break
                 sleep(0.5)
                 response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
-                hasSuggestedReplies = response_json['data']['chatOfCode']['defaultBotObject']['hasSuggestedReplies']
+                hasSuggestedReplies = response_json['data']['chatOfCode']['defaultBotObject']['mayHaveSuggestedReplies']
                 edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
                 if hasSuggestedReplies and edges:
                     latest_message = edges[-1]['node']
@@ -921,7 +925,7 @@ class PoeApi:
         chatdata = self.get_threadData(bot, chatCode, chatId)
         chatId = chatdata['chatId']
         variables = {'chatId': chatId, 'clientNonce': generate_nonce()}
-        self.send_request('gql_POST', 'ChatHelpers_addMessageBreakEdgeMutation_Mutation', variables)
+        self.send_request('gql_POST', 'SendChatBreakMutation', variables)
             
     def delete_message(self, message_ids):
         variables = {'messageIds': message_ids}

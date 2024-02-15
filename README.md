@@ -137,7 +137,7 @@ PoeExample(token).chat_with_bot()
 | Code-Llama-7b          | code_llama_7b_instruct    | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | Code-Llama-13b         | code_llama_13b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | Code-Llama-34b         | code_llama_34b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Solar-0-70b            | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Solar-Mini             | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 > [!IMPORTANT]  
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 ### How to get your Token

@@ -234,10 +234,10 @@ class PoeExample:
                 if has_next_page:
                     page += 1
                     new_data = self.client.get_chat_history(bot=self.bot, count=20, cursor=cursor)
-                    if new_data['data'][self.bot] == [] or new_data['cursor'] == None:
+                    if new_data['data'][self.bot.lower().replace(' ', '')] == [] or new_data['cursor'] == None:
                         has_next_page = False
                     if page == len(threads):
-                        threads.append(new_data['data'][self.bot])
+                        threads.append(new_data['data'][self.bot.lower().replace(' ', '')])
                     cursor = new_data['cursor']
                     continue
                 else:
@@ -351,7 +351,7 @@ class PoeExample:
             print(f'The selected bot is: {self.bot}')
             try:
                 data = self.client.get_chat_history(bot=self.bot, count=20)
-                threads = [data['data'][self.bot]]
+                threads = [data['data'][self.bot.lower().replace(' ', '')]]
                 cursor = data['cursor']
                 thread = self.chat_thread(threads, cursor)
             except KeyError:
@@ -388,7 +388,7 @@ class PoeExample:
             elif message == '!switch':
                 try:
                     data = self.client.get_chat_history(bot=self.bot, count=20)
-                    threads = [data['data'][self.bot]]
+                    threads = [data['data'][self.bot.lower().replace(' ', '')]]
                     cursor = data['cursor']
                     thread = self.chat_thread(threads, cursor)
                 except KeyError:
