@@ -115,7 +115,7 @@ from poe_api_wrapper import PoeExample
 token = "TOKEN_HERE"
 PoeExample(token).chat_with_bot()
 ```
-- You may also try command-line interface:
+- This library also supports command-line interface:
 ```ShellSession
 poe TOKEN
 ```
