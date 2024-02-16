@@ -115,6 +115,11 @@ from poe_api_wrapper import PoeExample
 token = "TOKEN_HERE"
 PoeExample(token).chat_with_bot()
 ```
+- Or you can try command-line interface:
+```ShellSession
+poe TOKEN
+```
+<img src="https://cdn.discordapp.com/attachments/609254207911886873/1207933753234821220/cli.png?ex=65e172f9&is=65cefdf9&hm=da581e6b31b39dc714e437abe5d49358c02388021f7af64c839527f1688bee96&" width="100%" height="auto">
 
 ## 🦄 Documentation
 ### Available Default Bots

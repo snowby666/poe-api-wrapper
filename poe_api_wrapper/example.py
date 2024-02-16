@@ -1,7 +1,5 @@
 from .api import PoeApi
-
-import sys
-
+from os import _exit
 from rich.markdown import Markdown
 from rich.console import Console
 from rich.live import Live
@@ -341,7 +339,8 @@ class PoeExample:
             try:
                 self.bot = self.select_bot()
                 if self.bot == 'exit':
-                    sys.exit('Poe Example is now closed.')
+                    print('Poe Example is now closed.')
+                    _exit(0)
                 break            
             except:
                 print('Invalid cookie. Please try again.\n')
@@ -448,6 +447,7 @@ class PoeExample:
                             live.update(
                                 Markdown(f'\033[38;5;20m{self.bot}\033[0m : {message["text"]}', code_theme='monokai')
                             ) if message['contentType']=="text_markdown" else ''
+                print("\n")
             else:
                 if message == '!suggest 1':
                     message =  chunk["suggestedReplies"][0]
