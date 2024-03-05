@@ -17,6 +17,10 @@ Credit to @ading2210 for the GraphQL queries
 
 BOTS_LIST = {
     'Assistant': 'capybara',
+    'Claude-3-Opus': 'claude_2_1_cedar',
+    'Claude-3-Sonnet': 'claude_2_1_bamboo',
+    'Claude-3-Opus-200k': 'claude_3_opus_200k',
+    'Claude-3-Sonnet-200k': 'claude_3_sonnet_200k',
     'Claude-instant-100k': 'a2_100k',
     'Claude-2-100k': 'a2_2',
     'Claude-instant': 'a2',
@@ -38,9 +42,12 @@ BOTS_LIST = {
 
 BOT_CREATION_MODELS = [
     'dalle3',
-    'chinchilla',
     'stablediffusionxl',
+    'playgroundv25',
+    'chinchilla',
+    'mixtral8x7bchat',
     'a2',
+    'gemini_pro',
     'llama_2_70b_chat',
     'beaver',
     'a2_2',
@@ -537,7 +544,7 @@ class PoeApi:
         response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
         if response_json['data'] == None and response_json["errors"]:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
-        elif response_json['data']['viewer']['retryButtonEnabled'] != True:
+        elif response_json['data']['viewer']['enableRemixButton'] != True:
             raise RuntimeError(f"Retry button is not enabled. Raw response data: {response_json}")
         edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
         edges.reverse()

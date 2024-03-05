@@ -4,7 +4,7 @@ from pathlib import Path
 base_path = Path(__file__).parent
 long_description = (base_path / "README.md").read_text(encoding='utf-8')
 
-VERSION = '1.3.7'
+VERSION = '1.3.8'
 DESCRIPTION = 'A simple API wrapper for Poe.com using Httpx'
 LONG_DESCRIPTION = '👾 A Python API wrapper for Poe.com, using Httpx. With this, you will have free access to ChatGPT, Claude, Llama, Google-PaLM and more! 🚀'
 
