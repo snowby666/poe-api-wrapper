@@ -632,11 +632,13 @@ tox
 - **Improve documentation:** fix incomplete or missing docs, bad wording, examples or explanations.
 
 ### Contributors
+<p>
 <a href="https://github.com/snowby666/poe-api-wrapper/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=snowby666/poe-api-wrapper" />
 </a>
 
-<p style="margin-top:15px">
+<br>
+
 <img src="https://repobeats.axiom.co/api/embed/cba15fced158acd258575d31fc14d7e5c59b07a3.svg" alt="Repobeats analytics image">
 </p>
 
