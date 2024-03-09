@@ -119,7 +119,7 @@ PoeExample(token).chat_with_bot()
 ```ShellSession
 poe TOKEN
 ```
-<img src="https://i.imgur.com/gpfplg8.png" width="100%" height="auto">
+<img src="https://i.imgur.com/HOzfEls.png" width="100%" height="auto">
 
 ## 🦄 Documentation
 ### Available Default Bots
