@@ -119,7 +119,7 @@ PoeExample(token).chat_with_bot()
 ```ShellSession
 poe TOKEN
 ```
-<img src="https://cdn.discordapp.com/attachments/609254207911886873/1207933753234821220/cli.png?ex=65e172f9&is=65cefdf9&hm=da581e6b31b39dc714e437abe5d49358c02388021f7af64c839527f1688bee96&" width="100%" height="auto">
+<img src="https://i.imgur.com/gpfplg8.png" width="100%" height="auto">
 
 ## 🦄 Documentation
 ### Available Default Bots
@@ -131,6 +131,7 @@ poe TOKEN
 | Claude-3-Opus-200k     | claude_3_opus_200k        | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-3-Sonnet-200k   | claude_3_sonnet_200k      | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-instant-100k    | a2_100k                   | 100K        | 75K   | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-2               | claude_2_short            | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-2-100k          | a2_2                      | 100K        | 75K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-instant         | a2                        | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | ChatGPT                | chinchilla                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
@@ -634,6 +635,10 @@ tox
 <a href="https://github.com/snowby666/poe-api-wrapper/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=snowby666/poe-api-wrapper" />
 </a>
+
+<br>
+
+<img src="https://repobeats.axiom.co/api/embed/cba15fced158acd258575d31fc14d7e5c59b07a3.svg" alt="Repobeats analytics image">
 
 ## 🤝 Copyright
 This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). Most code has been written by me, [snowby666](https://github.com/snowby666).

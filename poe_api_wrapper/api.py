@@ -22,6 +22,7 @@ BOTS_LIST = {
     'Claude-3-Opus-200k': 'claude_3_opus_200k',
     'Claude-3-Sonnet-200k': 'claude_3_sonnet_200k',
     'Claude-instant-100k': 'a2_100k',
+    'Claude-2': 'claude_2_short',
     'Claude-2-100k': 'a2_2',
     'Claude-instant': 'a2',
     'ChatGPT': 'chinchilla',

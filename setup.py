@@ -14,7 +14,7 @@ setup(
     author="snowby666",
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
-    long_description=LONG_DESCRIPTION,
+    long_description=long_description,
     packages=find_packages(),
     python_requires=">=3.7",
     install_requires=['httpx', 'websocket-client', 'requests_toolbelt', 'loguru', 'rich==13.3.4'],
