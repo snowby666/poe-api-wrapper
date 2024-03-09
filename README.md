@@ -632,7 +632,6 @@ tox
 - **Improve documentation:** fix incomplete or missing docs, bad wording, examples or explanations.
 
 ### Contributors
-<p>
 <a href="https://github.com/snowby666/poe-api-wrapper/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=snowby666/poe-api-wrapper" />
 </a>
@@ -640,7 +639,6 @@ tox
 <br>
 
 <img src="https://repobeats.axiom.co/api/embed/cba15fced158acd258575d31fc14d7e5c59b07a3.svg" alt="Repobeats analytics image">
-</p>
 
 ## 🤝 Copyright
 This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe-api-wrapper/blob/main/LICENSE). Most code has been written by me, [snowby666](https://github.com/snowby666).
