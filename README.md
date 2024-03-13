@@ -4,7 +4,7 @@
 
 <h1>Poe API Wrapper <img src="https://psc2.cf2.poecdn.net/favicon.svg" height="35"></h1>
 
-<p><em>A simple API wrapper for Poe.com using Httpx</em></p>
+<p><em>A simple, lightweight and efficient API wrapper for Poe.com</em></p>
 </div>
 
 <p align="center">
