@@ -152,7 +152,7 @@ poe TOKEN
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 ### How to get your Token
 Poe API Wrapper accepts both quora.com and poe.com tokens. Pick one that works best for you.
-#### Quora Token
+#### Quora Token *(Recommended)*
 Sign in at https://www.quora.com/
 
 F12 for Devtools (Right-click + Inspect)
@@ -250,6 +250,8 @@ chatCode = chunk["chatCode"]
 chatId = chunk["chatId"]
 # You can get the meaningful title as well
 title = chunk["title"]
+# You can also retrieve msgPrice
+msgPrice = chunk["msgPrice"]
 
 # Send message to an existing chat thread
 # 1. Using chatCode
@@ -257,6 +259,9 @@ for chunk in client.send_message(bot, message, chatCode="2i58ciex72dom7im83r"):
     print(chunk["response"], end="", flush=True)
 # 2. Using chatId
 for chunk in client.send_message(bot, message, chatId=59726162):
+    print(chunk["response"], end="", flush=True)
+# 3. Specify msgPrice manually (the wrapper automatically gets this, but you can also pass the param for less resources consumed)
+for chunk in client.send_message(bot, message, chatId=59726162, msgPrice=msgPrice):
     print(chunk["response"], end="", flush=True)
 ```
 > [!NOTE]

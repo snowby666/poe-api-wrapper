@@ -1,5 +1,5 @@
 from time import sleep, time
-from httpx import Client
+import cloudscraper
 from requests_toolbelt import MultipartEncoder
 import os, secrets, string, random, websocket, json, threading, queue, ssl
 from loguru import logger
@@ -112,7 +112,7 @@ def generate_file(file_path: list, proxy: dict=None):
                 content_type = EXTENSIONS[file_extension]
             else:
                 raise RuntimeError("This file type is not supported. Please try again with a different file.") 
-            with Client(timeout=60, proxies=proxy) as fetcher:
+            with cloudscraper.create_scraper(proxies=proxy) as fetcher:
                 response = fetcher.get(file)
                 file_data = response.read()
                 fetcher.close()
@@ -151,7 +151,7 @@ class PoeApi:
             for p in range(len(proxies)):
                 try:
                     self.proxy = {"http://": f"{proxies[p]}"}
-                    self.client = Client(headers=self.HEADERS, timeout=180, proxies=self.proxy)
+                    self.client = cloudscraper.create_scraper(proxies=self.proxy)
                     logger.info(f"Connection established with {proxies[p]}")
                     break
                 except:
@@ -159,7 +159,7 @@ class PoeApi:
                     sleep(1)
         else:
             self.proxy = None
-            self.client = Client(headers=self.HEADERS, timeout=180)
+            self.client = cloudscraper.create_scraper()
         self.client.cookies.update({'m-b': self.cookie})
         
         self.get_channel_settings()
@@ -202,7 +202,7 @@ class PoeApi:
                 )
             headers = {'Content-Type': payload.content_type}
             payload = payload.to_string()
-        response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers)
+        response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers, allow_redirects=True, timeout=30)
         if response.status_code == 200:
             for file in file_form:
                 if hasattr(file[1], 'closed') and not file[1].closed:
@@ -212,7 +212,7 @@ class PoeApi:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response.text}")
     
     def get_channel_settings(self):
-        response_json = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, follow_redirects=True).json()
+        response_json = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, timeout=30).json()
         self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:11]
         self.formkey = response_json["formkey"]
         self.client.headers.update({
@@ -552,6 +552,7 @@ class PoeApi:
         
         chatId = response_json['data']['chatOfCode']['chatId']
         title = response_json['data']['chatOfCode']['title']
+        msgPrice = response_json['data']['chatOfCode']['defaultBotObject']['messagePointLimit']['displayMessagePointPrice']
         last_message = edges[0]['node']
         
         if last_message['author'] == 'human':
@@ -577,7 +578,7 @@ class PoeApi:
         bot_message_id = last_message['messageId']
         human_message_id = edges[1]['node']['messageId']
         
-        response_json = self.send_request('gql_POST', 'RegenerateMessageMutation', {'messageId': bot_message_id})
+        response_json = self.send_request('gql_POST', 'RegenerateMessageMutation', {'messageId': bot_message_id, 'messagePointsDisplayPrice': msgPrice})
         if response_json['data'] == None and response_json["errors"]:
             logger.error(f"Failed to retry message {bot_message_id} of Thread {chatCode}. Raw response data: {response_json}")
         else:
@@ -613,6 +614,7 @@ class PoeApi:
             response["chatCode"] = chatCode
             response["chatId"] = chatId
             response["title"] = title
+            response["msgPrice"] = msgPrice
 
             if response["state"] == "error_user_message_too_long":
                 response["response"]  = 'Message too long. Please try again!'
@@ -702,7 +704,7 @@ class PoeApi:
         del self.message_queues[human_message_id]
         self.retry_attempts = 3
         
-    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, file_path: list=[], suggest_replies: bool=False, timeout: int=10) -> Generator[dict, None, None]:
+    def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, msgPrice: int=20, file_path: list=[], suggest_replies: bool=False, timeout: int=10) -> Generator[dict, None, None]:
         bot = bot_map(bot)
         self.retry_attempts = 3
         timer = 0
@@ -731,8 +733,13 @@ class PoeApi:
         
         if (chatId == None and chatCode == None):
             try:
-                variables = {"chatId": None, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments}
+                variables = {"chatId": None, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments, 'messagePointsDisplayPrice': msgPrice}
                 message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                
+                if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
+                    msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
+                    variables = {"chatId": None, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments, "messagePointsDisplayPrice": msgPrice}
+                    message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
         
                 if message_data["data"] == None and message_data["errors"]:
                     raise ValueError(
@@ -776,10 +783,15 @@ class PoeApi:
             chatCode = chatdata['chatCode']
             chatId = chatdata['chatId']
             title = chatdata['title']
-            variables = {'bot': bot, 'chatId': chatId, 'query': message, 'shouldFetchChat': False, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': attachments}
+            variables = {'bot': bot, 'chatId': chatId, 'query': message, 'shouldFetchChat': False, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': attachments, }
             
             try:
                 message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
+                    msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
+                variables = {"chatId": chatId, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments, "messagePointsDisplayPrice": msgPrice}
+                message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                
                 if message_data["data"] == None and message_data["errors"]:
                     raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
                 else:
@@ -834,6 +846,7 @@ class PoeApi:
             response["chatCode"] = chatCode
             response["chatId"] = chatId
             response["title"] = title
+            response["msgPrice"] = msgPrice
 
             if response["state"] == "error_user_message_too_long":
                 response["response"]  = 'Message too long. Please try again!'
