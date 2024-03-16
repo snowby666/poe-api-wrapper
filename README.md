@@ -114,8 +114,10 @@ pip install -U poe-api-wrapper[proxy]
 - You can run an example of this library:
 ```py
 from poe_api_wrapper import PoeExample
-token = "TOKEN_HERE"
-PoeExample(token).chat_with_bot()
+tokens = {
+    ...
+}
+PoeExample(cookie=tokens).chat_with_bot()
 ```
 - This library also supports command-line interface:
 ```ShellSession
@@ -158,7 +160,7 @@ poe --b B_TOKEN --lat LAT_TOKEN
 
 ### How to get your Token
 Poe API Wrapper accepts both quora.com and poe.com tokens. Pick one that works best for you.
-#### Quora Token
+#### Quora Tokens
 Sign in at https://www.quora.com/
 
 F12 for Devtools (Right-click + Inspect)
