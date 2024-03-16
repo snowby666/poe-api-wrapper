@@ -41,6 +41,8 @@ BOTS_LIST = {
     'Solar-Mini':'upstage_solar_0_70b_16bit',
 }
 
+REVERSE_BOTS_LIST = {v: k for k, v in BOTS_LIST.items()}
+
 BOT_CREATION_MODELS = [
     'dalle3',
     'stablediffusionxl',
@@ -82,6 +84,7 @@ MEDIA_EXTENSIONS = {
     '.jpeg': 'image/jpeg',
     '.gif': 'image/gif',
     '.mp4': 'video/mp4',
+    '.mov': 'video/quicktime',
     '.mp3': 'audio/mpeg',
     '.wav': 'audio/wav',
 }
@@ -110,17 +113,21 @@ def generate_file(file_path: list, proxy: dict=None):
             file_extension = os.path.splitext(file_name)[1].lower()
             if file_extension in EXTENSIONS:
                 content_type = EXTENSIONS[file_extension]
+            elif file_extension in MEDIA_EXTENSIONS:
+                content_type = MEDIA_EXTENSIONS[file_extension]
             else:
                 raise RuntimeError("This file type is not supported. Please try again with a different file.") 
-            with cloudscraper.create_scraper(proxies=proxy) as fetcher:
-                response = fetcher.get(file)
-                file_data = response.read()
+            with cloudscraper.create_scraper() as fetcher:
+                response = fetcher.get(file, proxies=proxy)
+                file_data = response.content
                 fetcher.close()
             file_size += len(file_data)
         else: 
             file_extension = os.path.splitext(file)[1].lower()
             if file_extension in EXTENSIONS:
                 content_type = EXTENSIONS[file_extension]
+            elif file_extension in MEDIA_EXTENSIONS:
+                content_type = MEDIA_EXTENSIONS[file_extension]
             else:
                 raise RuntimeError("This file type is not supported. Please try again with a different file.") 
             file_name = os.path.basename(file)
@@ -143,27 +150,12 @@ class PoeApi:
     }
     FORMKEY_PATTERN = r'formkey": "(.*?)"'
 
-    def __init__(self, cookie: str, proxy: bool=False):
+    def __init__(self, cookie: dict={}, proxy: list=[], auto_proxy: bool=False):
+        if not {'b', 'lat'}.issubset(cookie):
+            raise ValueError("Please provide a valid p-b and p-lat cookies")
+        
         self.cookie = cookie
         self.formkey = None
-        if proxy == True and PROXY == True:
-            proxies = fetch_proxy()
-            for p in range(len(proxies)):
-                try:
-                    self.proxy = {"http://": f"{proxies[p]}"}
-                    self.client = cloudscraper.create_scraper(proxies=self.proxy)
-                    logger.info(f"Connection established with {proxies[p]}")
-                    break
-                except:
-                    logger.info(f"Connection failed with {proxies[p]}. Trying {p+1}/{len(proxies)} ...")
-                    sleep(1)
-        else:
-            self.proxy = None
-            self.client = cloudscraper.create_scraper()
-        self.client.cookies.update({'m-b': self.cookie})
-        
-        self.get_channel_settings()
-        
         self.ws_connecting = False
         self.ws_connected = False
         self.ws_error = False
@@ -175,10 +167,40 @@ class PoeApi:
         self.ws_refresh = 3
         self.groups = {}
         
-        self.connect_ws()
+        self.client = cloudscraper.create_scraper()
+        self.client.cookies.update({
+                                'm-b': self.cookie['b'], 
+                                'm-lat': self.cookie['lat']
+                                })
+        
+        if proxy != [] or auto_proxy == True:
+            self.select_proxy(proxy, auto_proxy=auto_proxy)
+        elif proxy == [] and auto_proxy == False:
+            self.get_channel_settings()
+            self.connect_ws() 
+        else:
+            raise ValueError("Please provide a valid proxy list or set auto_proxy to False")
         
     def __del__(self):
         self.client.close()
+        
+    def select_proxy(self, proxy: list, auto_proxy: bool=False):
+        if proxy == [] and auto_proxy == True and PROXY == True:
+            proxies = fetch_proxy()
+        elif proxy != [] and auto_proxy == False:
+            proxies = proxy
+        else:
+            raise ValueError("Please provide a valid proxy list or set auto_proxy to False")
+        for p in range(len(proxies)):
+            try:
+                self.client.proxies = p
+                self.get_channel_settings()
+                self.connect_ws()
+                logger.info(f"Connection established with {proxies[p]}")
+                break
+            except:
+                logger.info(f"Connection failed with {proxies[p]}. Trying {p+1}/{len(proxies)} ...")
+                sleep(1)
 
     # @property
     # def get_formkey(self):
@@ -227,51 +249,56 @@ class PoeApi:
         response_json = self.send_request('gql_POST', "SubscriptionsMutation",
             {
                 "subscriptions": [
-                {
-                    "subscriptionName":"messageAdded",
-                    "query":None,
-                    "queryHash":"ea3e4708530183cb91cbfabc9d9bf4c797f70440dba336fb820ab8764528c922"
-                },
-                {
-                    "subscriptionName":"messageCancelled",
-                    "query":None,
-                    "queryHash":"14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff"
-                },
-                {
-                    "subscriptionName":"messageDeleted",
-                    "query":None,
-                    "queryHash":"91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3"
-                },
-                {
-                    "subscriptionName":"messageCreated",
-                    "query":None,
-                    "queryHash":"d5cdb3b7f34852c4c74e30946098ea3ab9a4bdac99acdb82d7708ad877040d53"
-                },
-                {
-                    "subscriptionName":"viewerStateUpdated",
-                    "query":None,
-                    "queryHash":"846a7a34f9d031f4db9a691fd54aa89f6b3dd2d2b2e1966b2f4fd242404f47b4"
-                },
-                {
-                    "subscriptionName":"messageLimitUpdated",
-                    "query":None,
-                    "queryHash":"daec317b69fed95fd7bf1202c4eca0850e6a9740bc8412af636940227359a211"
-                },
-                {
-                    "subscriptionName":"chatTitleUpdated",
-                    "query":None,
-                    "queryHash":"ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06"
-                },
-                {
-                    "subscriptionName":"knowledgeSourceUpdated",
-                    "query":None,
-                    "queryHash":"7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37"
-                },
-                {
-                    "subscriptionName":"messagePointLimitUpdated",
-                    "query":None,
-                    "queryHash":"94789388515b3c125c4a45d3c5112edffd102f8b72d4f152404f58e2aed9ec6d"
-                }
+                                    {
+                                        "subscriptionName":"messageAdded",
+                                        "query":None,
+                                        "queryHash":"b739399cc69af7bb45a16c889a6ca6c24d3456337fde805ee7f480e6195a3eb7"
+                                    },
+                                    {
+                                        "subscriptionName":"messageCancelled",
+                                        "query":None,
+                                        "queryHash":"14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff"
+                                    },
+                                    {
+                                        "subscriptionName":"messageDeleted",
+                                        "query":None,
+                                        "queryHash":"91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3"
+                                    },
+                                    {
+                                        "subscriptionName":"messageCreated",
+                                        "query":None,
+                                        "queryHash":"0445ef6a92aebf368dfb87659d2593b07a17d62ff48d0c0c8a0ae6ab2afd362c"
+                                    },
+                                    {
+                                        "subscriptionName":"viewerStateUpdated",
+                                        "query":None,
+                                        "queryHash":"cf9d367b40f59f4d087437912206dc0e3d344fb5085d0aba46cd88222a33edee"
+                                    },
+                                    {
+                                        "subscriptionName":"messageLimitUpdated",
+                                        "query":None,
+                                        "queryHash":"daec317b69fed95fd7bf1202c4eca0850e6a9740bc8412af636940227359a211"
+                                    },
+                                    {
+                                        "subscriptionName":"chatTitleUpdated",
+                                        "query":None,
+                                        "queryHash":"ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06"
+                                    },
+                                    {
+                                        "subscriptionName":"knowledgeSourceUpdated",
+                                        "query":None,
+                                        "queryHash":"7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37"
+                                    },
+                                    {
+                                        "subscriptionName":"messagePointLimitUpdated",
+                                        "query":None,
+                                        "queryHash":"94789388515b3c125c4a45d3c5112edffd102f8b72d4f152404f58e2aed9ec6d"
+                                    },
+                                    {
+                                        "subscriptionName":"chatMemberAdded",
+                                        "query":None,
+                                        "queryHash":"08b46c791cbb98b7e729c435d6b736ec60871dff58ec3a377ce818e30b50c1c8"
+                                    }
             ]},
         )
         if response_json['data'] == None and response_json["errors"]:
@@ -301,11 +328,11 @@ class PoeApi:
                 self.ws_refresh = 3
                 raise RuntimeError("Rate limit exceeded for sending requests to poe.com. Please try again later.")
             self.get_channel_settings()
+            sleep(1)
             try:
                 self.subscribe()
                 break
             except:
-                sleep(1)
                 continue
 
         self.ws = websocket.WebSocketApp(self.channel_url, 
@@ -527,6 +554,26 @@ class PoeApi:
                     break
         return {'chatCode': chatCode, 'chatId': chatId, 'id': id, 'title': title}
     
+    def get_botInfo(self, handle: str):
+        if handle in REVERSE_BOTS_LIST:
+            handle = REVERSE_BOTS_LIST[handle]
+        else:
+            handle = handle.lower().replace(' ', '')
+        response_json = self.send_request('gql_POST', 'HandleBotLandingPageQuery', {'botHandle': handle})
+        if response_json['data'] == None and response_json["errors"]:
+            raise ValueError(
+                f"Bot {handle} not found. Make sure the bot exists before creating new chat."
+            )
+        botData = response_json['data']['bot']
+        data = {
+                    'model':botData['model'],
+                    'supportsFileUpload': botData['supportsFileUpload'], 
+                    'messageTimeoutSecs': botData['messageTimeoutSecs'], 
+                    'displayMessagePointPrice': botData['messagePointLimit']['displayMessagePointPrice'], 
+                    'numRemainingMessages': botData['messagePointLimit']['numRemainingMessages']
+                }
+        return data
+        
     def retry_message(self, chatCode: str, suggest_replies: bool=False, timeout: int=20):
         self.retry_attempts = 3
         timer = 0
@@ -725,7 +772,7 @@ class PoeApi:
             file_form = []
         else:
             apiPath = 'gql_upload_POST'
-            file_form, file_size = generate_file(file_path, self.proxy)
+            file_form, file_size = generate_file(file_path, self.client.proxies)
             if file_size > 50000000:
                 raise RuntimeError("File size too large. Please try again with a smaller file.")
             for i in range(len(file_form)):
@@ -733,12 +780,33 @@ class PoeApi:
         
         if (chatId == None and chatCode == None):
             try:
-                variables = {"chatId": None, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments, 'messagePointsDisplayPrice': msgPrice}
+                variables = {
+                                "chatId": None, 
+                                "bot": bot,
+                                "query":message, 
+                                "shouldFetchChat": True, 
+                                "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, 
+                                "clientNonce": generate_nonce(),
+                                "sdid":"","attachments":attachments, 
+                                "existingMessageAttachmentsIds":[],
+                                "messagePointsDisplayPrice": msgPrice
+                            }
                 message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
                 
                 if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
                     msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
-                    variables = {"chatId": None, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments, "messagePointsDisplayPrice": msgPrice}
+                    variables = {
+                                    "chatId": None, 
+                                    "bot": bot,
+                                    "query":message, 
+                                    "shouldFetchChat": True, 
+                                    "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, 
+                                    "clientNonce": generate_nonce(),
+                                    "sdid":"",
+                                    "attachments":attachments, 
+                                    "existingMessageAttachmentsIds":[],
+                                    "messagePointsDisplayPrice": msgPrice
+                                }
                     message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
         
                 if message_data["data"] == None and message_data["errors"]:
@@ -783,13 +851,35 @@ class PoeApi:
             chatCode = chatdata['chatCode']
             chatId = chatdata['chatId']
             title = chatdata['title']
-            variables = {'bot': bot, 'chatId': chatId, 'query': message, 'shouldFetchChat': False, 'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, "clientNonce": generate_nonce(), 'sdid':"", 'attachments': attachments, }
+            variables = {
+                            'chatId': chatId, 
+                            'bot': bot, 
+                            'query': message, 
+                            'shouldFetchChat': False, 
+                            'source': { "sourceType": "chat_input", "chatInputMetadata": {"useVoiceRecord": False}}, 
+                            "clientNonce": generate_nonce(), 
+                            'sdid':"", 
+                            'attachments': attachments, 
+                            "existingMessageAttachmentsIds":[],
+                            "messagePointsDisplayPrice": msgPrice
+                        }
             
             try:
                 message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
                 if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
                     msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
-                variables = {"chatId": chatId, "bot": bot,"query":message, "shouldFetchChat": True, "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, "clientNonce": generate_nonce(),"sdid":"","attachments":attachments, "messagePointsDisplayPrice": msgPrice}
+                variables = {
+                                "chatId": chatId, 
+                                "bot": bot,
+                                "query":message, 
+                                "shouldFetchChat": True, 
+                                "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, 
+                                "clientNonce": generate_nonce(),
+                                "sdid":"",
+                                "attachments":attachments, 
+                                "existingMessageAttachmentsIds":[],
+                                "messagePointsDisplayPrice": msgPrice
+                            }
                 message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
                 
                 if message_data["data"] == None and message_data["errors"]:
@@ -1146,7 +1236,7 @@ class PoeApi:
                     sleep(2)        
         if file_path != []:
             for path in file_path:
-                file_form, file_size = generate_file([path], self.proxy)
+                file_form, file_size = generate_file([path], self.client.proxies)
                 if file_size > 50000000:
                     raise RuntimeError("File size too large. Please try again with a smaller file.")
                 response = self.send_request('gql_upload_POST', 'Knowledge_CreateKnowledgeSourceMutation', {"sourceInput":{"file_upload":{"attachment":"file"}}}, file_form, knowledge=True)

@@ -20,4 +20,4 @@ if PROXY:
             limit=10,
             protocols=[Protocols.HTTP],
             )
-        return proxies
+        return [{'http': f'{proxy.protocol}://{proxy.ip}:{proxy.port}'} for proxy in proxies]

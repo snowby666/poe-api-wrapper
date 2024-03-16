@@ -37,6 +37,7 @@
 <ul>
 <li>Log in with your Quora's token or Poe's token</li>
 <li>Auto Proxy requests</li>
+<li>Specify Proxy context</li>
 </ul>
 </details>
 <details close>
@@ -66,6 +67,7 @@
 <details close>
 <summary>Bot Management</summary><br>
 <ul>
+<li>Get bot info</li>
 <li>Create custom bot</li>
 <li>Edit custom bot</li>
 <li>Delete a custom bot</li>
@@ -117,9 +119,12 @@ PoeExample(token).chat_with_bot()
 ```
 - This library also supports command-line interface:
 ```ShellSession
-poe TOKEN
+poe --b B_TOKEN --lat LAT_TOKEN   
 ```
-<img src="https://i.imgur.com/HOzfEls.png" width="100%" height="auto">
+> [!TIP]
+> Type `poe -h` for more info
+
+<img src="https://i.imgur.com/ScZjzbx.png" width="100%" height="auto">
 
 ## 🦄 Documentation
 ### Available Default Bots
@@ -150,9 +155,10 @@ poe TOKEN
 | Solar-Mini             | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 > [!IMPORTANT]  
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
+
 ### How to get your Token
 Poe API Wrapper accepts both quora.com and poe.com tokens. Pick one that works best for you.
-#### Quora Token *(Recommended)*
+#### Quora Token
 Sign in at https://www.quora.com/
 
 F12 for Devtools (Right-click + Inspect)
@@ -160,9 +166,9 @@ F12 for Devtools (Right-click + Inspect)
 - Firefox: Devtools > Storage > Cookies
 - Safari: Devtools > Storage > Cookies
 
-Copy the value of `m-b` cookie
+Copy the values of `m-b` and `m-lat` cookies
 
-#### Poe Token
+#### Poe Tokens
 Sign in at https://poe.com/
 
 F12 for Devtools (Right-click + Inspect)
@@ -170,7 +176,7 @@ F12 for Devtools (Right-click + Inspect)
 - Firefox: Devtools > Storage > Cookies
 - Safari: Devtools > Storage > Cookies
 
-Copy the value of `p-b` cookie
+Copy the values of `p-b` and `p-lat` cookies
 
 > [!NOTE]
 > Make sure you have logged in poe.com using **the same email** which registered on quora.com.
@@ -178,11 +184,31 @@ Copy the value of `p-b` cookie
 ### Basic Usage
 - Connecting to the API
 ```py
-from poe_api_wrapper import PoeApi
-client = PoeApi("TOKEN_HERE")
+# Using poe.com tokens
+tokens = {
+    'b': 'p-b token here',
+    'lat': 'p-lat token here'
+}
+# Using quora.com tokens
+tokens = {
+    'b': 'm-b token here',
+    'lat': 'm-lat token here'
+}
 
-# Using Client with proxy (default is False)
-client = PoeApi("TOKEN_HERE", proxy=True)
+from poe_api_wrapper import PoeApi
+client = PoeApi(cookie=tokens)
+
+# Using Client with auto_proxy (default is False)
+client = PoeApi(cookie=tokens, auto_proxy=True)
+
+# Passing proxies manually
+proxy_context = [
+    {"https":X1, "http":X1},
+    {"https":X2, "http":X2},
+    ...
+]
+
+client = PoeApi(cookie=tokens, proxy=proxy_context) 
 ```
 - Getting Chat Ids & Chat Codes
 ```py
@@ -274,7 +300,7 @@ for chunk in client.retry_message(chatCode):
 - Adding file attachments
 ```py
 # Web urls example:
-file_urls = ["https://sweet.ua.pt/jpbarraca/course/er-2122/slides/er-1-intro_to_re.pdf", 
+file_urls = ["https://elinux.org/images/c/c5/IntroductionToReverseEngineering_Anderson.pdf", 
             "https://www.kcl.ac.uk/warstudies/assets/automation-and-artificial-intelligence.pdf"]
 for chunk in client.send_message(bot, "Compare 2 files and describe them in 300 words", file_path=file_urls):
     print(chunk["response"], end="", flush=True)
@@ -429,6 +455,13 @@ print(source_ids)
 - Editing knowledge bases (Only for plain texts)
 ```py
 client.edit_knowledge(knowledgeSourceId=86381, title='What is Quora?', content='Quora is a question-and-answer platform where users can ask questions, provide answers, and engage in discussions on various topics.')
+```
+- Getting bot info
+```py
+bot = 'gpt-4'
+print(client.get_botInfo(handle=bot))
+>> Output:
+{'model': 'beaver', 'supportsFileUpload': True, 'messageTimeoutSecs': 15, 'displayMessagePointPrice': 350, 'numRemainingMessages': 20}
 ```
 - Creating a new Bot
 ```py
@@ -610,9 +643,14 @@ Here is an example, the chatCode is 2i5bego6rzetfsevv5g
 
 Currently, this API only supports these file types for adding attachments
 
+#### Text files
 | .pdf | .docx | .txt | .md | .py | .js | .ts | .html | .css | .csv | .c | .cs | .cpp | .lua | .rs | .rb | .go | .java |
 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 |                                                                       |
+#### Media files
+| .png | .jpg | .jpeg | .gif | .mp4 | .mov | .mp3 | .wav |
+| - | - | - | - | - | - | - | - |
+|                               |
 
 ## 🙌 Contributing
 We would love to develop poe-api-wrapper together with our community! 💕
