@@ -637,9 +637,9 @@ print(client.load_group_history(file_path=local_path))
 ### Misc
 - How to find chatCode manually?
 
-Here is an example, the chatCode is 2i5bego6rzetfsevv5g
+Here is an example, the chatCode is 23o1gxjhb9cfnlacdcd
 
-![](https://cdn.discordapp.com/attachments/957946068836950026/1142363043741843506/image.png)
+![](https://i.imgur.com/m1zDP36.png)
 
 - What are the file types that poe-api-wrapper support?
 
