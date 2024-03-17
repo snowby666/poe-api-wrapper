@@ -6,7 +6,7 @@ from loguru import logger
 from urllib.parse import urlparse
 from .queries import generate_payload
 from .proxies import PROXY
-from .utils import (BOTS_LIST, REVERSE_BOTS_LIST, EXTENSIONS, MEDIA_EXTENSIONS, bot_map)
+from .utils import (BOTS_LIST, REVERSE_BOTS_LIST, EXTENSIONS, MEDIA_EXTENSIONS, BOT_CREATION_MODELS, bot_map)
 from typing import Generator
 if PROXY:
     from .proxies import fetch_proxy
