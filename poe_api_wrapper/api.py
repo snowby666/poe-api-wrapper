@@ -150,9 +150,6 @@ class PoeApi:
             payload = payload.to_string()
         response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers, allow_redirects=True, timeout=30)
         if response.status_code == 200:
-            for file in file_form:
-                if hasattr(file[1], 'closed') and not file[1].closed:
-                    file[1].close()
             return response.json()
         else:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response.text}")
@@ -765,6 +762,10 @@ class PoeApi:
             except Exception as e:
                 del self.active_messages["pending"]
                 raise e
+            finally:
+                for file in file_form:
+                    if hasattr(file[1], 'closed') and not file[1].closed:
+                        file[1].close()
             try:
                 human_message = message_data['messagesConnection']['edges'][0]['node']['text']
                 human_message_id = message_data['messagesConnection']['edges'][0]['node']['messageId']
@@ -829,6 +830,10 @@ class PoeApi:
                 human_message_id = human_message["node"]["messageId"]
             except TypeError:
                 raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
+            finally:
+                for file in file_form:
+                    if hasattr(file[1], 'closed') and not file[1].closed:
+                        file[1].close()
         
         self.message_generating = True
         self.active_messages[human_message_id] = None
