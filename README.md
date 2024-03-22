@@ -33,6 +33,9 @@
 
 ## ✨ Highlights
 <details close>
+<summary>Support both <b>Sync</b> and <b>Async</b></summary>
+</details>
+<details close>
 <summary>Authentication</summary><br>
 <ul>
 <li>Log in with your Quora's token or Poe's token</li>
@@ -68,6 +71,7 @@
 <summary>Bot Management</summary><br>
 <ul>
 <li>Get bot info</li>
+<li>Get available creation models</li>
 <li>Create custom bot</li>
 <li>Edit custom bot</li>
 <li>Delete a custom bot</li>
@@ -486,6 +490,12 @@ bot = 'gpt-4'
 print(client.get_botInfo(handle=bot))
 >> Output:
 {'model': 'beaver', 'supportsFileUpload': True, 'messageTimeoutSecs': 15, 'displayMessagePointPrice': 350, 'numRemainingMessages': 20}
+```
+- Getting available creation models
+```py
+print(client.get_available_creation_models())
+>> Output:
+['chinchilla', 'mixtral8x7bchat', 'playgroundv25', 'stablediffusionxl', 'dalle3', 'a2', 'claude_2_short', 'gemini_pro', 'a2_2', 'a2_100k', 'beaver', 'llama_2_70b_chat', 'mythomaxl213b', 'claude_2_1_bamboo', 'claude_2_1_cedar', 'claude_3_haiku', 'claude_3_haiku_200k']
 ```
 - Creating a new Bot
 ```py
