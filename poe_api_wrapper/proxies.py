@@ -2,7 +2,7 @@ try:
     from ballyregan import ProxyFetcher
     from ballyregan.models import Protocols, Anonymities
     PROXY = True
-except:
+except ImportError:
     PROXY = False
 
 if PROXY:
@@ -20,4 +20,4 @@ if PROXY:
             limit=10,
             protocols=[Protocols.HTTP],
             )
-        return [{'http': f'{proxy.protocol}://{proxy.ip}:{proxy.port}'} for proxy in proxies]
+        return [{'http': f'http://{proxy.ip}:{proxy.port}'} for proxy in proxies]

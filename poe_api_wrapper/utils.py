@@ -1,3 +1,73 @@
+import os, string, secrets
+from urllib.parse import urlparse
+import cloudscraper
+
+BASE_HEADERS = {
+    'Host': 'www.quora.com',
+    'Accept': '*/*',
+    'apollographql-client-version': '1.1.6-65',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'User-Agent': 'Poe 1.1.6 rv:65 env:prod (iPhone14,2; iOS 16.2; en_US)',
+    'apollographql-client-name': 'com.quora.app.Experts-apollo-ios',
+    'Connection': 'keep-alive',
+    'Content-Type': 'application/json'  
+}
+
+SubscriptionsMutation = {
+    "subscriptions": [
+                        {
+                            "subscriptionName":"messageAdded",
+                            "query":None,
+                            "queryHash":"b739399cc69af7bb45a16c889a6ca6c24d3456337fde805ee7f480e6195a3eb7"
+                        },
+                        {
+                            "subscriptionName":"messageCancelled",
+                            "query":None,
+                            "queryHash":"14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff"
+                        },
+                        {
+                            "subscriptionName":"messageDeleted",
+                            "query":None,
+                            "queryHash":"91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3"
+                        },
+                        {
+                            "subscriptionName":"messageCreated",
+                            "query":None,
+                            "queryHash":"0445ef6a92aebf368dfb87659d2593b07a17d62ff48d0c0c8a0ae6ab2afd362c"
+                        },
+                        {
+                            "subscriptionName":"viewerStateUpdated",
+                            "query":None,
+                            "queryHash":"cf9d367b40f59f4d087437912206dc0e3d344fb5085d0aba46cd88222a33edee"
+                        },
+                        {
+                            "subscriptionName":"messageLimitUpdated",
+                            "query":None,
+                            "queryHash":"daec317b69fed95fd7bf1202c4eca0850e6a9740bc8412af636940227359a211"
+                        },
+                        {
+                            "subscriptionName":"chatTitleUpdated",
+                            "query":None,
+                            "queryHash":"ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06"
+                        },
+                        {
+                            "subscriptionName":"knowledgeSourceUpdated",
+                            "query":None,
+                            "queryHash":"7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37"
+                        },
+                        {
+                            "subscriptionName":"messagePointLimitUpdated",
+                            "query":None,
+                            "queryHash":"94789388515b3c125c4a45d3c5112edffd102f8b72d4f152404f58e2aed9ec6d"
+                        },
+                        {
+                            "subscriptionName":"chatMemberAdded",
+                            "query":None,
+                            "queryHash":"08b46c791cbb98b7e729c435d6b736ec60871dff58ec3a377ce818e30b50c1c8"
+                        }
+    ]
+    
+}
 BOTS_LIST = {
     'Assistant': 'capybara',
     'Claude-3-Opus': 'claude_2_1_cedar',
@@ -25,20 +95,6 @@ BOTS_LIST = {
 }
 
 REVERSE_BOTS_LIST = {v: k for k, v in BOTS_LIST.items()}
-
-BOT_CREATION_MODELS = [
-    'dalle3',
-    'stablediffusionxl',
-    'playgroundv25',
-    'chinchilla',
-    'mixtral8x7bchat',
-    'a2',
-    'gemini_pro',
-    'llama_2_70b_chat',
-    'beaver',
-    'a2_2',
-    'a2_100k'
-]
 
 EXTENSIONS = {
     '.md': 'application/octet-stream',
@@ -76,3 +132,45 @@ def bot_map(bot):
     if bot in BOTS_LIST:
         return BOTS_LIST[bot]
     return bot.lower().replace(' ', '')
+
+def generate_nonce(length:int=16):
+      return "".join(secrets.choice(string.ascii_letters + string.digits) for i in range(length))
+
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+    
+def generate_file(file_path: list, proxy: dict=None):
+    files = []   
+    file_size = 0
+    for file in file_path: 
+        if is_valid_url(file):  
+            file_name = file.split('/')[-1]
+            file_extension = os.path.splitext(file_name)[1].lower()
+            if file_extension in EXTENSIONS:
+                content_type = EXTENSIONS[file_extension]
+            elif file_extension in MEDIA_EXTENSIONS:
+                content_type = MEDIA_EXTENSIONS[file_extension]
+            else:
+                raise RuntimeError("This file type is not supported. Please try again with a different file.") 
+            with cloudscraper.create_scraper() as fetcher:
+                response = fetcher.get(file, proxies=proxy)
+                file_data = response.content
+                fetcher.close()
+            file_size += len(file_data)
+        else: 
+            file_extension = os.path.splitext(file)[1].lower()
+            if file_extension in EXTENSIONS:
+                content_type = EXTENSIONS[file_extension]
+            elif file_extension in MEDIA_EXTENSIONS:
+                content_type = MEDIA_EXTENSIONS[file_extension]
+            else:
+                raise RuntimeError("This file type is not supported. Please try again with a different file.") 
+            file_name = os.path.basename(file)
+            file_data = open(file, 'rb')
+            file_size += os.path.getsize(file)
+        files.append((file_name, file_data, content_type))
+    return files, file_size

@@ -33,7 +33,7 @@ QUERIES = {
   "ContinueChatFromPoeShare": "a220810c2d1d3b5284b6be44309a3d2b197c312a79b1a27f165a12f1508322bd",
   "ContinueChatIndexPageQuery": "a7eea6eebd14aa355723514558762315d0b4df46205b70f825d288d5ed1635ec",
   "ContinueChatPageQuery": "fe3a4d2006b1c4bb47ac6dea0639bc9128ad983cf37cbc0006c33efab372a19d",
-  "CreateBotIndexPageQuery": "61134731fa4e4cc9b2006b6a819f343dc91876f91a6e1cd28d49826bba79e4e7",
+  "CreateBotIndexPageQuery": "0d7db3055a91d8574628b81f4e5ed23309bacb90cab08ac3ab7e32d67a72fd22",
   "CreateBotPageQuery": "4fa5e0703c416fc6b40c5e2fcfcac66301ed0c8d32bafb5d69300e7553ef1f8f",
   "CreateChatMutation": "f1322c9c34d4140d420aeb9151cdeebc2235d381ada0037c845572310f613b7d",
   "CreateChatWithTitle": "6cf8cddd6594901bd4a7dc6ddeffc91485c21c817e8f7fa07fae9d71d9807d71",

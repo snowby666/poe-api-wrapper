@@ -19,8 +19,9 @@ setup(
     python_requires=">=3.7",
     install_requires=['cloudscraper', 'websocket-client', 'requests_toolbelt', 'loguru', 'rich==13.3.4'],
     extras_require={
+        'async': ['httpx==0.24.0'],
         'proxy': ['ballyregan; python_version>="3.9"'],
-        'tests': ['tox']
+        'tests': ['tox'],
     },
     keywords=['python', 'poe', 'quora', 'chatgpt', 'claude', 'poe-api', 'api'],
     classifiers=[
