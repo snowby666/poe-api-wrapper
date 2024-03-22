@@ -59,6 +59,7 @@
 <li>Purge all messages of user</li>
 <li>Fetch previous messages</li>
 <li>Share and import messages</li>
+<li>Get citations</li>
 </ul>
 </details>
 <details close>
@@ -437,14 +438,17 @@ for message in previous_messages:
 > It will fetch messages from the latest to the oldest, but the order to be displayed is reversed.
 - Getting available knowledge bases
 ```py
-print(client.get_available_knowledge(botName="BOT_NAME"))
+# Get a defined number of sources (default is 10)
+print(client.get_available_knowledge(botName="BOT_NAME", count=2))
 >> Output:
 {'What is Quora?': [86698], 'Founders of Quora': [86705]}
+# Get all available sources
+print(client.get_available_knowledge(botName="BOT_NAME", get_all=True))
 ```
 - Uploading knowledge bases
 ```py
 # Web urls example:
-file_urls = ["https://sweet.ua.pt/jpbarraca/course/er-2122/slides/er-1-intro_to_re.pdf", 
+file_urls = ["https://elinux.org/images/c/c5/IntroductionToReverseEngineering_Anderson.pdf", 
             "https://www.kcl.ac.uk/warstudies/assets/automation-and-artificial-intelligence.pdf"]
 source_ids = client.upload_knowledge(file_path=file_urls)
 print(source_ids)
@@ -489,7 +493,7 @@ client.edit_knowledge(knowledgeSourceId=86381, title='What is Quora?', content='
 bot = 'gpt-4'
 print(client.get_botInfo(handle=bot))
 >> Output:
-{'model': 'beaver', 'supportsFileUpload': True, 'messageTimeoutSecs': 15, 'displayMessagePointPrice': 350, 'numRemainingMessages': 20}
+{'handle': 'GPT-4', 'model': 'beaver', 'supportsFileUpload': True, 'messageTimeoutSecs': 15, 'displayMessagePointPrice': 350, 'numRemainingMessages': 20, 'viewerIsCreator': False, 'id': 'Qm90OjMwMDc='}
 ```
 - Getting available creation models
 ```py
@@ -583,6 +587,10 @@ client2 = PoeApi("2nd_TOKEN_HERE")
 print(client2.import_chat(bot, shareCode))
 >> Output:
 {'chatId': 72929127, 'chatCode': '2iw0xcem7a18wy1avd3'}
+```
+- Getting citations
+```py
+print(client.get_citations(messageId=141597902621))
 ```
 ### Bots Group Chat (beta)
 - Creating a group chat

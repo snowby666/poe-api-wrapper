@@ -399,12 +399,15 @@ class PoeApi:
                 f"Bot {handle} not found. Make sure the bot exists before creating new chat."
             )
         botData = response_json['data']['bot']
-        data = {
-                    'model':botData['model'],
-                    'supportsFileUpload': botData['supportsFileUpload'], 
-                    'messageTimeoutSecs': botData['messageTimeoutSecs'], 
-                    'displayMessagePointPrice': botData['messagePointLimit']['displayMessagePointPrice'], 
-                    'numRemainingMessages': botData['messagePointLimit']['numRemainingMessages']
+        data = {    
+                'handle': botData['handle'],
+                'model':botData['model'],
+                'supportsFileUpload': botData['supportsFileUpload'], 
+                'messageTimeoutSecs': botData['messageTimeoutSecs'], 
+                'displayMessagePointPrice': botData['messagePointLimit']['displayMessagePointPrice'], 
+                'numRemainingMessages': botData['messagePointLimit']['numRemainingMessages'],
+                'viewerIsCreator': botData['viewerIsCreator'],
+                'id': botData['id'],
                 }
         return data
     
@@ -1006,11 +1009,6 @@ class PoeApi:
         logger.info(f"Found {len(messages)} messages of {chatCode}")
         return messages[::-1]
     
-    def get_citations(self, message_id: str):
-        variables = {"messageId": message_id }
-        response_json = self.send_request('gql_POST', 'MessageCitationSourceModalQuery', variables)
-        return response_json
-        
     def get_user_bots(self, user: str):
         variables = {'handle': user}
         response_json = self.send_request('gql_POST', 'HandleProfilePageQuery', variables)
@@ -1029,19 +1027,38 @@ class PoeApi:
         self.send_request('gql_POST', 'NuxInitialModal_poeSetHandle_Mutation', variables)
         self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
     
-    def get_available_knowledge(self, botName: str):
-        variables = {"botName": botName}
-        response = self.send_request('gql_POST', 'EditBotIndexPageQuery', variables)
-        if response['data']['bot']['viewerIsCreator'] == False:
+    def get_available_knowledge(self, botName: str, count: int=10, get_all: bool=False):
+        response = self.get_botInfo(botName)
+        if response['viewerIsCreator'] == False:
             raise RuntimeError(f"You are not the creator of {botName}.")
-        edges = response['data']['bot']['knowledgeSourceConnection']['edges']
+        id = response["id"]
         sources_ids = {}
-        for edge in edges:
-            if edge['node']['title'] not in sources_ids:
-                sources_ids[edge['node']['title']] = [edge['node']['knowledgeSourceId']]
-            else:
-                sources_ids[edge['node']['title']].append(edge['node']['knowledgeSourceId'])
-        logger.info(f"Found {len(sources_ids)} knowledge sources of {botName}")
+        new_variables = {"after": "5", "first": count, "id": id}
+        response = self.send_request('gql_POST', 'BotKnowledgeSourcesModalPaginationQuery', new_variables)
+        edges = response['data']['node']['knowledgeSourceConnection']['edges']
+        if edges:
+            for edge in edges:
+                if edge['node']['title'] not in sources_ids:
+                    sources_ids[edge['node']['title']] = [edge['node']['knowledgeSourceId']]
+                else:
+                    sources_ids[edge['node']['title']].append(edge['node']['knowledgeSourceId'])
+                total_sources = edge['cursor']
+            while (len(sources_ids) < count or get_all):
+                if response['data']['node']['knowledgeSourceConnection']['pageInfo']['hasNextPage']:
+                    cursor = response['data']['node']['knowledgeSourceConnection']['pageInfo']['endCursor']
+                else:
+                    break
+                new_variables = {"after": cursor, "first": count, "id": id }
+                response = self.send_request('gql_POST', 'BotKnowledgeSourcesModalPaginationQuery', new_variables)
+                if edges:
+                    edges = response['data']['node']['knowledgeSourceConnection']['edges']
+                    for edge in edges:
+                        if edge['node']['title'] not in sources_ids:
+                            sources_ids[edge['node']['title']] = [edge['node']['knowledgeSourceId']]
+                        else:
+                            sources_ids[edge['node']['title']].append(edge['node']['knowledgeSourceId'])
+                        total_sources = edge['cursor']
+        logger.info(f"Found {len(sources_ids)} unique knowledge sources out of {int(total_sources)+1} sources from {botName}")
         return sources_ids
 
     def upload_knowledge(self, file_path: list=[], text_knowledge: list=[]):
