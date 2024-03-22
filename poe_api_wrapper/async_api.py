@@ -13,16 +13,14 @@ from requests_toolbelt import MultipartEncoder
 import nest_asyncio
 nest_asyncio.apply()
 
-from .utils import ( 
-                    BASE_HEADERS,
+from .utils import (
+                    BASE_URL,
+                    HEADERS,
                     SubscriptionsMutation,
                     BOTS_LIST, 
                     REVERSE_BOTS_LIST, 
-                    EXTENSIONS, 
-                    MEDIA_EXTENSIONS, 
                     bot_map, 
                     generate_nonce, 
-                    is_valid_url,
                     generate_file
                     )
 from .queries import generate_payload
@@ -37,9 +35,8 @@ Credit to @ading2210 for the GraphQL queries
 
 
 class AsyncPoeApi:
-    BASE_URL = 'https://www.quora.com'
-    HEADERS = BASE_HEADERS
-
+    BASE_URL = BASE_URL
+    HEADERS = HEADERS
     def __init__(self, cookie: dict={}, proxy: list=[], auto_proxy: bool=False):
         self.client = None
         if not ASYNC:

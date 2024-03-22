@@ -2,7 +2,8 @@ import os, string, secrets
 from urllib.parse import urlparse
 import cloudscraper
 
-BASE_HEADERS = {
+BASE_URL = 'https://www.quora.com'
+HEADERS = {
     'Host': 'www.quora.com',
     'Accept': '*/*',
     'apollographql-client-version': '1.1.6-65',

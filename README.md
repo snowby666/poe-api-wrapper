@@ -111,11 +111,33 @@ Or you can install a proxy-support version of this library for **Python 3.9+**
 ```ShellSession
 pip install -U poe-api-wrapper[proxy]
 ```
+You can also use the Async version:
+```ShellSession
+pip install -U poe-api-wrapper[async]
+```
+Quick setup for Async Client:
+```py
+from poe_api_wrapper import AsyncPoeApi
+import asyncio
+tokens = {
+    'b': ..., 
+    'lat': ...
+}
+
+async def main():
+    client = await AsyncPoeApi(cookie=tokens).create()
+    message = "Explain quantum computing in simple terms"
+    async for chunk in client.send_message(bot="gpt3_5", message=message):
+        print(chunk["response"], end='', flush=True)
+        
+asyncio.run(main())
+```
 - You can run an example of this library:
 ```py
 from poe_api_wrapper import PoeExample
 tokens = {
-    ...
+    'b': ..., 
+    'lat': ...
 }
 PoeExample(cookie=tokens).chat_with_bot()
 ```
