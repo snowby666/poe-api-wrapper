@@ -147,31 +147,28 @@ def is_valid_url(url):
 def generate_file(file_path: list, proxy: dict=None):
     files = []   
     file_size = 0
-    for file in file_path: 
-        if is_valid_url(file):  
+    for file in file_path:
+        if is_valid_url(file):
+            # Handle URL files
             file_name = file.split('/')[-1]
             file_extension = os.path.splitext(file_name)[1].lower()
-            if file_extension in EXTENSIONS:
-                content_type = EXTENSIONS[file_extension]
-            elif file_extension in MEDIA_EXTENSIONS:
-                content_type = MEDIA_EXTENSIONS[file_extension]
-            else:
-                raise RuntimeError("This file type is not supported. Please try again with a different file.") 
+            content_type = MEDIA_EXTENSIONS.get(file_extension, EXTENSIONS.get(file_extension, None))
+            if not content_type:
+                raise RuntimeError("This file type is not supported. Please try again with a different file.")
             with cloudscraper.create_scraper() as fetcher:
                 response = fetcher.get(file, proxies=proxy)
                 file_data = response.content
-                fetcher.close()
+            files.append((file_name, file_data, content_type))
             file_size += len(file_data)
-        else: 
+        else:
+            # Handle local files
             file_extension = os.path.splitext(file)[1].lower()
-            if file_extension in EXTENSIONS:
-                content_type = EXTENSIONS[file_extension]
-            elif file_extension in MEDIA_EXTENSIONS:
-                content_type = MEDIA_EXTENSIONS[file_extension]
-            else:
-                raise RuntimeError("This file type is not supported. Please try again with a different file.") 
+            content_type = MEDIA_EXTENSIONS.get(file_extension, EXTENSIONS.get(file_extension, None))
+            if not content_type:
+                raise RuntimeError("This file type is not supported. Please try again with a different file.")
             file_name = os.path.basename(file)
-            file_data = open(file, 'rb')
-            file_size += os.path.getsize(file)
-        files.append((file_name, file_data, content_type))
+            with open(file, 'rb') as f:
+                file_data = f.read()
+                files.append((file_name, file_data, content_type))
+                file_size += len(file_data)
     return files, file_size
