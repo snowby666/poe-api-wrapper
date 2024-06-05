@@ -85,6 +85,7 @@ BOTS_LIST = {
     'ChatGPT-16k': 'agouti',
     'GPT-4': 'beaver',
     'GPT-4-128k': 'vizcacha',
+    'GPT-4o': 'gpt4_o',
     'Google-PaLM': 'acouchy',
     'Llama-2-7b': 'llama_2_7b_chat',
     'Llama-2-13b': 'llama_2_13b_chat',
