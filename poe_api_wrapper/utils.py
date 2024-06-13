@@ -174,8 +174,4 @@ def generate_file(file_path: list, proxy: dict=None):
                 file_data = f.read()
                 files.append((file_name, file_data, content_type))
                 file_size += len(file_data)
-<<<<<<< HEAD
     return files, file_size
-=======
-    return files, file_size
->>>>>>> 0edbc2e5a3ac502d537b8f1518fe817cf37a17ea

@@ -17,12 +17,7 @@ setup(
     long_description=long_description,
     packages=find_packages(),
     python_requires=">=3.7",
-<<<<<<< HEAD
     install_requires=['cloudscraper', 'websocket-client', 'requests_toolbelt', 'loguru', 'rich==13.3.4', 'nest-asyncio'],
-=======
-    install_requires=['cloudscraper', 'websocket-client',
-                      'requests_toolbelt', 'loguru', 'rich==13.3.4', 'nest_asyncio'],
->>>>>>> 0edbc2e5a3ac502d537b8f1518fe817cf37a17ea
     extras_require={
         'async': ['httpx==0.24.0'],
         'proxy': ['ballyregan; python_version>="3.9"'],
@@ -35,7 +30,7 @@ setup(
         "Operating System :: OS Independent"
     ],
     url="https://github.com/snowby666/poe-api-wrapper",
-
+    
     entry_points={
         "console_scripts": [
             "poe = poe_api_wrapper.cli:main",
