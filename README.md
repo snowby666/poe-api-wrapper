@@ -1,6 +1,6 @@
 <div align="center">
 <a href="https://github.com/snowby666">
-<img src="https://socialify.git.ci/snowby666/poe-api-wrapper/image?font=Raleway&forks=1&issues=1&language=1&logo=https://i.ibb.co/JsNwP3B/nobgprofile-3.png&name=1&owner=1&pattern=Charlie%20Brown&pulls=1&stargazers=1&theme=Auto" width="700" height="350"></a>
+<img src="https://socialify.git.ci/snowby666/poe-api-wrapper/image?font=Raleway&forks=1&issues=1&language=1&logo=https://i.ibb.co/xHrZxFY/logo-nobg.png&name=1&owner=1&pattern=Charlie%20Brown&pulls=1&stargazers=1&theme=Auto" width="700" height="350"></a>
 
 <h1>Poe API Wrapper <img src="https://psc2.cf2.poecdn.net/favicon.svg" height="35"></h1>
 
