@@ -236,6 +236,10 @@ class PoeApi:
             logger.exception(f"Failed to parse message: {msg}")
             self.disconnect_ws()
             self.connect_ws()
+            
+    def get_remaining_points(self):
+        response_json = self.send_request('gql_POST', 'SettingsPageQuery', {})
+        return response_json["data"]["viewer"]["messagePointInfo"]
     
     def get_available_bots(self, count: int=25, get_all: bool=False):
         self.bots = {}
@@ -423,9 +427,8 @@ class PoeApi:
             sleep(0.5)
             response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
             hasSuggestedReplies = response_json['data']['chatOfCode']['defaultBotObject']['mayHaveSuggestedReplies']
-            edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
-            if hasSuggestedReplies and edges:
-                latest_message = edges[-1]['node']
+            latest_message = response_json['data']['chatOfCode']['lastMessage']
+            if hasSuggestedReplies and latest_message:
                 suggestions = latest_message['suggestedReplies']
                 state = latest_message['state']
                 if state == 'complete' and suggestions:

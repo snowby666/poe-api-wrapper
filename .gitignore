@@ -1,5 +1,6 @@
 build/
 dist/
 playground/
+openai/
 *.egg-info/
 poe_api_wrapper/__pycache__/

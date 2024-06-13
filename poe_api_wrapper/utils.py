@@ -16,59 +16,59 @@ HEADERS = {
 
 SubscriptionsMutation = {
     "subscriptions": [
-                        {
-                            "subscriptionName":"messageAdded",
-                            "query":None,
-                            "queryHash":"b739399cc69af7bb45a16c889a6ca6c24d3456337fde805ee7f480e6195a3eb7"
-                        },
-                        {
-                            "subscriptionName":"messageCancelled",
-                            "query":None,
-                            "queryHash":"14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff"
-                        },
-                        {
-                            "subscriptionName":"messageDeleted",
-                            "query":None,
-                            "queryHash":"91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3"
-                        },
-                        {
-                            "subscriptionName":"messageCreated",
-                            "query":None,
-                            "queryHash":"0445ef6a92aebf368dfb87659d2593b07a17d62ff48d0c0c8a0ae6ab2afd362c"
-                        },
-                        {
-                            "subscriptionName":"viewerStateUpdated",
-                            "query":None,
-                            "queryHash":"cf9d367b40f59f4d087437912206dc0e3d344fb5085d0aba46cd88222a33edee"
-                        },
-                        {
-                            "subscriptionName":"messageLimitUpdated",
-                            "query":None,
-                            "queryHash":"daec317b69fed95fd7bf1202c4eca0850e6a9740bc8412af636940227359a211"
-                        },
-                        {
-                            "subscriptionName":"chatTitleUpdated",
-                            "query":None,
-                            "queryHash":"ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06"
-                        },
-                        {
-                            "subscriptionName":"knowledgeSourceUpdated",
-                            "query":None,
-                            "queryHash":"7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37"
-                        },
-                        {
-                            "subscriptionName":"messagePointLimitUpdated",
-                            "query":None,
-                            "queryHash":"94789388515b3c125c4a45d3c5112edffd102f8b72d4f152404f58e2aed9ec6d"
-                        },
-                        {
-                            "subscriptionName":"chatMemberAdded",
-                            "query":None,
-                            "queryHash":"08b46c791cbb98b7e729c435d6b736ec60871dff58ec3a377ce818e30b50c1c8"
-                        }
+        {
+            "subscriptionName": "messageAdded",
+            "query": None,
+            "queryHash": "e86569a8e5c9fcea8e92796917ef13351d5297f750a4fe182b78b1916204e4cb"
+        },
+        {
+            "subscriptionName": "messageCancelled",
+            "query": None,
+            "queryHash": "14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff"
+        },
+        {
+            "subscriptionName": "messageDeleted",
+            "query": None,
+            "queryHash": "91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3"
+        },
+        {
+            "subscriptionName": "messageCreated",
+            "query": None,
+            "queryHash": "ff1367770c21a86f461c0208284eef485693b6efe29e70ff0be593eee8951ec9"
+        },
+        {
+            "subscriptionName": "viewerStateUpdated",
+            "query": None,
+            "queryHash": "a19c32dbe38d13d4f6e4b03463c1f1ceee8ca3999ce011cae5e834e050e0a4b0"
+        },
+        {
+            "subscriptionName": "chatTitleUpdated",
+            "query": None,
+            "queryHash": "ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06"
+        },
+        {
+            "subscriptionName": "knowledgeSourceUpdated",
+            "query": None,
+            "queryHash": "7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37"
+        },
+        {
+            "subscriptionName": "messagePointLimitUpdated",
+            "query": None,
+            "queryHash": "ed3857668953d6e8849c1562f3039df16c12ffddaaac1db930b91108775ee16d"
+        },
+        {
+            "subscriptionName": "chatMemberAdded",
+            "query": None,
+            "queryHash": "caeefc6438df7e9a12a689bda7698965359d33cf84f18cda9cdc89d1aff0fd9c"
+        },
+        {
+            "subscriptionName": "chatSettingsUpdated",
+            "query": None,
+            "queryHash": "3b370c05478959224e3dbf9112d1e0490c22e17ffb4befd9276fc62e196b0f5b"
+        }
     ]
-    
 }
+
 BOTS_LIST = {
     'Assistant': 'capybara',
     'Claude-3-Opus': 'claude_2_1_cedar',
@@ -83,8 +83,11 @@ BOTS_LIST = {
     'GPT-3.5-Turbo': 'gpt3_5',
     'GPT-3.5-Turbo-Instruct': 'chinchilla_instruct',
     'ChatGPT-16k': 'agouti',
-    'GPT-4': 'beaver',
-    'GPT-4-128k': 'vizcacha',
+    'GPT-4-Classic': 'gpt4_classic',
+    'GPT-4-Turbo': 'beaver',
+    'GPT-4-Turbo-128k': 'vizcacha',
+    'GPT-4o': 'gpt4_o',
+    'GPT-4o-128k': 'gpt4_o_128k',
     'Google-PaLM': 'acouchy',
     'Llama-2-7b': 'llama_2_7b_chat',
     'Llama-2-13b': 'llama_2_13b_chat',
@@ -147,31 +150,28 @@ def is_valid_url(url):
 def generate_file(file_path: list, proxy: dict=None):
     files = []   
     file_size = 0
-    for file in file_path: 
-        if is_valid_url(file):  
+    for file in file_path:
+        if is_valid_url(file):
+            # Handle URL files
             file_name = file.split('/')[-1]
             file_extension = os.path.splitext(file_name)[1].lower()
-            if file_extension in EXTENSIONS:
-                content_type = EXTENSIONS[file_extension]
-            elif file_extension in MEDIA_EXTENSIONS:
-                content_type = MEDIA_EXTENSIONS[file_extension]
-            else:
-                raise RuntimeError("This file type is not supported. Please try again with a different file.") 
+            content_type = MEDIA_EXTENSIONS.get(file_extension, EXTENSIONS.get(file_extension, None))
+            if not content_type:
+                raise RuntimeError("This file type is not supported. Please try again with a different file.")
             with cloudscraper.create_scraper() as fetcher:
                 response = fetcher.get(file, proxies=proxy)
                 file_data = response.content
-                fetcher.close()
+            files.append((file_name, file_data, content_type))
             file_size += len(file_data)
-        else: 
+        else:
+            # Handle local files
             file_extension = os.path.splitext(file)[1].lower()
-            if file_extension in EXTENSIONS:
-                content_type = EXTENSIONS[file_extension]
-            elif file_extension in MEDIA_EXTENSIONS:
-                content_type = MEDIA_EXTENSIONS[file_extension]
-            else:
-                raise RuntimeError("This file type is not supported. Please try again with a different file.") 
+            content_type = MEDIA_EXTENSIONS.get(file_extension, EXTENSIONS.get(file_extension, None))
+            if not content_type:
+                raise RuntimeError("This file type is not supported. Please try again with a different file.")
             file_name = os.path.basename(file)
-            file_data = open(file, 'rb')
-            file_size += os.path.getsize(file)
-        files.append((file_name, file_data, content_type))
+            with open(file, 'rb') as f:
+                file_data = f.read()
+                files.append((file_name, file_data, content_type))
+                file_size += len(file_data)
     return files, file_size

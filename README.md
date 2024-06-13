@@ -66,6 +66,7 @@
 <summary>Chat Management</summary><br>
 <ul>
 <li>Get Chat Ids & Chat Codes of bot(s)</li>
+<li>Get remaining points</li>
 </ul>
 </details>
 <details close>
@@ -171,9 +172,12 @@ poe --b B_TOKEN --lat LAT_TOKEN
 | ChatGPT                | chinchilla                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | GPT-3.5-Turbo          | gpt3_5                    | 2k          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| GPT-4                  | beaver                    | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| GPT-4-128k             | vizcacha                  | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |\
+| GPT-4-Classic          | gpt4_classic              | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| GPT-4-Turbo            | beaver                    | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| GPT-4-Turbo-128k       | vizcacha                  | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| GPT-4o                 | gpt4_o                    | 4k          | 3k    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| GPT-4o-128k            | gpt4_o_128k               | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Google-PaLM            | acouchy                   | 8K          | 6K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | Llama-2-7b             | llama_2_7b_chat           | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | Llama-2-13b            | llama_2_13b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
@@ -238,6 +242,14 @@ proxy_context = [
 ]
 
 client = PoeApi(cookie=tokens, proxy=proxy_context) 
+
+# Add cloudflare cookies to pass challenges
+tokens = {
+    'b': 'p-b token here',
+    'lat': 'p-lat token here',
+    '__cf_bm': '__cf_bm cookie here, 
+    'cf_clearance': 'cf_clearance cookie here'
+}
 ```
 - Getting Chat Ids & Chat Codes
 ```py
@@ -283,6 +295,11 @@ for page in range(len(pages)):
     for bot, value in pages[page].items():
         for thread in value:
             print({bot: thread})
+```
+- Getting remaining points
+```py
+data = client.get_remaining_points()
+print(data)
 ```
 - Sending messages & Streaming responses 
 ```py
@@ -730,7 +747,7 @@ This program is licensed under the [GNU GPL v3](https://github.com/snowby666/poe
 
 ### Copyright Notice
 ```
-snowby666/poe-api-wrapper: A simple API wrapper for poe.com using Httpx
+snowby666/poe-api-wrapper: A simple, lightweight and efficient API wrapper for Poe.com
 Copyright (C) 2023 snowby666
 
 This program is free software: you can redistribute it and/or modify

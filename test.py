@@ -3,7 +3,9 @@ import unittest, random, string, loguru
 
 loguru.logger.disable('poe_api_wrapper')
 
-TOKEN = input("Enter your token: ")
+b = input("Enter your p-b/m-b token: ")
+lat = input("Enter your p-lat/m-lat token: ")
+TOKEN = {'b': b, 'lat': lat}
 
 def testObjectGenerator(length):
        return ''.join(random.choice(string.ascii_letters) for _ in range(length))
@@ -96,7 +98,7 @@ class PoeApiTest(unittest.TestCase):
         client = PoeApi(cookie=TOKEN)
         
         # Web urls
-        file_urls = ["https://sweet.ua.pt/jpbarraca/course/er-2122/slides/er-1-intro_to_re.pdf", 
+        file_urls = ["https://elinux.org/images/c/c5/IntroductionToReverseEngineering_Anderson.pdf", 
             "https://www.kcl.ac.uk/warstudies/assets/automation-and-artificial-intelligence.pdf"]
         client.upload_knowledge(file_path=file_urls)
         
