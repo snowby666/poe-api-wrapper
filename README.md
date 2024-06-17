@@ -210,18 +210,18 @@ F12 for Devtools (Right-click + Inspect)
 
 - 1st Method: Devtools > Network > gql_POST > Headers > Poe-Formkey
 
-Copy the value of `Poe-Formkey`
+    Copy the value of `Poe-Formkey`
 
 - 2nd Method: Devtools > Console > Type: `allow pasting` > Paste this script: `window.ereNdsRqhp2Rd3LEW()`
 
-Copy the result
+    Copy the result
 
 ### Basic Usage
 - Connecting to the API
 ```py
 tokens = {
     'p-b': 'p-b cookie here',
-    'p-lat': 'p-lat cookie here'.
+    'p-lat': 'p-lat cookie here',
     'formkey': 'formkey here'
 }
 
