@@ -17,9 +17,9 @@ $$ |      \$$$$$$  |\$$$$$$$\       $$ |  $$ |$$ |     $$$$$$\
 \033[0m                                                                  
 """ 
 class PoeExample:
-    def __init__(self, cookie):
-        self.cookie = cookie
-        self.client = PoeApi(cookie=self.cookie)
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.client = PoeApi(tokens=self.tokens)
         
     def select_bot(self):
         bots = {}

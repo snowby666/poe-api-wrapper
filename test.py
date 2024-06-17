@@ -3,14 +3,14 @@ import unittest, random, string, loguru
 
 loguru.logger.disable('poe_api_wrapper')
 
-b = input("Enter your p-b/m-b token: ")
-lat = input("Enter your p-lat/m-lat token: ")
-TOKEN = {'b': b, 'lat': lat}
+p_b = input("Enter your p-b cookie: ")
+p_lat = input("Enter your p-lat cookie: ")
+formkey = input("Enter your formkey: ")
+TOKEN = {'p-b': p_b, 'p-lat': p_lat, 'formkey': formkey}
 
 def testObjectGenerator(length):
        return ''.join(random.choice(string.ascii_letters) for _ in range(length))
    
-
 class PoeApiTest(unittest.TestCase):
     
     @classmethod
@@ -20,51 +20,51 @@ class PoeApiTest(unittest.TestCase):
         print("Initializing tests")
                 
     def test_get_subscription_info(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         client.get_channel_settings()
         client.subscribe()
         
     def test_get_available_bots(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         client.get_available_bots()
         
     def test_get_available_categories(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         client.get_available_categories()
         
     def test_get_user_bots(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         client.get_user_bots(user='poe')
         
     def test_explore(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         client.explore(count=10)
         client.explore(search="Midjourney", count=30)
         client.explore(categoryName="Popular", count=30)
         client.explore(search="Poe", entity_type='user', count=30)
         
     def test_get_chat_history(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         client.get_chat_history(count=200)
     
     def test_send_message(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         for _ in client.send_message(bot='a2', message='Nice to meet you. Write a 100 word essay about the moon', suggest_replies=True):
             pass
         
     def test_upload_file(self):
-        client = PoeApi(cookie=TOKEN)
-        file_urls = ["https://sweet.ua.pt/jpbarraca/course/er-2122/slides/er-1-intro_to_re.pdf", 
+        client = PoeApi(tokens=TOKEN)
+        file_urls = ["https://elinux.org/images/c/c5/IntroductionToReverseEngineering_Anderson.pdf", 
                     "https://www.kcl.ac.uk/warstudies/assets/automation-and-artificial-intelligence.pdf"]
         for _ in client.send_message(bot="a2", message="Compare 2 files and describe them in 100 words", file_path=file_urls):
             pass
     
     def test_get_threadData(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         client.get_threadData(bot="a2")
     
     def test_cancel_message(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         i = 0
         for chunk in client.send_message(bot="a2", message="What is the meaning of life (100 words)?"):
             i += 1
@@ -72,7 +72,7 @@ class PoeApiTest(unittest.TestCase):
                 client.cancel_message(chunk)
                 break 
     def test_retry_message(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         for _ in client.send_message(bot="capybara", message="Explain Quantaum Mechanics in 50 words"):
             pass
         chatCode = client.get_chat_history("capybara")['data']['capybara'][0]['chatCode']
@@ -80,22 +80,22 @@ class PoeApiTest(unittest.TestCase):
             pass
     
     def test_clear_conversation(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         chatCode = client.get_chat_history("a2")['data']['a2'][0]['chatCode']
         client.chat_break(bot="a2", chatCode=chatCode)
 
     def test_purge_conversation(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         chatCode = client.get_chat_history("a2")['data']['a2'][0]['chatCode']
         client.purge_conversation(bot="a2", chatCode=chatCode)
         
     def test_get_previous_messages(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         chatCode = client.get_chat_history("a2")['data']['a2'][0]['chatCode']
         client.get_previous_messages('a2', chatCode=chatCode, count=2)
     
     def test_upload_knowledge(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         
         # Web urls
         file_urls = ["https://elinux.org/images/c/c5/IntroductionToReverseEngineering_Anderson.pdf", 
@@ -116,7 +116,7 @@ class PoeApiTest(unittest.TestCase):
         client.upload_knowledge(text_knowledge=knowledges)
         
     def test_edit_knowledge(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         knowledges = [
             {
                 "title": "What is Quora?",
@@ -131,7 +131,7 @@ class PoeApiTest(unittest.TestCase):
         client.edit_knowledge(knowledgeSourceId=source_ids['What is Quora?'][-1], title='What is Quora?', content='Quora is a question-and-answer platform where users can ask questions, provide answers, and engage in discussions on various topics.')
 
     def test_create_bot(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         knowledges = [
             {
                 "title": "What is Quora?",
@@ -146,15 +146,15 @@ class PoeApiTest(unittest.TestCase):
         client.create_bot(handle=self.botName, prompt='You are a helpful assitant', base_model='a2', knowledgeSourceIds=source_ids)
         
     def test_get_available_knowledge(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         client.get_available_knowledge(botName=self.botName)
         
     def test_delete_bot(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         client.delete_bot(handle=self.botName)
         
     def test_edit_bot(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         knowledges = [
             {
                 "title": "What is Quora?",
@@ -171,7 +171,7 @@ class PoeApiTest(unittest.TestCase):
         client.delete_bot(handle=self.botName2)
         
     def test_shareCode(self):
-        client = PoeApi(cookie=TOKEN)
+        client = PoeApi(tokens=TOKEN)
         chatCode = client.get_chat_history("capybara")['data']['capybara'][0]['chatCode']
         shareCode = client.share_chat("capybara", chatCode=chatCode, count=2)
         client.import_chat("capybara", shareCode=shareCode)

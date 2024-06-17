@@ -1,7 +1,7 @@
 from time import sleep, time
 import cloudscraper
 from requests_toolbelt import MultipartEncoder
-import os, secrets, string, random, websocket, json, threading, queue, ssl
+import os, secrets, string, random, websocket, json, threading, queue, ssl, hashlib
 from loguru import logger
 from .queries import generate_payload
 from .proxies import PROXY
@@ -28,13 +28,12 @@ class PoeApi:
     HEADERS = HEADERS
     FORMKEY_PATTERN = r'formkey": "(.*?)"'
 
-    def __init__(self, cookie: dict={}, proxy: list=[], auto_proxy: bool=False):
+    def __init__(self, tokens: dict={}, proxy: list=[], auto_proxy: bool=False):
         self.client = None
-        if not {'b', 'lat'}.issubset(cookie):
-            raise ValueError("Please provide a valid p-b and p-lat cookies")
-        
-        self.cookie = cookie
-        self.formkey = None
+        if not {'p-b', 'p-lat', 'formkey'}.issubset(tokens):
+            raise ValueError("Please provide valid p-b, p-lat and formkey")
+    
+        self.tokens = tokens
         self.ws_connecting = False
         self.ws_connected = False
         self.ws_error = False
@@ -45,12 +44,23 @@ class PoeApi:
         self.message_generating = True
         self.ws_refresh = 3
         self.groups = {}
+        self.formkey = self.tokens['formkey']
         
         self.client = cloudscraper.create_scraper()
         self.client.cookies.update({
-                                'm-b': self.cookie['b'], 
-                                'm-lat': self.cookie['lat']
+                                'p-b': self.tokens['p-b'], 
+                                'p-lat': self.tokens['p-lat']
                                 })
+        
+        if { '__cf_bm', 'cf_clearance'}.issubset(tokens):
+            self.client.cookies.update({
+                '__cf_bm': tokens['__cf_bm'], 
+                'cf_clearance': tokens['cf_clearance']
+            })
+            
+        self.client.headers.update({
+            'Poe-Formkey': self.formkey,
+        })
         
         if proxy != [] or auto_proxy == True:
             self.select_proxy(proxy, auto_proxy=auto_proxy)
@@ -89,7 +99,7 @@ class PoeApi:
     def send_request(self, path: str, query_name: str="", variables: dict={}, file_form: list=[], knowledge: bool=False):
         payload = generate_payload(query_name, variables)
         if file_form == []:
-            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            headers = {'Content-Type': 'application/json'}
         else:
             fields = {'queryInfo': payload}
             if not knowledge:
@@ -102,7 +112,11 @@ class PoeApi:
                 )
             headers = {'Content-Type': payload.content_type}
             payload = payload.to_string()
-        response = self.client.post(f'{self.BASE_URL}/poe_api/{path}', data=payload, headers=headers, allow_redirects=True, timeout=30)
+        
+        headers.update({
+            "poe-tag-id": hashlib.md5((payload + self.formkey + "4LxgHM6KpFqokX0Ox").encode()).hexdigest(),
+        })
+        response = self.client.post(f'{self.BASE_URL}/api/{path}', data=payload, headers=headers, allow_redirects=True, timeout=30)
         if response.status_code == 200:
             for file in file_form:
                 try:
@@ -115,14 +129,10 @@ class PoeApi:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response.text}")
     
     def get_channel_settings(self):
-        response_json = self.client.get(f'{self.BASE_URL}/poe_api/settings', headers=self.HEADERS, timeout=30).json()
+        response_json = self.client.get(f'{self.BASE_URL}/api/settings', headers=self.HEADERS, timeout=30).json()
         self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:11]
-        self.formkey = response_json["formkey"]
-        self.client.headers.update({
-            'Quora-Formkey': self.formkey,
-        })
         self.tchannel_data = response_json["tchannelData"]
-        self.client.headers["Quora-Tchannel"] = self.tchannel_data["channel"]
+        self.client.headers["Poe-Tchannel"] = self.tchannel_data["channel"]
         self.channel_url = f'ws://{self.ws_domain}.tch.{self.tchannel_data["baseHost"]}/up/{self.tchannel_data["boxName"]}/updates?min_seq={self.tchannel_data["minSeq"]}&channel={self.tchannel_data["channel"]}&hash={self.tchannel_data["channelHash"]}'
         return self.channel_url
     

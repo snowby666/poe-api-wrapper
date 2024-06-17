@@ -2,16 +2,18 @@ import os, string, secrets
 from urllib.parse import urlparse
 import cloudscraper
 
-BASE_URL = 'https://www.quora.com'
+BASE_URL = 'https://poe.com'
 HEADERS = {
-    'Host': 'www.quora.com',
-    'Accept': '*/*',
-    'apollographql-client-version': '1.1.6-65',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'User-Agent': 'Poe 1.1.6 rv:65 env:prod (iPhone14,2; iOS 16.2; en_US)',
-    'apollographql-client-name': 'com.quora.app.Experts-apollo-ios',
-    'Connection': 'keep-alive',
-    'Content-Type': 'application/json'  
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
+    "Accept": "*/*",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Language": "en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+    "Sec-Ch-Ua": '"Microsoft Edge";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Upgrade-Insecure-Requests": "1",
+    "Origin": "https://poe.com",
+    "Referer": "https://poe.com/",
 }
 
 SubscriptionsMutation = {

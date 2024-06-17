@@ -38,7 +38,7 @@
 <details close>
 <summary>Authentication</summary><br>
 <ul>
-<li>Log in with your Quora's token or Poe's token</li>
+<li>Log in with your Poe tokens</li>
 <li>Auto Proxy requests</li>
 <li>Specify Proxy context</li>
 </ul>
@@ -126,12 +126,13 @@ Quick setup for Async Client:
 from poe_api_wrapper import AsyncPoeApi
 import asyncio
 tokens = {
-    'b': ..., 
-    'lat': ...
+    'p-b': ..., 
+    'p-lat': ...,
+    'formkey': ...
 }
 
 async def main():
-    client = await AsyncPoeApi(cookie=tokens).create()
+    client = await AsyncPoeApi(tokens=tokens).create()
     message = "Explain quantum computing in simple terms"
     async for chunk in client.send_message(bot="gpt3_5", message=message):
         print(chunk["response"], end='', flush=True)
@@ -142,19 +143,20 @@ asyncio.run(main())
 ```py
 from poe_api_wrapper import PoeExample
 tokens = {
-    'b': ..., 
-    'lat': ...
+    'p-b': ..., 
+    'p-lat': ...,
+    'formkey': ...
 }
-PoeExample(cookie=tokens).chat_with_bot()
+PoeExample(tokens=tokens).chat_with_bot()
 ```
 - This library also supports command-line interface:
 ```ShellSession
-poe --b B_TOKEN --lat LAT_TOKEN   
+poe -b P-B_HERE -lat P-LAT_HERE -f FORMKEY_HERE
 ```
 > [!TIP]
 > Type `poe -h` for more info
 
-<img src="https://i.imgur.com/ScZjzbx.png" width="100%" height="auto">
+<img src="https://i.imgur.com/oAkTHfB.png" width="100%" height="auto">
 
 ## 🦄 Documentation
 ### Available Default Bots
@@ -190,18 +192,8 @@ poe --b B_TOKEN --lat LAT_TOKEN
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 
 ### How to get your Token
-Poe API Wrapper accepts both quora.com and poe.com tokens. Pick one that works best for you.
-#### Quora Tokens
-Sign in at https://www.quora.com/
 
-F12 for Devtools (Right-click + Inspect)
-- Chromium: Devtools > Application > Cookies > quora.com
-- Firefox: Devtools > Storage > Cookies
-- Safari: Devtools > Storage > Cookies
-
-Copy the values of `m-b` and `m-lat` cookies
-
-#### Poe Tokens
+#### Getting p-b and p-lat cookies
 Sign in at https://poe.com/
 
 F12 for Devtools (Right-click + Inspect)
@@ -211,28 +203,33 @@ F12 for Devtools (Right-click + Inspect)
 
 Copy the values of `p-b` and `p-lat` cookies
 
-> [!NOTE]
-> Make sure you have logged in poe.com using **the same email** which registered on quora.com.
+#### Getting formkey
+There are two ways to get formkey:
+
+F12 for Devtools (Right-click + Inspect)
+
+- 1st Method: Devtools > Network > gql_POST > Headers > Poe-Formkey
+
+Copy the value of `Poe-Formkey`
+
+- 2nd Method: Devtools > Console > Type: `allow pasting` > Paste this script: `window.ereNdsRqhp2Rd3LEW()`
+
+Copy the result
 
 ### Basic Usage
 - Connecting to the API
 ```py
-# Using poe.com tokens
 tokens = {
-    'b': 'p-b token here',
-    'lat': 'p-lat token here'
-}
-# Using quora.com tokens
-tokens = {
-    'b': 'm-b token here',
-    'lat': 'm-lat token here'
+    'p-b': 'p-b cookie here',
+    'p-lat': 'p-lat cookie here'.
+    'formkey': 'formkey here'
 }
 
 from poe_api_wrapper import PoeApi
-client = PoeApi(cookie=tokens)
+client = PoeApi(tokens=tokens)
 
 # Using Client with auto_proxy (default is False)
-client = PoeApi(cookie=tokens, auto_proxy=True)
+client = PoeApi(tokens=tokens, auto_proxy=True)
 
 # Passing proxies manually
 proxy_context = [
@@ -241,13 +238,14 @@ proxy_context = [
     ...
 ]
 
-client = PoeApi(cookie=tokens, proxy=proxy_context) 
+client = PoeApi(tokens=tokens, proxy=proxy_context) 
 
 # Add cloudflare cookies to pass challenges
 tokens = {
-    'b': 'p-b token here',
-    'lat': 'p-lat token here',
-    '__cf_bm': '__cf_bm cookie here, 
+    'p-b': 'p-b cookie here',
+    'p-lat': 'p-lat cookie here',
+    'formkey': 'formkey here',
+    '__cf_bm': '__cf_bm cookie here', 
     'cf_clearance': 'cf_clearance cookie here'
 }
 ```
