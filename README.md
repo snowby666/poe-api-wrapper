@@ -239,8 +239,8 @@ client = PoeApi(tokens=tokens, auto_proxy=True)
 
 # Passing proxies manually
 proxy_context = [
-    {"https":X1, "http":X1},
-    {"https":X2, "http":X2},
+    {"https://":X1, "http://":X1},
+    {"https://":X2, "http://":X2},
     ...
 ]
 
