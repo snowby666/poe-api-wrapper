@@ -24,6 +24,7 @@ from .utils import (
                     generate_file
                     )
 from .queries import generate_payload
+from .bundles import PoeBundle
 from .proxies import PROXY
 if PROXY:
     from .proxies import fetch_proxy
@@ -41,8 +42,8 @@ class AsyncPoeApi:
         self.client = None
         if not ASYNC:
             raise ImportError("Please install Async version using 'pip install poe-api-wrapper[async]'")
-        if not {'p-b', 'p-lat', 'formkey'}.issubset(tokens):
-            raise ValueError("Please provide valid p-b, p-lat, and formkey")
+        if not {'p-b', 'p-lat'}.issubset(tokens):
+            raise ValueError("Please provide valid p-b and p-lat cookies")
         
         self.proxy = proxy
         self.auto_proxy = auto_proxy
@@ -58,8 +59,8 @@ class AsyncPoeApi:
         self.message_generating = True
         self.ws_refresh = 3
         self.groups = {}
-        self.formkey = self.tokens['formkey']
         self.proxies = {}
+        self.bundle: PoeBundle = None
         
         self.client = AsyncClient(headers=self.HEADERS, timeout=60, http2=True)
         self.client.cookies.update({
@@ -74,11 +75,15 @@ class AsyncPoeApi:
                 'cf_clearance': tokens['cf_clearance']
             })
             
-        self.client.headers.update({
-            'Poe-Formkey': self.formkey,
-        })
+        if 'formkey' in tokens:
+            self.formkey = tokens['formkey']
+            self.client.headers.update({
+                'Poe-Formkey': self.formkey,
+            })
         
     async def create(self):
+        await self.load_bundle()
+        
         if self.proxy != [] or self.auto_proxy == True:
             await self.select_proxy(self.proxy, auto_proxy=self.auto_proxy)
         elif self.proxy == [] and self.auto_proxy == False:
@@ -93,6 +98,17 @@ class AsyncPoeApi:
     def __del__(self):
         if self.client:
             asyncio.get_event_loop().run_until_complete(self.client.aclose())
+    
+    async def load_bundle(self):
+        try:
+            webData = await self.client.get(self.BASE_URL)
+            self.bundle = PoeBundle(webData.text)
+            self.formkey = self.bundle.get_form_key()
+            self.client.headers.update({
+                'Poe-Formkey': self.formkey,
+            })
+        except Exception as e:
+            logger.error(f"Failed to load bundle. Reason: {e}")
         
     async def select_proxy(self, proxy: list, auto_proxy: bool=False):
         if proxy == [] and auto_proxy == True:

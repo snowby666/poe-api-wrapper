@@ -7,7 +7,6 @@ BASE_URL = 'https://poe.com'
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
     "Accept": "*/*",
-    "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
     "Sec-Ch-Ua": '"Microsoft Edge";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
     "Sec-Ch-Ua-Mobile": "?0",

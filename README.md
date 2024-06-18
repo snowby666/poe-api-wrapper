@@ -22,8 +22,8 @@
 - [🦄 Documentation](#-documentation)
   - [Available Default Bots](#available-default-bots)
   - [How to get your Token](#how-to-get-your-token)
-    - [Getting p-b and p-lat cookies](#getting-p-b-and-p-lat-cookies)
-    - [Getting formkey](#getting-formkey)
+    - [Getting p-b and p-lat cookies (*required*)](#getting-p-b-and-p-lat-cookies-required)
+    - [Getting formkey (*optional*)](#getting-formkey-optional)
   - [Basic Usage](#basic-usage)
   - [Bots Group Chat (beta)](#bots-group-chat-beta)
   - [Misc](#misc)
@@ -133,7 +133,6 @@ import asyncio
 tokens = {
     'p-b': ..., 
     'p-lat': ...,
-    'formkey': ...
 }
 
 async def main():
@@ -150,7 +149,6 @@ from poe_api_wrapper import PoeExample
 tokens = {
     'p-b': ..., 
     'p-lat': ...,
-    'formkey': ...
 }
 PoeExample(tokens=tokens).chat_with_bot()
 ```
@@ -198,7 +196,7 @@ poe -b P-B_HERE -lat P-LAT_HERE -f FORMKEY_HERE
 
 ### How to get your Token
 
-#### Getting p-b and p-lat cookies
+#### Getting p-b and p-lat cookies (*required*)
 Sign in at https://poe.com/
 
 F12 for Devtools (Right-click + Inspect)
@@ -208,7 +206,11 @@ F12 for Devtools (Right-click + Inspect)
 
 Copy the values of `p-b` and `p-lat` cookies
 
-#### Getting formkey
+#### Getting formkey (*optional*)
+> [!IMPORTANT] 
+> **poe-api-wrapper** depends on library **js2py** to get formkey. If you are using `Python 3.12+`, it may not be compatible, so please downgrade your version.
+> By default, poe_api_wrapper will automatically retrieve formkey for you. If it doesn't work, please pass this token manually by following these steps:
+
 There are two ways to get formkey:
 
 F12 for Devtools (Right-click + Inspect)
@@ -227,7 +229,6 @@ F12 for Devtools (Right-click + Inspect)
 tokens = {
     'p-b': 'p-b cookie here',
     'p-lat': 'p-lat cookie here',
-    'formkey': 'formkey here'
 }
 
 # Default setup
@@ -246,7 +247,7 @@ proxy_context = [
 
 client = PoeApi(tokens=tokens, proxy=proxy_context) 
 
-# Add cloudflare cookies to pass challenges
+# Add formkey and cloudflare cookies to pass challenges
 tokens = {
     'p-b': 'p-b cookie here',
     'p-lat': 'p-lat cookie here',

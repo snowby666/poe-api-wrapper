@@ -3,7 +3,7 @@ from httpx import Client, ReadTimeout, ConnectError
 from requests_toolbelt import MultipartEncoder
 import os, secrets, string, random, websocket, json, threading, queue, ssl, hashlib
 from loguru import logger
-from .queries import generate_payload
+from typing import Generator
 from .utils import (
                     BASE_URL,
                     HEADERS,
@@ -14,7 +14,8 @@ from .utils import (
                     generate_nonce, 
                     generate_file
                     )
-from typing import Generator
+from .queries import generate_payload
+from .bundles import PoeBundle
 from .proxies import PROXY
 if PROXY:
     from .proxies import fetch_proxy
@@ -30,10 +31,11 @@ class PoeApi:
 
     def __init__(self, tokens: dict={}, proxy: list=[], auto_proxy: bool=False):
         self.client = None
-        if not {'p-b', 'p-lat', 'formkey'}.issubset(tokens):
-            raise ValueError("Please provide valid p-b, p-lat and formkey")
+        if not {'p-b', 'p-lat'}.issubset(tokens):
+            raise ValueError("Please provide valid p-b and p-lat cookies")
     
         self.tokens = tokens
+        self.formkey = None
         self.ws_connecting = False
         self.ws_connected = False
         self.ws_error = False
@@ -44,8 +46,8 @@ class PoeApi:
         self.message_generating = True
         self.ws_refresh = 3
         self.groups = {}
-        self.formkey = self.tokens['formkey']
         self.proxies = {}
+        self.bundle: PoeBundle = None
         
         self.client = Client(headers=self.HEADERS, timeout=60, http2=True)
         self.client.cookies.update({
@@ -58,11 +60,15 @@ class PoeApi:
                 '__cf_bm': tokens['__cf_bm'], 
                 'cf_clearance': tokens['cf_clearance']
             })
-            
-        self.client.headers.update({
-            'Poe-Formkey': self.formkey,
-        })
         
+        if 'formkey' in tokens:
+            self.formkey = tokens['formkey']
+            self.client.headers.update({
+                'Poe-Formkey': self.formkey,
+            })
+        
+        self.load_bundle()
+
         if proxy != [] or auto_proxy == True:
             self.select_proxy(proxy, auto_proxy=auto_proxy)
         elif proxy == [] and auto_proxy == False:
@@ -74,6 +80,17 @@ class PoeApi:
         if self.client:
             self.client.close()
         
+    def load_bundle(self):
+        try:
+            webData = self.client.get(self.BASE_URL)
+            self.bundle = PoeBundle(webData.text)
+            self.formkey = self.bundle.get_form_key()
+            self.client.headers.update({
+                'Poe-Formkey': self.formkey,
+            })
+        except Exception as e:
+            logger.error(f"Failed to load bundle. Reason: {e}")
+            
     def select_proxy(self, proxy: list, auto_proxy: bool=False):
         if proxy == [] and auto_proxy == True:
             if not PROXY:
