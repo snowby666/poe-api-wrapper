@@ -16,20 +16,25 @@
 </p>
 
 ## 📚 Table of Contents
-- [Highlights](https://github.com/snowby666/poe-api-wrapper#-highlights)
-- [Installation](https://github.com/snowby666/poe-api-wrapper#-installation)
-- [Documentation](https://github.com/snowby666/poe-api-wrapper#-documentation)
-  - [Available Default Bots](https://github.com/snowby666/poe-api-wrapper#available-default-bots)
-  - [How to get your Token](https://github.com/snowby666/poe-api-wrapper#how-to-get-your-token)
-  - [Basic Usage](https://github.com/snowby666/poe-api-wrapper#basic-usage)
-  - [Bots Group Chat (beta)](https://github.com/snowby666/poe-api-wrapper#bots-group-chat-beta)
-  - [Misc](https://github.com/snowby666/poe-api-wrapper#misc)
-- [Contributing](https://github.com/snowby666/poe-api-wrapper#-contributing)
-  - [Run debug](https://github.com/snowby666/poe-api-wrapper#run-debug)
-  - [Ways to contribute](https://github.com/snowby666/poe-api-wrapper#ways-to-contribute)
-  - [Contributors](https://github.com/snowby666/poe-api-wrapper#contributors)
-- [Copyright](https://github.com/snowby666/poe-api-wrapper#-copyright)
-  - [Copyright Notice](https://github.com/snowby666/poe-api-wrapper#copyright-notice)
+- [📚 Table of Contents](#-table-of-contents)
+- [✨ Highlights](#-highlights)
+- [🔧 Installation](#-installation)
+- [🦄 Documentation](#-documentation)
+  - [Available Default Bots](#available-default-bots)
+  - [How to get your Token](#how-to-get-your-token)
+    - [Getting p-b and p-lat cookies](#getting-p-b-and-p-lat-cookies)
+    - [Getting formkey](#getting-formkey)
+  - [Basic Usage](#basic-usage)
+  - [Bots Group Chat (beta)](#bots-group-chat-beta)
+  - [Misc](#misc)
+    - [Text files](#text-files)
+    - [Media files](#media-files)
+- [🙌 Contributing](#-contributing)
+  - [Run debug](#run-debug)
+  - [Ways to contribute](#ways-to-contribute)
+  - [Contributors](#contributors)
+- [🤝 Copyright](#-copyright)
+  - [Copyright Notice](#copyright-notice)
 
 ## ✨ Highlights
 <details close>
@@ -225,6 +230,7 @@ tokens = {
     'formkey': 'formkey here'
 }
 
+# Default setup
 from poe_api_wrapper import PoeApi
 client = PoeApi(tokens=tokens)
 

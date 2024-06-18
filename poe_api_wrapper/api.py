@@ -1,5 +1,5 @@
 from time import sleep, time
-import cloudscraper
+from httpx import Client, ReadTimeout, ConnectError
 from requests_toolbelt import MultipartEncoder
 import os, secrets, string, random, websocket, json, threading, queue, ssl, hashlib
 from loguru import logger
@@ -46,7 +46,7 @@ class PoeApi:
         self.groups = {}
         self.formkey = self.tokens['formkey']
         
-        self.client = cloudscraper.create_scraper()
+        self.client = Client(headers=self.HEADERS, timeout=60, http2=True)
         self.client.cookies.update({
                                 'p-b': self.tokens['p-b'], 
                                 'p-lat': self.tokens['p-lat']
@@ -89,52 +89,87 @@ class PoeApi:
             except:
                 logger.info(f"Connection failed with {proxies[p]}. Trying {p+1}/{len(proxies)} ...")
                 sleep(1)
-
-    # @property
-    # def get_formkey(self):
-    #     response = self.client.get(self.BASE_URL, headers=self.HEADERS, follow_redirects=True)
-    #     formkey = search(self.FORMKEY_PATTERN, response.text)[1]
-    #     return formkey
     
-    def send_request(self, path: str, query_name: str="", variables: dict={}, file_form: list=[], knowledge: bool=False):
-        payload = generate_payload(query_name, variables)
-        if file_form == []:
-            headers = {'Content-Type': 'application/json'}
-        else:
-            fields = {'queryInfo': payload}
-            if not knowledge:
-                for i in range(len(file_form)):
-                    fields[f'file{i}'] = file_form[i]
-            else:
-                fields['file'] = file_form[0]
-            payload = MultipartEncoder(
-                fields=fields
-                )
-            headers = {'Content-Type': payload.content_type}
-            payload = payload.to_string()
+    def send_request(self, path: str, query_name: str="", variables: dict={}, file_form: list=[], knowledge: bool=False, ratelimit: int = 0):
+        if ratelimit > 0:
+            logger.warning(f"Wating for {ratelimit} seconds to avoid rate limit")
+            sleep(random.randint(2, 3))
+        status_code = 0
         
-        headers.update({
-            "poe-tag-id": hashlib.md5((payload + self.formkey + "4LxgHM6KpFqokX0Ox").encode()).hexdigest(),
-        })
-        response = self.client.post(f'{self.BASE_URL}/api/{path}', data=payload, headers=headers, allow_redirects=True, timeout=30)
-        if response.status_code == 200:
-            for file in file_form:
-                try:
-                    if hasattr(file[1], 'closed') and not file[1].closed:
-                        file[1].close()
-                except IOError as e:
-                    logger.warning(f"Failed to close file: {file[0]}. Reason: {e}")
-            return response.json()
-        else:
-            raise RuntimeError(f"An unknown error occurred. Raw response data: {response.text}")
+        try:
+            payload = generate_payload(query_name, variables)
+            base_string = payload + self.formkey + "4LxgHM6KpFqokX0Ox"
+            if file_form == []:
+                headers = {'Content-Type': 'application/json'}
+            else:
+                fields = {'queryInfo': payload}
+                if not knowledge:
+                    for i in range(len(file_form)):
+                        fields[f'file{i}'] = file_form[i]
+                else:
+                    fields['file'] = file_form[0]
+                payload = MultipartEncoder(
+                    fields=fields
+                    )
+                headers = {'Content-Type': payload.content_type}
+                payload = payload.to_string()
+            
+            headers.update({
+                "poe-tag-id": hashlib.md5(base_string.encode()).hexdigest(),
+            })
+            response = self.client.post(f'{self.BASE_URL}/api/{path}', data=payload, headers=headers, follow_redirects=True, timeout=30)
+            
+            status_code = response.status_code
+            json_data = json.loads(response.text)
+
+            if (
+                "success" in json_data.keys()
+                and not json_data["success"]
+                or (json_data and json_data["data"] is None)
+            ):
+                err_msg: str = json_data["errors"][0]["message"]
+                if err_msg == "Server Error":
+                    raise RuntimeError(f"Server Error. Raw response data: {json_data}")
+                else:
+                    logger.error(response.status_code)
+                    logger.error(response.text)
+                    raise Exception(response.text)
+                
+            if status_code == 200:
+                for file in file_form:
+                    try:
+                        if hasattr(file[1], 'closed') and not file[1].closed:
+                            file[1].close()
+                    except IOError as e:
+                        logger.warning(f"Failed to close file: {file[0]}. Reason: {e}")
+                return json_data
+            
+        except Exception as e:
+            if isinstance(e, ReadTimeout):
+                if query_name == "SendMessageMutation":
+                    logger.error(f"Failed to send message {variables['query']} due to ReadTimeout")
+                    logger.info(f"Attempting to retry message {variables['query']} 3 times...")
+                else:
+                    logger.error(f"Automatic retrying request {query_name} due to ReadTimeout")
+                    return self.send_request(path, query_name, variables, file_form)
+
+            if (
+                isinstance(e, ConnectError) or 500 <= status_code < 600
+            ) and ratelimit < 2:
+                return self.send_request(path, query_name, variables, file_form, ratelimit=ratelimit + 1)
+
+            error_code = f"status_code:{status_code}, " if status_code else ""
+            raise Exception(
+                f"Sending request {query_name} failed. {error_code} Error log: {repr(e)}"
+            )
     
     def get_channel_settings(self):
-        response_json = self.client.get(f'{self.BASE_URL}/api/settings', headers=self.HEADERS, timeout=30).json()
+        response_json = self.client.get(f'{self.BASE_URL}/api/settings', headers=self.HEADERS, follow_redirects=True, timeout=30).json()
         self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:11]
         self.tchannel_data = response_json["tchannelData"]
         self.client.headers["Poe-Tchannel"] = self.tchannel_data["channel"]
         self.channel_url = f'ws://{self.ws_domain}.tch.{self.tchannel_data["baseHost"]}/up/{self.tchannel_data["boxName"]}/updates?min_seq={self.tchannel_data["minSeq"]}&channel={self.tchannel_data["channel"]}&hash={self.tchannel_data["channelHash"]}'
-        return self.channel_url
+        self.subscribe()
     
     def subscribe(self):
         response_json = self.send_request('gql_POST', "SubscriptionsMutation", SubscriptionsMutation)
@@ -165,16 +200,20 @@ class PoeApi:
             if self.ws_refresh == 0:
                 self.ws_refresh = 3
                 raise RuntimeError("Rate limit exceeded for sending requests to poe.com. Please try again later.")
-            self.get_channel_settings()
-            sleep(1)
             try:
-                self.subscribe()
+                self.get_channel_settings()
                 break
             except Exception as e:
-                logger.debug(str(e))
+                logger.error(f"Failed to get channel settings. Reason: {e}")
+                sleep(1)
                 continue
 
         self.ws = websocket.WebSocketApp(self.channel_url, 
+                                         header={
+                                             "Origin": f"{self.BASE_URL}",
+                                             "Pragma": "no-cache",
+                                             "Cache-Control": "no-cache",
+                                         },
                                          on_message=lambda ws, msg: self.on_message(ws, msg), 
                                          on_open=lambda ws: self.on_ws_connect(ws), 
                                          on_error=lambda ws, error: self.on_ws_error(ws, error), 
@@ -216,34 +255,57 @@ class PoeApi:
         self.ws_connecting = False
         self.ws_connected = False
         self.ws_error = True
-
+        
     def on_message(self, ws, msg):
         try:
-            data = json.loads(msg)
-            if not "messages" in data:
+            ws_data = json.loads(msg)
+
+            if "error" in ws_data.keys() and ws_data["error"] == "missed_messages":
+                self.disconnect_ws()
+                self.connect_ws()
                 return
-            for message_str in data["messages"]:
-                message_data = json.loads(message_str)
-                if message_data['message_type'] == 'refetchChannel':
+            
+            if not "messages" in ws_data:
+                return
+            
+            for data in ws_data["messages"]:
+                data = json.loads(data)
+                message_type = data.get("message_type")
+                if message_type == "refetchChannel":
                     self.disconnect_ws()
                     self.connect_ws()
                     return
-                if message_data["message_type"] != "subscriptionUpdate" or message_data["payload"]["subscription_name"] != "messageAdded":
+
+                payload = data.get("payload", {})
+
+                if payload.get("subscription_name") not in [
+                    "messageAdded",
+                    "messageCancelled",
+                ]:
                     continue
-                message = message_data["payload"]["data"]["messageAdded"]
-        
+
+                data = (payload.get("data", {})).get("messageAdded", {})
+                
+                if (
+                    not data
+                    or data["suggestedReplies"]
+                    or data.get("author") == "chat_break"
+                ):
+                    continue
+
                 copied_dict = self.active_messages.copy()
                 for key, value in copied_dict.items():
-                    if value == message["messageId"] and key in self.message_queues:
-                        self.message_queues[key].put(message)
+                    if value == data["messageId"] and key in self.message_queues:
+                        self.message_queues[key].put(data)
                         return
 
-                    elif key != "pending" and value == None and message["state"] != "complete":
-                        self.active_messages[key] = message["messageId"]
-                        self.message_queues[key].put(message)
+                    elif key != "pending" and value == None and data["state"] != "complete":
+                        self.active_messages[key] = data["messageId"]
+                        self.message_queues[key].put(data)
                         return
+                    
         except Exception:
-            logger.exception(f"Failed to parse message: {msg}")
+            logger.exception(f"Failed to parse message: {ws_data}")
             self.disconnect_ws()
             self.connect_ws()
             
@@ -301,13 +363,11 @@ class PoeApi:
             else:
                 chat_bots['cursor'] = None
             edges = response_json['data']['chats']['edges']
-            # print('-'*38+' \033[38;5;121mChat History\033[0m '+'-'*38)
-            # print('\033[38;5;121mChat ID\033[0m  |     \033[38;5;121mChat Code\033[0m       |           \033[38;5;121mBot Name\033[0m            |       \033[38;5;121mChat Title\033[0m')
-            # print('-' * 90)
+       
             for edge in edges:
                 chat = edge['node']
                 model = bot_map(chat["defaultBotObject"]["displayName"])
-                # print(f'{chat["chatId"]} | {chat["chatCode"]} | {model}' + (30-len(model))*' ' + f'| {chat["title"]}')
+              
                 if model in chat_bots['data']:
                     chat_bots['data'][model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]})
                 else:
@@ -320,7 +380,7 @@ class PoeApi:
                     for edge in edges:
                         chat = edge['node']
                         model = bot_map(chat["defaultBotObject"]["displayName"])
-                        # print(f'{chat["chatId"]} | {chat["chatCode"]} | {model}' + (30-len(model))*' ' + f'| {chat["title"]}')
+                      
                         if model in chat_bots['data']:
                             chat_bots['data'][model].append({"chatId": chat["chatId"],"chatCode": chat["chatCode"], "id": chat["id"], "title": chat["title"]})
                         else:
@@ -329,7 +389,6 @@ class PoeApi:
                     chat_bots['cursor'] = cursor      
                 if not response_json['data']['chats']['pageInfo']['hasNextPage']:
                     chat_bots['cursor'] = None  
-                # print('-' * 90)  
         else:
             model = bot.lower().replace(' ', '')
             handle = model
@@ -612,7 +671,6 @@ class PoeApi:
         self.retry_attempts = 3
         
     def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, msgPrice: int=20, file_path: list=[], suggest_replies: bool=False, timeout: int=10) -> Generator[dict, None, None]:
-        bot = bot_map(bot)
         self.retry_attempts = 3
         timer = 0
         while None in self.active_messages.values():
@@ -626,7 +684,9 @@ class PoeApi:
             sleep(0.01)
         self.connect_ws()
         
+        bot = bot_map(bot)
         attachments = []
+        
         if file_path == []:
             apiPath = 'gql_POST'
             file_form = []

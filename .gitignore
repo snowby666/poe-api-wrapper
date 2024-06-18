@@ -4,3 +4,5 @@ playground/
 openai/
 *.egg-info/
 poe_api_wrapper/__pycache__/
+examples/
+langchain/
