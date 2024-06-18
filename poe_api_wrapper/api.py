@@ -4,7 +4,6 @@ from requests_toolbelt import MultipartEncoder
 import os, secrets, string, random, websocket, json, threading, queue, ssl, hashlib
 from loguru import logger
 from .queries import generate_payload
-from .proxies import PROXY
 from .utils import (
                     BASE_URL,
                     HEADERS,
@@ -16,6 +15,7 @@ from .utils import (
                     generate_file
                     )
 from typing import Generator
+from .proxies import PROXY
 if PROXY:
     from .proxies import fetch_proxy
 
@@ -45,6 +45,7 @@ class PoeApi:
         self.ws_refresh = 3
         self.groups = {}
         self.formkey = self.tokens['formkey']
+        self.proxies = {}
         
         self.client = Client(headers=self.HEADERS, timeout=60, http2=True)
         self.client.cookies.update({
@@ -74,7 +75,9 @@ class PoeApi:
             self.client.close()
         
     def select_proxy(self, proxy: list, auto_proxy: bool=False):
-        if proxy == [] and auto_proxy == True and PROXY == True:
+        if proxy == [] and auto_proxy == True:
+            if not PROXY:
+                raise ValueError("Please install ballyregan for auto proxy")
             proxies = fetch_proxy()
         elif proxy != [] and auto_proxy == False:
             proxies = proxy
@@ -82,7 +85,8 @@ class PoeApi:
             raise ValueError("Please provide a valid proxy list or set auto_proxy to False")
         for p in range(len(proxies)):
             try:
-                self.client.proxies = p
+                self.proxies = proxies[p]
+                self.client.proxies = self.proxies 
                 self.connect_ws()
                 logger.info(f"Connection established with {proxies[p]}")
                 break
@@ -692,7 +696,7 @@ class PoeApi:
             file_form = []
         else:
             apiPath = 'gql_upload_POST'
-            file_form, file_size = generate_file(file_path, self.client.proxies)
+            file_form, file_size = generate_file(file_path, self.proxies)
             if file_size > 50000000:
                 raise RuntimeError("File size too large. Please try again with a smaller file.")
             for i in range(len(file_form)):
@@ -1155,7 +1159,7 @@ class PoeApi:
                     sleep(2)        
         if file_path != []:
             for path in file_path:
-                file_form, file_size = generate_file([path], self.client.proxies)
+                file_form, file_size = generate_file([path], self.proxies)
                 if file_size > 50000000:
                     raise RuntimeError("File size too large. Please try again with a smaller file.")
                 response = self.send_request('gql_upload_POST', 'Knowledge_CreateKnowledgeSourceMutation', {"sourceInput":{"file_upload":{"attachment":"file"}}}, file_form, knowledge=True)

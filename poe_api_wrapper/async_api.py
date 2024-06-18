@@ -59,6 +59,7 @@ class AsyncPoeApi:
         self.ws_refresh = 3
         self.groups = {}
         self.formkey = self.tokens['formkey']
+        self.proxies = {}
         
         self.client = AsyncClient(headers=self.HEADERS, timeout=60, http2=True)
         self.client.cookies.update({
@@ -94,7 +95,9 @@ class AsyncPoeApi:
             asyncio.get_event_loop().run_until_complete(self.client.aclose())
         
     async def select_proxy(self, proxy: list, auto_proxy: bool=False):
-        if proxy == [] and auto_proxy == True and PROXY == True:
+        if proxy == [] and auto_proxy == True:
+            if not PROXY:
+                raise ValueError("Please install ballyregan for auto proxy")
             proxies = fetch_proxy()
         elif proxy != [] and auto_proxy == False:
             proxies = proxy
@@ -102,7 +105,8 @@ class AsyncPoeApi:
             raise ValueError("Please provide a valid proxy list or set auto_proxy to False")
         for p in range(len(proxies)):
             try:
-                self.client.proxies = p
+                self.proxies = proxies[p]
+                self.client.proxies = self.proxies
                 await self.connect_ws()
                 logger.info(f"Connection established with {proxies[p]}")
                 break
@@ -704,7 +708,7 @@ class AsyncPoeApi:
             file_form = []
         else:
             apiPath = 'gql_upload_POST'
-            file_form, file_size = generate_file(file_path, self.client.proxies)
+            file_form, file_size = generate_file(file_path, self.proxies)
             if file_size > 50000000:
                 raise RuntimeError("File size too large. Please try again with a smaller file.")
             for i in range(len(file_form)):
@@ -1155,7 +1159,7 @@ class AsyncPoeApi:
                     await asyncio.sleep(2)        
         if file_path != []:
             for path in file_path:
-                file_form, file_size = generate_file([path], self.client.proxies)
+                file_form, file_size = generate_file([path], self.proxies)
                 if file_size > 50000000:
                     raise RuntimeError("File size too large. Please try again with a smaller file.")
                 response = await self.send_request('gql_upload_POST', 'Knowledge_CreateKnowledgeSourceMutation', {"sourceInput":{"file_upload":{"attachment":"file"}}}, file_form, knowledge=True)

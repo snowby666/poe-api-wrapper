@@ -1,6 +1,7 @@
 import os, string, secrets
 from urllib.parse import urlparse
-import cloudscraper
+from httpx import Client
+from loguru import logger
 
 BASE_URL = 'https://poe.com'
 HEADERS = {
@@ -160,8 +161,9 @@ def generate_file(file_path: list, proxy: dict=None):
             content_type = MEDIA_EXTENSIONS.get(file_extension, EXTENSIONS.get(file_extension, None))
             if not content_type:
                 raise RuntimeError("This file type is not supported. Please try again with a different file.")
-            with cloudscraper.create_scraper() as fetcher:
-                response = fetcher.get(file, proxies=proxy)
+            logger.info(f"Downloading file from {file}")
+            with Client(proxies=proxy, http2=True) as fetcher:
+                response = fetcher.get(file)
                 file_data = response.content
             files.append((file_name, file_data, content_type))
             file_size += len(file_data)
