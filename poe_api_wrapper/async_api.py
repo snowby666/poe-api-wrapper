@@ -3,7 +3,7 @@ try:
     ASYNC = True
 except ImportError:
     ASYNC = False
-import asyncio, json, queue, random, ssl, threading, websocket, string, secrets, os, hashlib
+import asyncio, json, queue, random, ssl, threading, websocket, string, secrets, os, hashlib, re
 from time import time
 from typing import  AsyncIterator
 from loguru import logger
@@ -1227,9 +1227,13 @@ class AsyncPoeApi:
         return models
             
     async def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", 
-                   api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, linkification=False,  
-                   markdown_rendering=True, suggested_replies=False, private=False, temperature=None, customMessageLimit=None, 
-                   messagePriceCc=None, shouldCiteSources=True, knowledgeSourceIds:dict = {}):
+                   api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, markdown_rendering=True,
+                   suggested_replies=False, private=False, temperature=None, customMessageLimit=None, messagePriceCc=None,
+                   shouldCiteSources=True, knowledgeSourceIds:dict = {}, allowRelatedBotRecommendations=True):
+        
+        if not re.match("^[a-zA-Z0-9_.-]{4,20}$", handle):
+                raise ValueError("Invalid handle. Should be unique and use 4-20 characters, including letters, numbers, dashes, periods and underscores.")
+        
         bot_models = await self.get_available_creation_models()
         if base_model not in bot_models:
             raise ValueError(f"Invalid base model {base_model}. Please choose from {bot_models}")
@@ -1242,6 +1246,7 @@ class AsyncPoeApi:
             sourceIds = [item for sublist in knowledgeSourceIds.values() for item in sublist]
         else:
             sourceIds = []
+    
         variables = {
             "model": base_model,
             "displayName": display_name,
@@ -1254,7 +1259,6 @@ class AsyncPoeApi:
             "apiUrl": api_url,
             "apiKey": api_key,
             "isApiBot": api_bot,
-            "hasLinkification": linkification,
             "hasMarkdownRendering": markdown_rendering,
             "hasSuggestedReplies": suggested_replies,
             "isPrivateBot": private,
@@ -1262,8 +1266,10 @@ class AsyncPoeApi:
             "customMessageLimit": customMessageLimit,
             "knowledgeSourceIds": sourceIds,
             "messagePriceCc": messagePriceCc,
-            "shouldCiteSources": shouldCiteSources
+            "shouldCiteSources": shouldCiteSources,
+            "allowRelatedBotRecommendations": allowRelatedBotRecommendations,
         }
+        
         result = await self.send_request('gql_POST', 'PoeBotCreate', variables)['data']['poeBotCreate']
         if result["status"] != "success":
            logger.error(f"Poe returned an error while trying to create a bot: {result['status']}")
@@ -1281,12 +1287,16 @@ class AsyncPoeApi:
                 f"Fail to get botId from {handle}. Make sure the bot exists and you have access to it."
             ) from e
 
-    async def edit_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="",
-                intro_message="", api_key=None, api_url=None, private=False,
-                prompt_public=True, pfp_url=None, linkification=False,
-                markdown_rendering=True, suggested_replies=False, temperature=None, customMessageLimit=None, 
-                knowledgeSourceIdsToAdd:dict = {}, knowledgeSourceIdsToRemove:dict = {}, messagePriceCc=None, shouldCiteSources=True):  
-        bot_models = await self.get_available_creation_models() 
+    async def edit_bot(self, handle, prompt, new_handle=None, display_name=None, base_model="chinchilla", description="",
+                intro_message="", api_key=None, api_url=None, private=False, prompt_public=True,
+                pfp_url=None, markdown_rendering=True, suggested_replies=False, temperature=None, 
+                customMessageLimit=None, knowledgeSourceIdsToAdd:dict = {}, knowledgeSourceIdsToRemove:dict = {},
+                messagePriceCc=None, shouldCiteSources=True, allowRelatedBotRecommendations=True):  
+        
+        if new_handle and not re.match("^[a-zA-Z0-9_.-]{4,20}$", new_handle):
+            raise ValueError("Invalid handle. Should be unique and use 4-20 characters, including letters, numbers, dashes, periods and underscores.") 
+        
+        bot_models = await self.get_available_creation_models()
         if base_model not in bot_models:
             raise ValueError(f"Invalid base model {base_model}. Please choose from {bot_models}")  
         
@@ -1298,35 +1308,51 @@ class AsyncPoeApi:
             removeIds = [item for sublist in knowledgeSourceIdsToRemove.values() for item in sublist]
         else:
             removeIds = []
+        
+        try: 
+            botId = await self.get_botData(handle)['botId']
+        except Exception as e:
+            raise ValueError(
+                f"Fail to get botId from {handle}. Make sure the bot exists and you have access to it."
+            ) from e
+            
         variables = {
-        "baseBot": base_model,
-        "botId": await self.get_botData(handle)['botId'],
-        "handle": handle,
-        "displayName": display_name,
-        "prompt": prompt,
-        "isPromptPublic": prompt_public,
-        "introduction": intro_message,
-        "description": description,
-        "profilePictureUrl": pfp_url,
-        "apiUrl": api_url,
-        "apiKey": api_key,
-        "hasLinkification": linkification,
-        "hasMarkdownRendering": markdown_rendering,
-        "hasSuggestedReplies": suggested_replies,
-        "isPrivateBot": private,
-        "temperature": temperature,
-        "customMessageLimit": customMessageLimit,
-        "knowledgeSourceIdsToAdd": addIds,
-        "knowledgeSourceIdsToRemove": removeIds,
-        "messagePriceCc": messagePriceCc,
-        "shouldCiteSources": shouldCiteSources
+            "baseBot": base_model,
+            "botId": botId,
+            "handle": new_handle if new_handle != None else handle,
+            "displayName": display_name,
+            "prompt": prompt,
+            "isPromptPublic": prompt_public,
+            "introduction": intro_message,
+            "description": description,
+            "profilePictureUrl": pfp_url,
+            "apiUrl": api_url,
+            "apiKey": api_key,
+            "hasMarkdownRendering": markdown_rendering,
+            "hasSuggestedReplies": suggested_replies,
+            "isPrivateBot": private,
+            "temperature": temperature,
+            "customMessageLimit": customMessageLimit,
+            "knowledgeSourceIdsToAdd": addIds,
+            "knowledgeSourceIdsToRemove": removeIds,
+            "messagePriceCc": messagePriceCc,
+            "shouldCiteSources": shouldCiteSources,
+            "allowRelatedBotRecommendations": allowRelatedBotRecommendations,
         }
+        
         result = await self.send_request('gql_POST', 'PoeBotEdit', variables)["data"]["poeBotEdit"]
         if result["status"] != "success":
             logger.error(f"Poe returned an error while trying to edit a bot: {result['status']}")
         else:
-            logger.info(f"Bot edited successfully | {handle}")
-      
+            if new_handle and handle != new_handle:
+                if handle in self.current_thread:
+                    self.current_thread[new_handle] = self.current_thread.pop(handle)
+                logger.info(f"Bot edited successfully | New handle from {handle} to {new_handle}")
+            else:
+                logger.info(f"Bot edited successfully | {handle}")
+                
+        return {"status": result["status"], "botId": botId, "handle": new_handle if new_handle != None else handle}
+    
     async def delete_bot(self, handle):
         isCreator = await self.get_botData(handle)['viewerIsCreator']
         botId = await self.get_botData(handle)['botId']

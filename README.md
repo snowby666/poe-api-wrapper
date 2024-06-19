@@ -122,10 +122,6 @@ Or you can install a proxy-support version of this library for **Python 3.9+**
 ```ShellSession
 pip install -U poe-api-wrapper[proxy]
 ```
-You can also use the Async version:
-```ShellSession
-pip install -U poe-api-wrapper[async]
-```
 Quick setup for Async Client:
 ```py
 from poe_api_wrapper import AsyncPoeApi
@@ -208,8 +204,7 @@ Copy the values of `p-b` and `p-lat` cookies
 
 #### Getting formkey (*optional*)
 > [!IMPORTANT] 
-> **poe-api-wrapper** depends on library **js2py** to get formkey. If you are using `Python 3.12+`, it may not be compatible, so please downgrade your version.
-> By default, poe_api_wrapper will automatically retrieve formkey for you. If it doesn't work, please pass this token manually by following these steps:
+> By default, **poe-api-wrapper** will automatically retrieve formkey for you. If it doesn't work, please pass this token manually by following these steps:
 
 There are two ways to get formkey:
 
@@ -521,30 +516,30 @@ print(client.get_botInfo(handle=bot))
 ```py
 print(client.get_available_creation_models())
 >> Output:
-['chinchilla', 'mixtral8x7bchat', 'playgroundv25', 'stablediffusionxl', 'dalle3', 'a2', 'claude_2_short', 'gemini_pro', 'a2_2', 'a2_100k', 'beaver', 'llama_2_70b_chat', 'mythomaxl213b', 'claude_2_1_bamboo', 'claude_2_1_cedar', 'claude_3_haiku', 'claude_3_haiku_200k']
+['chinchilla', 'claude_3_haiku', 'mythomaxl213b', 'mixtral8x7bchat', 'playgroundv25', 'stablediffusionxl', 'dalle3', 'a2', 'claude_2_short', 'gemini_pro', 'a2_2', 'a2_100k', 'gpt4_o', 'gpt4_o_128k', 'beaver', 'vizcacha', 'gemini_1_5_pro', 'gemini_1_5_pro_128k', 'gemini_1_5_pro_1m', 'gemini_1_5_flash', 'gemini_1_5_flash_128k', 'gemini_1_5_flash_1m', 'llama_2_70b_chat', 'claude_2_1_bamboo', 'claude_2_1_cedar', 'claude_3_haiku_200k', 'claude_3_sonnet_200k', 'claude_3_opus_200k', 'sd3turbo', 'stablediffusion3', 'ideogram']
 ```
 - Creating a new Bot
 ```py
-client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2")
+client.create_bot(handle="BOT_NAME", prompt="PROMPT_HERE", base_model="a2")
 
 # Using knowledge bases (you can use source_ids from uploaded knowledge bases for your custom bot)
-client.create_bot("BOT_NAME", "PROMPT_HERE", base_model="a2", knowledgeSourceIds=source_ids, shouldCiteSources=True)
+client.create_bot(handle="BOT_NAME", prompt="PROMPT_HERE", base_model="a2", knowledgeSourceIds=source_ids, shouldCiteSources=True)
 ```
 - Editing a Bot
 ```py
-client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla')
+client.edit_bot(handle="BOT_NAME", prompt="PROMPT_HERE", new_handle="NEW_BOT_NAME", base_model='chinchilla')
 
 # Adding knowledge bases 
-client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla', knowledgeSourceIdsToAdd=source_ids, shouldCiteSources=True)
+client.edit_bot(handle="BOT_NAME", prompt="PROMPT_HERE", new_handle="NEW_BOT_NAME", base_model='chinchilla', knowledgeSourceIdsToAdd=source_ids, shouldCiteSources=True)
 
 # Removing knowledge bases
-client.edit_bot("(NEW)BOT_NAME", "PROMPT_HERE", base_model='chinchilla', knowledgeSourceIdsToRemove=source_ids, shouldCiteSources=True)
+client.edit_bot(handle="BOT_NAME", prompt="PROMPT_HERE", new_handle="NEW_BOT_NAME", base_model='chinchilla', knowledgeSourceIdsToRemove=source_ids, shouldCiteSources=True)
 ```
 > [!TIP]
 > You can also use both `knowledgeSourceIdsToAdd` and `knowledgeSourceIdsToRemove` at the same time.
 - Deleting a Bot
 ```py
-client.delete_bot("BOT_NAME")
+client.delete_bot(handle="BOT_NAME")
 ```
 - Getting available bots (your bots section)
 ```py

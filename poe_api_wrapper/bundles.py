@@ -1,7 +1,7 @@
 from httpx import Client
 from bs4 import BeautifulSoup
-from js2py import eval_js
 from loguru import logger
+import quickjs
 import re
 
 class PoeBundle:
@@ -77,6 +77,7 @@ class PoeBundle:
             raise RuntimeError("Failed to parse form-key function in Poe document")
         
         script += f'window.{secret}().slice(0, 32);'
-        formkey = str(eval_js(script))
+        context = quickjs.Context()
+        formkey = str(context.eval(script))
         logger.info(f"Retrieved formkey successfully: {formkey}")
         return formkey
