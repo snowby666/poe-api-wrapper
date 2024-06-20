@@ -25,7 +25,7 @@
     - [Getting p-b and p-lat cookies (*required*)](#getting-p-b-and-p-lat-cookies-required)
     - [Getting formkey (*optional*)](#getting-formkey-optional)
   - [OpenAI](#openai)
-    - [Availabe Routes](#availabe-routes)
+    - [Available Routes](#available-routes)
     - [Quick Setup](#quick-setup)
     - [Built-in completion (WIP)](#built-in-completion-wip)
     - [OpenAI Proxy](#openai-proxy)
@@ -229,7 +229,7 @@ F12 for Devtools (Right-click + Inspect)
 <details close>
 <summary>Read Docs</summary>
 
-#### Availabe Routes
+#### Available Routes
 - /models
 - /chat/completions
 - /v1/models
