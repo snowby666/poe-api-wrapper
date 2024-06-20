@@ -63,7 +63,7 @@ async def message_handler(baseModel: str, messages: list[dict[str, str]], tokens
         rest_string = await helpers.__stringify_messages(messages=messages)
         
         rest_string = await helpers.__progressive_summarize_text(
-                    rest_string, min(len(rest_string), tokensLimit) # bullshitting values as im not sure of token->characters conversion
+                    rest_string, min(len(rest_string), tokensLimit) 
                 )
         
         message = f"IGNORE PREVIOUS MESSAGES.\n\nYour current message context: {rest_string}\n\nThe most recent message: {main_request}\n\n"
