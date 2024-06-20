@@ -253,7 +253,7 @@ cd poe-api-wrapper\poe_api_wrapper\openai
 python api.py
 ```
 - Run the examples:
-```
+```ShellSession
 python example.py
 ```
 
@@ -269,7 +269,7 @@ tokens = [
     {"p-b": "XXXXXXXX", "p-lat": "XXXXXXXX"}
 ]
 PoeServer(tokens=tokens)
-
+```
 - Non-streamed example:
 ```py
 import openai 
