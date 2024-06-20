@@ -230,6 +230,7 @@ F12 for Devtools (Right-click + Inspect)
 <summary>Read Docs</summary>
 
 #### Available Routes
+
 - /models
 - /chat/completions
 - /v1/models
