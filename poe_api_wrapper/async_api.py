@@ -191,12 +191,12 @@ class AsyncPoeApi:
                     logger.info(f"Attempting to retry message {variables['query']} 3 times...")
                 else:
                     logger.error(f"Automatic retrying request {query_name} due to ReadTimeout")
-                    return self.send_request(path, query_name, variables, file_form)
+                    return await self.send_request(path, query_name, variables, file_form)
 
             if (
                 isinstance(e, ConnectError) or 500 <= status_code < 600
             ) and ratelimit < 2:
-                return self.send_request(path, query_name, variables, file_form, ratelimit=ratelimit + 1)
+                return await self.send_request(path, query_name, variables, file_form, ratelimit=ratelimit + 1)
 
             error_code = f"status_code:{status_code}, " if status_code else ""
             raise Exception(
@@ -353,9 +353,14 @@ class AsyncPoeApi:
             self.disconnect_ws()
             asyncio.get_event_loop().run_until_complete(self.connect_ws())
             
-    async def get_remaining_points(self):
+    async def get_settings(self):
         response_json = await self.send_request('gql_POST', 'SettingsPageQuery', {})
-        return response_json["data"]["viewer"]["messagePointInfo"]
+        if response_json['data'] == None and response_json["errors"]:
+            raise RuntimeError(f'Failed to get settings. Raw response data: {response_json}')
+        return {
+            "subscription": response_json["data"]["viewer"]["subscription"],
+            "messagePointInfo": response_json["data"]["viewer"]["messagePointInfo"]
+        }
     
     async def get_available_bots(self, count: int=25, get_all: bool=False):
         self.bots = {}

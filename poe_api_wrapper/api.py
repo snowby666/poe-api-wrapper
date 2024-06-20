@@ -330,9 +330,14 @@ class PoeApi:
             self.disconnect_ws()
             self.connect_ws()
             
-    def get_remaining_points(self):
+    def get_settings(self):
         response_json = self.send_request('gql_POST', 'SettingsPageQuery', {})
-        return response_json["data"]["viewer"]["messagePointInfo"]
+        if response_json['data'] == None and response_json["errors"]:
+            raise RuntimeError(f'Failed to get settings. Raw response data: {response_json}')
+        return {
+            "subscription": response_json["data"]["viewer"]["subscription"],
+            "messagePointInfo": response_json["data"]["viewer"]["messagePointInfo"]
+        }
     
     def get_available_bots(self, count: int=25, get_all: bool=False):
         self.bots = {}

@@ -1,7 +1,7 @@
 build/
 dist/
 playground/
-openai/
+poe_api_wrapper/openai/__pycache__/
 *.egg-info/
 poe_api_wrapper/__pycache__/
 examples/

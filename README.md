@@ -24,8 +24,13 @@
   - [How to get your Token](#how-to-get-your-token)
     - [Getting p-b and p-lat cookies (*required*)](#getting-p-b-and-p-lat-cookies-required)
     - [Getting formkey (*optional*)](#getting-formkey-optional)
+  - [OpenAI](#openai)
+    - [Availabe Routes](#availabe-routes)
+    - [Quick Setup](#quick-setup)
+    - [Built-in completion (WIP)](#built-in-completion-wip)
+    - [OpenAI Proxy](#openai-proxy)
   - [Basic Usage](#basic-usage)
-  - [Bots Group Chat (beta)](#bots-group-chat-beta)
+  - [Bots Group Chat](#bots-group-chat)
   - [Misc](#misc)
     - [Text files](#text-files)
     - [Media files](#media-files)
@@ -71,7 +76,7 @@
 <summary>Chat Management</summary><br>
 <ul>
 <li>Get Chat Ids & Chat Codes of bot(s)</li>
-<li>Get remaining points</li>
+<li>Get subscription info and remaining points</li>
 </ul>
 </details>
 <details close>
@@ -85,7 +90,7 @@
 </ul>
 </details>
 <details close>
-<summary>Knowledge Base Customization <b>(New)</b></summary><br>
+<summary>Knowledge Base Customization</summary><br>
 <ul>
 <li>Get available knowledge bases</li>
 <li>Upload knowledge bases for custom bots</li>
@@ -164,17 +169,19 @@ poe -b P-B_HERE -lat P-LAT_HERE -f FORMKEY_HERE
 | Assistant              | capybara                  | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | Claude-3-Opus          | claude_2_1_cedar          | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-3-Sonnet        | claude_2_1_bamboo         | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-3-Haiku         | claude_3_haiku            | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | Claude-3-Opus-200k     | claude_3_opus_200k        | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-3-Sonnet-200k   | claude_3_sonnet_200k      | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Claude-instant-100k    | a2_100k                   | 100K        | 75K   | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-3-Haiku-200k    | claude_3_haiku_200k       | 200K        | 150K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | Claude-2               | claude_2_short            | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-2-100k          | a2_2                      | 100K        | 75K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-instant         | a2                        | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-instant-100k    | a2_100k                   | 100K        | 75K   | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | ChatGPT                | chinchilla                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | GPT-3.5-Turbo          | gpt3_5                    | 2k          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
 | GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |\
-| GPT-4-Classic          | gpt4_classic              | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| GPT-4-Classic          | gpt4_classic              | 2K          | 1.5K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | GPT-4-Turbo            | beaver                    | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | GPT-4-Turbo-128k       | vizcacha                  | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | GPT-4o                 | gpt4_o                    | 4k          | 3k    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
@@ -218,7 +225,88 @@ F12 for Devtools (Right-click + Inspect)
 
     Copy the result
 
+### OpenAI
+<details close>
+<summary>Read Docs</summary>
+
+#### Availabe Routes
+- /models
+- /chat/completions
+- /v1/models
+- /v1/chat/completions
+
+#### Quick Setup
+- First, install the additional packages:
+```ShellSession
+pip install -U poe_api_wrapper[llm]
+```
+- Clone the repo or use the same setup in `openai` folder:
+```ShellSession
+git clone https://github.com/snowby666/poe-api-wrapper.git
+cd poe-api-wrapper\poe_api_wrapper\openai
+```
+- Modify secrets.json with your own tokens
+  
+- Run the FastAPI server:
+```ShellSession
+python api.py
+```
+- Run the examples:
+```
+python example.py
+```
+
+#### Built-in completion (WIP)
+
+#### OpenAI Proxy
+- Start the server
+```py
+from poe_api_wrapper import PoeServer
+tokens = [
+    {"p-b": "XXXXXXXX", "p-lat": "XXXXXXXX"},
+    {"p-b": "XXXXXXXX", "p-lat": "XXXXXXXX"},
+    {"p-b": "XXXXXXXX", "p-lat": "XXXXXXXX"}
+]
+PoeServer(tokens=tokens)
+
+- Non-streamed example:
+```py
+import openai 
+client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo", 
+    messages = [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Hello!"}
+            ]
+)
+
+print(response.choices[0].message.content)
+```
+- Streaming example:
+```py
+import openai 
+client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
+
+stream = client.chat.completions.create(
+    model="gpt-3.5-turbo", 
+    messages = [
+                {"role": "user", "content": "this is a test request, write a short poem"}
+            ],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content is not None:
+        print(chunk.choices[0].delta.content, end="")
+```
+</details>
+
 ### Basic Usage
+<details close>
+<summary>Read Docs</summary>
+
 - Connecting to the API
 ```py
 tokens = {
@@ -296,9 +384,9 @@ for page in range(len(pages)):
         for thread in value:
             print({bot: thread})
 ```
-- Getting remaining points
+- Getting subscription info and remaining points
 ```py
-data = client.get_remaining_points()
+data = client.get_settings()
 print(data)
 ```
 - Sending messages & Streaming responses 
@@ -609,7 +697,12 @@ print(client2.import_chat(bot, shareCode))
 ```py
 print(client.get_citations(messageId=141597902621))
 ```
-### Bots Group Chat (beta)
+</details>
+
+### Bots Group Chat
+<details close>
+<summary>Read Docs</summary>
+
 - Creating a group chat
 ```py
 bots = [
@@ -690,8 +783,12 @@ client.save_group_history(group_name='Hangout', file_path=local_path)
 ```py
 print(client.load_group_history(file_path=local_path))
 ```
+</details>
 
 ### Misc
+<details close>
+<summary>Read Docs</summary>
+
 - How to find chatCode manually?
 
 Here is an example, the chatCode is 23o1gxjhb9cfnlacdcd
@@ -710,6 +807,7 @@ Currently, this API only supports these file types for adding attachments
 | .png | .jpg | .jpeg | .gif | .mp4 | .mov | .mp3 | .wav |
 | - | - | - | - | - | - | - | - |
 |                               |
+</details>
 
 ## 🙌 Contributing
 We would love to develop poe-api-wrapper together with our community! 💕

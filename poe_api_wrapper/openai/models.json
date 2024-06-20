@@ -1,0 +1,330 @@
+{
+    "gpt-3.5-turbo": {
+        "baseModel": "gpt3_5",
+        "tokens": 2000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gpt-3.5-turbo-instruct": {
+        "baseModel": "chinchilla_instruct",
+        "tokens": 2000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gpt-3.5-turbo-16k": {
+        "baseModel": "agouti",
+        "tokens": 16000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gpt-4": {
+        "baseModel": "gpt4_classic",
+        "tokens": 2000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "gpt-4-turbo": {
+        "baseModel": "beaver",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "gpt-4-turbo-128k": {
+        "baseModel": "vizcacha",
+        "tokens": 128000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "gpt-4-o": {
+        "baseModel": "gpt4_o",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gpt-4o-128k": {
+        "baseModel": "gpt4_o_128k",
+        "tokens": 128000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "claude-instant": {
+        "baseModel": "a2",
+        "tokens": 9000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "claude-instant-100k": {
+        "baseModel": "a2_100k",
+        "tokens": 100000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "claude-2": {
+        "baseModel": "claude_2_short",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "claude-2-100k": {
+        "baseModel": "a2_2",
+        "tokens": 100000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "claude-3-opus": {
+        "baseModel": "claude_2_1_cedar",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "claude-3-sonnet": {
+        "baseModel": "claude_2_1_bamboo",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "claude-3-haiku": {
+        "baseModel": "claude_3_haiku",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "claude-3-opus-200k": {
+        "baseModel": "claude_3_opus_200k",
+        "tokens": 200000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "claude-3-sonnet-200k": {
+        "baseModel": "claude_3_sonnet_200k",
+        "tokens": 200000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "claude-3-haiku-200k": {
+        "baseModel": "claude_3_haiku_200k",
+        "tokens": 200000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gemini-1.5-pro": {
+        "baseModel": "gemini_1_5_pro",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "gemini-1.5-pro-128k": {
+        "baseModel": "gemini_1_5_pro_128k",
+        "tokens": 128000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "gemini-1.5-pro-1m": {
+        "baseModel": "gemini_1_5_pro_1m",
+        "tokens": 1000000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "gemini-1.5-flash": {
+        "baseModel": "gemini_1_5_flash",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gemini-1.5-flash-128k": {
+        "baseModel": "gemini_1_5_flash_128k",
+        "tokens": 128000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gemini-1.5-flash-1m": {
+        "baseModel": "gemini_1_5_flash_1m",
+        "tokens": 1000000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "gemini-1.0-pro-search": {
+        "baseModel": "gemini_pro_search",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gemini-1.5-pro-search": {
+        "baseModel": "gemini_1_5_pro_search",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": true
+    },
+
+    "llama-2-7b": {
+        "baseModel": "llama_2_7b_chat",
+        "tokens": 2000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "llama-2-13b": {
+        "baseModel": "llama_2_13b_chat",
+        "tokens": 2000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "llama-2-70b": {
+        "baseModel": "llama_2_70b_chat",
+        "tokens": 2000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "code-llama-7b": {
+        "baseModel": "code_llama_7b_instruct",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+    
+    "code-llama-13b": {
+        "baseModel": "code_llama_13b_instruct",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "code-llama-34b": {
+        "baseModel": "code_llama_34b_instruct",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "llama-3-8b" : {
+        "baseModel": "groq_llama_3_8b",
+        "tokens": 8000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "llama-3-70b": {
+        "baseModel": "groq_llama_3_70b",
+        "tokens": 8000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "llama-3-70b-instruct": {
+        "baseModel": "llama370bt",
+        "tokens": 8000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "mistral-7b": {
+        "baseModel": "groq_mixtral_8x_7b",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+    
+    "mistral-medium": {
+        "baseModel": "mistral_medium",
+        "tokens": 32000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+    
+    "mistral-large": {
+        "baseModel": "mistral_large",
+        "tokens": 32000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "palm-2": {
+        "baseModel": "acouchy",
+        "tokens": 8000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "mytho-max-l2-13b": {
+        "baseModel": "mythomaxl213b",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+    
+    "solar-mini": {
+        "baseModel": "upstage_solar_0_70b_16bit",
+        "tokens": 2000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gemma-7b": {
+        "baseModel": "gemma7bfw",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "gemma-instruct-7b": {
+        "baseModel": "gemmainstruct7bt",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "qwen-1.5-72b": {
+        "baseModel": "qwen72bt",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "qwen-1.5-110b": {
+        "baseModel": "qwen15110bt",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "qwen-2-72b": {
+        "baseModel": "qwen272bchat",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
+    "qwen-2-72b-instruct": {
+        "baseModel": "qwen272binstructt",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    }
+}
