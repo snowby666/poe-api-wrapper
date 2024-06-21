@@ -325,7 +325,7 @@ response = client.chat.completions.create(
     ]
 )
 
-print(response.choices[0].content)
+print(response.choices[0].message.content)
 ```
 - Images Generation example:
 ```py
