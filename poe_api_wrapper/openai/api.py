@@ -12,6 +12,12 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI()
 
+with open(os.path.join(DIR, "secrets.json"), "r") as f:
+    TOKENS = ujson.load(f)
+    if "tokens" not in TOKENS:
+        raise Exception("Tokens not found in secrets.json")
+    app.state.tokens = TOKENS["tokens"]
+
 with open(os.path.join(DIR, "models.json"), "r") as f:
     models = ujson.load(f)
     app.state.models = models
@@ -195,17 +201,11 @@ async def non_streaming_response(client: AsyncPoeApi, response: dict, model: str
             ],
             
         }
-    
+
+
 if __name__ == "__main__":
-    with open(os.path.join(DIR, "secrets.json"), "r") as f:
-        TOKENS = ujson.load(f)
-        if "tokens" not in TOKENS:
-            raise Exception("Tokens not found in secrets.json")
-        app.state.tokens = TOKENS["tokens"]
-    
     CommandLineInterface().run(["api:app", "--bind", "127.0.0.1", "--port", "8000"])
     
 def start_server(tokens):
     app.state.tokens = tokens
-    
     CommandLineInterface().run(["poe_api_wrapper.openai.api:app", "--bind", "127.0.0.1", "--port", "8000"])
