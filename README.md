@@ -166,34 +166,34 @@ poe -b P-B_HERE -lat P-LAT_HERE -f FORMKEY_HERE
 ### Available Default Bots
 | Display Name           | Model                     | Token Limit | Words | Access Type                                                     |
 | ---------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
-| Assistant              | capybara                  | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Assistant              | capybara                  | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Claude-3-Opus          | claude_2_1_cedar          | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Claude-3-Sonnet        | claude_2_1_bamboo         | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Claude-3-Haiku         | claude_3_haiku            | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-3-Sonnet        | claude_2_1_bamboo         | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-3-Haiku         | claude_3_haiku            | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Claude-3-Opus-200k     | claude_3_opus_200k        | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-3-Sonnet-200k   | claude_3_sonnet_200k      | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Claude-3-Haiku-200k    | claude_3_haiku_200k       | 200K        | 150K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-3-Haiku-200k    | claude_3_haiku_200k       | 200K        | 150K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Claude-2               | claude_2_short            | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-2-100k          | a2_2                      | 100K        | 75K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Claude-instant         | a2                        | 9K          | 7K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Claude-instant-100k    | a2_100k                   | 100K        | 75K   | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| ChatGPT                | chinchilla                | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| GPT-3.5-Turbo          | gpt3_5                    | 2k          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Claude-instant         | a2                        | 9K          | 7K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-instant-100k    | a2_100k                   | 100K        | 75K   | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| ChatGPT                | chinchilla                | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-3.5-Turbo          | gpt3_5                    | 2k          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | GPT-4-Classic          | gpt4_classic              | 2K          | 1.5K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | GPT-4-Turbo            | beaver                    | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | GPT-4-Turbo-128k       | vizcacha                  | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| GPT-4o                 | gpt4_o                    | 4k          | 3k    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| GPT-4o                 | gpt4_o                    | 4k          | 3k    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | GPT-4o-128k            | gpt4_o_128k               | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Google-PaLM            | acouchy                   | 8K          | 6K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-7b             | llama_2_7b_chat           | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-13b            | llama_2_13b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Llama-2-70b            | llama_2_70b_chat          | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-7b          | code_llama_7b_instruct    | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-13b         | code_llama_13b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Code-Llama-34b         | code_llama_34b_instruct   | 4K          | 3K    | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
-| Solar-Mini             | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![No Limit](https://img.shields.io/badge/no%20limit-2feb7a)     |
+| Google-PaLM            | acouchy                   | 8K          | 6K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Llama-2-7b             | llama_2_7b_chat           | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Llama-2-13b            | llama_2_13b_chat          | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Llama-2-70b            | llama_2_70b_chat          | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Code-Llama-7b          | code_llama_7b_instruct    | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Code-Llama-13b         | code_llama_13b_instruct   | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Code-Llama-34b         | code_llama_34b_instruct   | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Solar-Mini             | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 > [!IMPORTANT]  
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
 
@@ -233,8 +233,10 @@ F12 for Devtools (Right-click + Inspect)
 
 - /models
 - /chat/completions
+- /images/generations
 - /v1/models
 - /v1/chat/completions
+- /v1/images/generations
 
 #### Quick Setup
 - First, install the additional packages:
@@ -301,6 +303,42 @@ stream = client.chat.completions.create(
 for chunk in stream:
     if chunk.choices[0].delta.content is not None:
         print(chunk.choices[0].delta.content, end="")
+```
+- Image Input example:
+```py
+import openai 
+client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
+
+response = client.chat.completions.create(
+    model="claude-instant",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+                },
+            ],
+        }
+    ]
+)
+
+print(response.choices[0].content)
+```
+- Images Generation example:
+```py
+import openai
+client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
+
+images_url = client.images.generate(
+  model="playground-v2.5",
+  prompt="A cute baby sea otter",
+  n=1, # The number of images to generate
+)
+
+print(images_url)
 ```
 </details>
 

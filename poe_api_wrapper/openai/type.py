@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Any, Optional
 
-class RequestData(BaseModel):
+class ChatData(BaseModel):
     model: Any
     messages: Any
     stream: Optional[bool] = False
@@ -9,3 +9,9 @@ class RequestData(BaseModel):
     presence_penalty: Optional[float] = 1.0
     temperature: Optional[float] = 1.0
     top_p: Optional[float] = 1.0
+    
+class ImagesData(BaseModel):
+    prompt: Any
+    model: Any
+    n: Optional[int] = 1
+    size: Optional[str] = '1024x1024'

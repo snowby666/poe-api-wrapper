@@ -64,6 +64,23 @@ async def __validate_messages_format(messages):
         return False
     return True
 
+async def __split_content(messages):
+    text_messages = []
+    image_urls = []
+    
+    for message in messages:
+        if "content" in message and isinstance(message["content"], list):
+            for item in message["content"]:
+                if item["type"] == "text":
+                    if "text" in item:
+                        text_messages.append({"role": message["role"], "content": item["text"]})
+                elif item["type"] == "image_url":
+                    if "image_url" in item:
+                        image_urls.append(item["image_url"])  
+        elif "content" in message and isinstance(message["content"], str):
+            text_messages.append({"role": message["role"], "content": message["content"]})  
+               
+    return text_messages, image_urls
 
 async def __generate_completion_id():
     return "".join(random.choices(string.ascii_letters + string.digits, k=28))

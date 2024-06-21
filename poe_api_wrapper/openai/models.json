@@ -326,5 +326,54 @@
         "tokens": 4000,
         "endpoints": "/v1/chat/completions",
         "premium_model": false
+    },
+
+    "playground-v2.5": {
+        "baseModel": "playgroundv25",
+        "tokens": 80,
+        "endpoints": "/v1/images/generations",
+        "premium_model": false
+    },
+
+    "stable-diffusion-xl": {
+        "baseModel": "stablediffusionxl",
+        "tokens": 80,
+        "endpoints": "/v1/images/generations",
+        "premium_model": false
+    },
+
+    "stable-diffusion-3": {
+        "baseModel": "stablediffusion3",
+        "tokens": 80,
+        "endpoints": "/v1/images/generations",
+        "premium_model": true
+    },
+
+    "stable-diffusion-3-turbo": {
+        "baseModel": "sd3turbo",
+        "tokens": 80,
+        "endpoints": "/v1/images/generations",
+        "premium_model": true
+    },
+
+    "stable-diffusion-3-2b": {
+        "baseModel": "stablediffusion32b",
+        "tokens": 80,
+        "endpoints": "/v1/images/generations",
+        "premium_model": false
+    },
+
+    "dall-e-3": {
+        "baseModel": "dalle3",
+        "tokens": 80,
+        "endpoints": "/v1/images/generations",
+        "premium_model": true
+    },
+
+    "ideogram": {
+        "baseModel": "ideogram",
+        "tokens": 80,
+        "endpoints": "/v1/images/generations",
+        "premium_model": true
     }
 }

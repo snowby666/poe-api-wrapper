@@ -24,3 +24,29 @@ stream = client.chat.completions.create(
 for chunk in stream:
     if chunk.choices[0].delta.content is not None:
         print(chunk.choices[0].delta.content, end="")
+        
+image_input = client.chat.completions.create(
+    model="claude-instant",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+                },
+            ],
+        }
+    ]
+)
+
+print(image_input.choices[0].content)
+
+images_url = client.images.generate(
+  model="playground-v2.5",
+  prompt="A cute baby sea otter",
+  n=1, # The number of images to generate
+)
+
+print(images_url)
