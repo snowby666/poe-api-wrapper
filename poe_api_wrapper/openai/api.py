@@ -90,11 +90,11 @@ async def images(request: Request, data: ImagesData) -> None:
     if premiumModel and not subscription:
         raise HTTPException(status_code=402, detail="Premium model requires a subscription.")
     
-    response = await image_handler(prompt, model, tokensLimit)
+    response = await image_handler(baseModel, prompt, tokensLimit)
     
     urls = []
     for _ in range(n):
-        image_generation = await generate_image(client, response, baseModel)
+        image_generation = await generate_image(client, response)
         urls.extend([url for url in image_generation.split() if url.startswith("https://")])
     
     if len(urls) == 0:
@@ -110,10 +110,10 @@ async def images(request: Request, data: ImagesData) -> None:
     return {"created": await helpers.__generate_timestamp(), "data": [{"url": url} for url in urls]}
 
 
-async def image_handler(prompt: str, model: str, tokensLimit: int) -> dict:
+async def image_handler(baseModel: str, prompt: str, tokensLimit: int) -> dict:
     try:
         message = await helpers.__progressive_summarize_text(prompt, min(len(prompt), tokensLimit))
-        return {"bot": model, "message": message}
+        return {"bot": baseModel, "message": message}
     except Exception as e:
         raise HTTPException(status_code=400, detail="Failed to truncate prompt.") from e
          
@@ -132,7 +132,7 @@ async def message_handler(baseModel: str, messages: list[dict[str, str]], tokens
     except Exception as e:
         raise HTTPException(status_code=400, detail="Failed to process messages.") from e
 
-async def generate_image(client: AsyncPoeApi, response: dict, model: str) -> str:
+async def generate_image(client: AsyncPoeApi, response: dict) -> str:
     try:
         async for chunk in client.send_message(bot=response["bot"], message=response["message"]):
             pass
