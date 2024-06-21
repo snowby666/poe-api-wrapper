@@ -4,7 +4,7 @@ from pathlib import Path
 base_path = Path(__file__).parent
 long_description = (base_path / "README.md").read_text(encoding='utf-8')
 
-VERSION = '1.5.4'
+VERSION = '1.5.5'
 DESCRIPTION = 'A simple, lightweight and efficient API wrapper for Poe.com'
 LONG_DESCRIPTION = '👾 A Python API wrapper for Poe.com. With this, you will have free access to ChatGPT, Claude, Llama, Gemini, Google-PaLM and more! 🚀'
 
@@ -17,10 +17,10 @@ setup(
     long_description=long_description,
     packages=find_packages(),
     python_requires=">=3.7",
-    install_requires=['httpx[http2]', 'websocket-client', 'requests_toolbelt', 'loguru', 'rich==13.3.4', 'beautifulsoup4', 'quickjs', 'nest-asyncio'],
+    install_requires=['httpx[http2]', 'websocket-client', 'requests_toolbelt', 'loguru', 'rich==13.3.4', 'beautifulsoup4', 'quickjs', 'nest-asyncio', 'ujson'],
     extras_require={
         'proxy': ['ballyregan; python_version>="3.9"'],
-        'llm': ['ujson', 'fastapi', 'pydantic', 'nltk', 'daphne', 'openai'],
+        'llm': ['fastapi', 'pydantic', 'nltk', 'daphne', 'openai'],
         'tests': ['tox'],
     },
     keywords=['python', 'poe', 'quora', 'chatgpt', 'claude', 'poe-api', 'api'],

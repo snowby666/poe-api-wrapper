@@ -125,6 +125,20 @@
         "premium_model": false
     },
 
+    "claude-3.5-sonnet": {
+        "baseModel": "claude_3_igloo",
+        "tokens": 4000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+    
+    "claude-3.5-sonnet-200k": {
+        "baseModel": "claude_3_igloo_200k",
+        "tokens": 200000,
+        "endpoints": "/v1/chat/completions",
+        "premium_model": false
+    },
+
     "gemini-1.5-pro": {
         "baseModel": "gemini_1_5_pro",
         "tokens": 4000,

@@ -167,9 +167,11 @@ poe -b P-B_HERE -lat P-LAT_HERE -f FORMKEY_HERE
 | Display Name           | Model                     | Token Limit | Words | Access Type                                                     |
 | ---------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
 | Assistant              | capybara                  | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-3.5-Sonnet      | claude_3_igloo            | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Claude-3-Opus          | claude_2_1_cedar          | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-3-Sonnet        | claude_2_1_bamboo         | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Claude-3-Haiku         | claude_3_haiku            | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-3.5-Sonnet-200k | claude_3_igloo_200k       | 200K        | 150K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Claude-3-Opus-200k     | claude_3_opus_200k        | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-3-Sonnet-200k   | claude_3_sonnet_200k      | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-3-Haiku-200k    | claude_3_haiku_200k       | 200K        | 150K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
@@ -195,7 +197,9 @@ poe -b P-B_HERE -lat P-LAT_HERE -f FORMKEY_HERE
 | Code-Llama-34b         | code_llama_34b_instruct   | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Solar-Mini             | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 > [!IMPORTANT]  
-> The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed.
+> The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed. 
+>
+> The table above only shows bots with different display names from their models. Other bots on poe.com have the same display name as model.
 
 ### How to get your Token
 

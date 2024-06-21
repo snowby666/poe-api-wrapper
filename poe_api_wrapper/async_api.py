@@ -3,7 +3,7 @@ try:
     ASYNC = True
 except ImportError:
     ASYNC = False
-import asyncio, json, queue, random, ssl, threading, websocket, string, secrets, os, hashlib, re
+import asyncio, ujson, queue, random, ssl, threading, websocket, string, secrets, os, hashlib, re
 from time import time
 from typing import  AsyncIterator
 from loguru import logger
@@ -160,7 +160,7 @@ class AsyncPoeApi:
             response = await self.client.post(f'{self.BASE_URL}/api/{path}', data=payload, headers=headers, follow_redirects=True, timeout=30)
             
             status_code = response.status_code
-            json_data = json.loads(response.text)
+            json_data = ujson.loads(response.text)
 
             if (
                 "success" in json_data.keys()
@@ -302,7 +302,7 @@ class AsyncPoeApi:
 
     def on_message(self, ws, msg):
         try:
-            ws_data = json.loads(msg)
+            ws_data = ujson.loads(msg)
 
             if "error" in ws_data.keys() and ws_data["error"] == "missed_messages":
                 self.disconnect_ws()
@@ -313,7 +313,7 @@ class AsyncPoeApi:
                 return
             
             for data in ws_data["messages"]:
-                data = json.loads(data)
+                data = ujson.loads(data)
                 message_type = data.get("message_type")
                 if message_type == "refetchChannel":
                     self.disconnect_ws()
@@ -491,9 +491,11 @@ class AsyncPoeApi:
         id = None
         title = None
         if bot not in self.current_thread:
-            self.current_thread[bot] = await self.get_chat_history(bot=bot)['data'][bot]
+            temp = await self.get_chat_history(bot=bot)
+            self.current_thread[bot] = temp['data'][bot]
         elif len(self.current_thread[bot]) <= 1:
-            self.current_thread[bot] = await self.get_chat_history(bot=bot)['data'][bot]
+            temp = await self.get_chat_history(bot=bot)
+            self.current_thread[bot] = temp['data'][bot]
         if chatCode != None:
             for chat in self.current_thread[bot]:
                 if chat['chatCode'] == chatCode:
@@ -1018,7 +1020,8 @@ class AsyncPoeApi:
     async def delete_chat(self, bot: str, chatId: any=None, chatCode: any=None, del_all: bool=False):
         bot = bot_map(bot)
         try:
-            chatdata = await self.get_chat_history(bot=bot)['data'][bot]
+            temp = await self.get_chat_history(bot=bot)
+            chatdata = temp['data'][bot]
         except:
             raise RuntimeError(f"No chat found for {bot}. Make sure the bot has a chat history before deleting.")
         if chatId != None and not isinstance(chatId, list):
@@ -1275,7 +1278,8 @@ class AsyncPoeApi:
             "allowRelatedBotRecommendations": allowRelatedBotRecommendations,
         }
         
-        result = await self.send_request('gql_POST', 'PoeBotCreate', variables)['data']['poeBotCreate']
+        temp = await self.send_request('gql_POST', 'PoeBotCreate', variables)
+        result = temp['data']['poeBotCreate']
         if result["status"] != "success":
            logger.error(f"Poe returned an error while trying to create a bot: {result['status']}")
         else:
@@ -1315,7 +1319,8 @@ class AsyncPoeApi:
             removeIds = []
         
         try: 
-            botId = await self.get_botData(handle)['botId']
+            temp = await self.get_botData(handle)
+            botId = temp['botId']
         except Exception as e:
             raise ValueError(
                 f"Fail to get botId from {handle}. Make sure the bot exists and you have access to it."
@@ -1345,7 +1350,8 @@ class AsyncPoeApi:
             "allowRelatedBotRecommendations": allowRelatedBotRecommendations,
         }
         
-        result = await self.send_request('gql_POST', 'PoeBotEdit', variables)["data"]["poeBotEdit"]
+        temp = await self.send_request('gql_POST', 'PoeBotEdit', variables)
+        result = temp["data"]["poeBotEdit"]
         if result["status"] != "success":
             logger.error(f"Poe returned an error while trying to edit a bot: {result['status']}")
         else:
@@ -1359,8 +1365,9 @@ class AsyncPoeApi:
         return {"status": result["status"], "botId": botId, "handle": new_handle if new_handle != None else handle}
     
     async def delete_bot(self, handle):
-        isCreator = await self.get_botData(handle)['viewerIsCreator']
-        botId = await self.get_botData(handle)['botId']
+        temp = await self.get_botData(handle)
+        isCreator = temp['viewerIsCreator']
+        botId = temp['botId']
         try:
             if isCreator == True:
                 response = await self.send_request('gql_POST', "BotInfoCardActionBar_poeBotDelete_Mutation", {"botId": botId})
@@ -1564,7 +1571,7 @@ class AsyncPoeApi:
             if not file_path.endswith('.json'):
                 raise ValueError(f"File path {file_path} is not a json file.")
         with open(file_path, 'w') as f:
-            json.dump(saveData, f)
+            ujson.dump(saveData, f)
         logger.info(f"Group {group_name} saved to {file_path}")
         return file_path
         
@@ -1579,7 +1586,7 @@ class AsyncPoeApi:
             if os.stat(file_path).st_size == 0:
                 raise ValueError(f"File path {file_path} is empty.")
         with open(file_path, 'r') as f:
-            groupData = json.load(f)
+            groupData = ujson.load(f)
         group_name = file_path.split('.')[0]
         self.groups[group_name] = groupData
         logger.info(f"Group {group_name} loaded from {file_path}")

@@ -173,6 +173,7 @@ async def streaming_response(client: AsyncPoeApi, response: dict, model: str, co
         }
         content = ujson.dumps(end_completion_data, separators=(",", ":"))
         yield f"data: {content}\n\n"
+        yield "data: [DONE]"
     except GeneratorExit:
         pass
 

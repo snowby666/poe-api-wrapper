@@ -1,7 +1,7 @@
 from time import sleep, time
 from httpx import Client, ReadTimeout, ConnectError
 from requests_toolbelt import MultipartEncoder
-import os, secrets, string, random, websocket, json, threading, queue, ssl, hashlib, re
+import os, secrets, string, random, websocket, ujson, threading, queue, ssl, hashlib, re
 from loguru import logger
 from typing import Generator
 from .utils import (
@@ -141,7 +141,7 @@ class PoeApi:
             response = self.client.post(f'{self.BASE_URL}/api/{path}', data=payload, headers=headers, follow_redirects=True, timeout=30)
             
             status_code = response.status_code
-            json_data = json.loads(response.text)
+            json_data = ujson.loads(response.text)
 
             if (
                 "success" in json_data.keys()
@@ -279,7 +279,7 @@ class PoeApi:
         
     def on_message(self, ws, msg):
         try:
-            ws_data = json.loads(msg)
+            ws_data = ujson.loads(msg)
 
             if "error" in ws_data.keys() and ws_data["error"] == "missed_messages":
                 self.disconnect_ws()
@@ -290,7 +290,7 @@ class PoeApi:
                 return
             
             for data in ws_data["messages"]:
-                data = json.loads(data)
+                data = ujson.loads(data)
                 message_type = data.get("message_type")
                 if message_type == "refetchChannel":
                     self.disconnect_ws()
@@ -1565,7 +1565,7 @@ class PoeApi:
             if not file_path.endswith('.json'):
                 raise ValueError(f"File path {file_path} is not a json file.")
         with open(file_path, 'w') as f:
-            json.dump(saveData, f)
+            ujson.dump(saveData, f)
         logger.info(f"Group {group_name} saved to {file_path}")
         return file_path
         
@@ -1580,7 +1580,7 @@ class PoeApi:
             if os.stat(file_path).st_size == 0:
                 raise ValueError(f"File path {file_path} is empty.")
         with open(file_path, 'r') as f:
-            groupData = json.load(f)
+            groupData = ujson.load(f)
         group_name = file_path.split('.')[0]
         self.groups[group_name] = groupData
         logger.info(f"Group {group_name} loaded from {file_path}")
