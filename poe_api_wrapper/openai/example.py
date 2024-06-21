@@ -41,7 +41,7 @@ image_input = client.chat.completions.create(
     ]
 )
 
-print(image_input.choices[0].content)
+print(image_input.choices[0].message.content)
 
 images_url = client.images.generate(
   model="playground-v2.5",
