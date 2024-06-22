@@ -358,7 +358,7 @@ print(images_url)
 import openai
 client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
 
-images_url = client.images.generate(
+images_url = client.images.edit(
   image="https://imgcdn.stablediffusionweb.com/2024/4/29/0b0b8798-1965-4e3d-b0a8-d153728320d4.jpg",
   model="stable-diffusion-xl",
   prompt="A cute baby sea otter wearing a raincoat",
