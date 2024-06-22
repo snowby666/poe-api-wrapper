@@ -10,7 +10,14 @@ class ChatData(BaseModel):
     temperature: Optional[float] = 1.0
     top_p: Optional[float] = 1.0
     
-class ImagesData(BaseModel):
+class ImagesGenData(BaseModel):
+    prompt: Any
+    model: Any
+    n: Optional[int] = 1
+    size: Optional[str] = '1024x1024'
+    
+class ImagesEditData(BaseModel):
+    image: Any
     prompt: Any
     model: Any
     n: Optional[int] = 1

@@ -3,7 +3,7 @@ try:
     ASYNC = True
 except ImportError:
     ASYNC = False
-import asyncio, ujson, queue, random, ssl, threading, websocket, string, secrets, os, hashlib, re
+import asyncio, queue, ujson, random, ssl, threading, websocket, string, secrets, os, hashlib, re
 from time import time
 from typing import  AsyncIterator
 from loguru import logger
@@ -53,7 +53,7 @@ class AsyncPoeApi:
         self.ws_connected = False
         self.ws_error = False
         self.active_messages = {}
-        self.message_queues = {}
+        self.message_queues: dict[int, queue.Queue] = {}
         self.current_thread = {}
         self.retry_attempts = 3
         self.message_generating = True
@@ -337,17 +337,16 @@ class AsyncPoeApi:
                 ):
                     continue
 
-                copied_dict = self.active_messages.copy()
-                for key, value in copied_dict.items():
-                    if value == data["messageId"] and key in self.message_queues:
-                        self.message_queues[key].put(data)
-                        return
-
-                    elif key != "pending" and value == None and data["state"] != "complete":
-                        self.active_messages[key] = data["messageId"]
-                        self.message_queues[key].put(data)
-                        return
-                    
+                chat_id: int = int(payload.get("unique_id")[13:])
+                
+                if chat_id not in self.message_queues:
+                    continue
+                
+                if chat_id in self.message_queues:
+                    self.active_messages[chat_id] = data["messageId"]
+                    self.message_queues[chat_id].put(data)
+                    return
+                
         except Exception:
             logger.exception(f"Failed to parse message: {msg}")
             self.disconnect_ws()
@@ -608,7 +607,6 @@ class AsyncPoeApi:
                 raise RuntimeError(f"Last message is too long. Raw response data: {response_json}")
         
         bot_message_id = last_message['messageId']
-        human_message_id = edges[1]['node']['messageId']
         
         response_json = await self.send_request('gql_POST', 'RegenerateMessageMutation', {'messageId': bot_message_id, 'messagePointsDisplayPrice': msgPrice})
         if response_json['data'] == None and response_json["errors"]:
@@ -617,8 +615,8 @@ class AsyncPoeApi:
             logger.info(f"Message {bot_message_id} of Thread {chatCode} has been retried.")
             
         self.message_generating = True
-        self.active_messages[human_message_id] = None
-        self.message_queues[human_message_id] = queue.Queue()
+        self.active_messages[chatId] = None
+        self.message_queues[chatId] = queue.Queue()
 
         last_text = ""
         message_id = None
@@ -627,7 +625,10 @@ class AsyncPoeApi:
         
         while True:
             try:
-                response = self.message_queues[human_message_id].get(timeout=timeout)
+                response = self.message_queues[chatId].get(timeout=timeout)
+            except KeyError:
+                await asyncio.sleep(1)
+                continue
             except queue.Empty:
                 try:
                     if self.retry_attempts > 0:
@@ -635,8 +636,8 @@ class AsyncPoeApi:
                         logger.warning(f"Retrying request {3-self.retry_attempts}/3 times...")
                     else:
                         self.retry_attempts = 3
-                        del self.active_messages[human_message_id]
-                        del self.message_queues[human_message_id]
+                        del self.active_messages[chatId]
+                        del self.message_queues[chatId]
                         raise RuntimeError("Timed out waiting for response.")
                     await self.connect_ws()
                     continue
@@ -674,26 +675,8 @@ class AsyncPoeApi:
             
             last_text = response["text"]
             message_id = response["messageId"]
-            
-        async def recv_post_thread():
-            bot_message_id = self.active_messages[human_message_id]
-            await asyncio.sleep(2.5)
-            await self.send_request("receive_POST", "recv", {
-                "bot_name": bot,
-                "time_to_first_typing_indicator": 300,
-                "time_to_first_subscription_response": 600,
-                "time_to_full_bot_response": 1100,
-                "full_response_length": len(last_text) + 1,
-                "full_response_word_count": len(last_text.split(" ")) + 1,
-                "human_message_id": human_message_id,
-                "bot_message_id": bot_message_id,
-                "chat_id": chatId,
-                "bot_response_status": "success",
-            })
-            await asyncio.sleep(0.5)
         
         if response["state"] != "error_user_message_too_long": 
-            await recv_post_thread()
             
             if suggest_replies:
                 self.suggestions_queue = queue.Queue()
@@ -705,11 +688,11 @@ class AsyncPoeApi:
                     yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
                 del self.suggestions_queue
         
-        del self.active_messages[human_message_id]
-        del self.message_queues[human_message_id]
+        del self.active_messages[chatId]
+        del self.message_queues[chatId]
         self.retry_attempts = 3
         
-    async def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, msgPrice: int=20, file_path: list=[], suggest_replies: bool=False, timeout: int=10) -> AsyncIterator[dict]:
+    async def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, msgPrice: int=20, file_path: list=[], suggest_replies: bool=False, timeout: int=20) -> AsyncIterator[dict]:
         self.retry_attempts = 3
         timer = 0
         while None in self.active_messages.values():
@@ -781,7 +764,7 @@ class AsyncPoeApi:
                         logger.warning("This file type is not supported. Please try again with a different file.")
                     elif status == 'reached_limit':
                         raise RuntimeError(f"Daily limit reached for {bot}.")
-                    elif status == 'too_many_tokens':
+                    elif status in ('too_many_tokens', 'concurrent_messages'):
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
                         
                     logger.info(f"New Thread created | {message_data['data']['messageEdgeCreate']['chat']['chatCode']}")
@@ -796,15 +779,12 @@ class AsyncPoeApi:
                     self.current_thread[bot] = [{'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']}]
                 else:
                     self.current_thread[bot].append({'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']})
-                del self.active_messages["pending"]
+                if "pending" in self.active_messages:
+                    del self.active_messages["pending"]
             except Exception as e:
-                del self.active_messages["pending"]
+                if "pending" in self.active_messages:
+                    del self.active_messages["pending"]
                 raise e
-            try:
-                human_message = message_data['messagesConnection']['edges'][0]['node']['text']
-                human_message_id = message_data['messagesConnection']['edges'][0]['node']['messageId']
-            except TypeError:
-                raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
         else:
             chatdata = await self.get_threadData(bot, chatCode, chatId)
             chatCode = chatdata['chatCode']
@@ -852,22 +832,19 @@ class AsyncPoeApi:
                         logger.warning("This file type is not supported. Please try again with a different file.")
                     elif status == 'reached_limit':
                         raise RuntimeError(f"Daily limit reached for {bot}.")
-                    elif status == 'too_many_tokens':
+                    elif status in ('too_many_tokens', 'concurrent_messages'):
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
-                del self.active_messages["pending"]
+                        
+                if "pending" in self.active_messages:
+                    del self.active_messages["pending"]
             except Exception as e:
-                del self.active_messages["pending"]
+                if "pending" in self.active_messages:
+                    del self.active_messages["pending"]
                 raise e
                     
-            try:
-                human_message = message_data["data"]["messageEdgeCreate"]["message"]
-                human_message_id = human_message["node"]["messageId"]
-            except TypeError:
-                raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
-        
         self.message_generating = True
-        self.active_messages[human_message_id] = None
-        self.message_queues[human_message_id] = queue.Queue()
+        self.active_messages[chatId] = None
+        self.message_queues[chatId] = queue.Queue()
 
         last_text = ""
         message_id = None
@@ -876,7 +853,10 @@ class AsyncPoeApi:
         
         while True:
             try:
-                response = self.message_queues[human_message_id].get(timeout=timeout)
+                response = self.message_queues[chatId].get(timeout=timeout)
+            except KeyError:
+                await asyncio.sleep(1)
+                continue
             except queue.Empty:
                 try:
                     if self.retry_attempts > 0:
@@ -884,8 +864,8 @@ class AsyncPoeApi:
                         logger.warning(f"Retrying request {3-self.retry_attempts}/3 times...")
                     else:
                         self.retry_attempts = 3
-                        del self.active_messages[human_message_id]
-                        del self.message_queues[human_message_id]
+                        del self.active_messages[chatId]
+                        del self.message_queues[chatId]
                         raise RuntimeError("Timed out waiting for response.")
                     await self.connect_ws()
                     continue
@@ -924,25 +904,7 @@ class AsyncPoeApi:
             last_text = response["text"]
             message_id = response["messageId"]
             
-        async def recv_post_thread():
-            bot_message_id = self.active_messages[human_message_id]
-            await asyncio.sleep(2.5)
-            await self.send_request("receive_POST", "recv", {
-                "bot_name": bot,
-                "time_to_first_typing_indicator": 300,
-                "time_to_first_subscription_response": 600,
-                "time_to_full_bot_response": 1100,
-                "full_response_length": len(last_text) + 1,
-                "full_response_word_count": len(last_text.split(" ")) + 1,
-                "human_message_id": human_message_id,
-                "bot_message_id": bot_message_id,
-                "chat_id": chatId,
-                "bot_response_status": "success",
-            })
-            await asyncio.sleep(0.5)
-        
         if response["state"] != "error_user_message_too_long": 
-            await recv_post_thread()
             
             if suggest_replies:
                 self.suggestions_queue = queue.Queue()
@@ -954,8 +916,8 @@ class AsyncPoeApi:
                     yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
                 del self.suggestions_queue
         
-        del self.active_messages[human_message_id]
-        del self.message_queues[human_message_id]
+        del self.active_messages[chatId]
+        del self.message_queues[chatId]
         self.retry_attempts = 3
         
     async def cancel_message(self, chunk: dict):

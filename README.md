@@ -28,7 +28,10 @@
     - [Available Routes](#available-routes)
     - [Quick Setup](#quick-setup)
     - [Built-in completion (WIP)](#built-in-completion-wip)
-    - [OpenAI Proxy](#openai-proxy)
+    - [OpenAI Proxy Server](#openai-proxy-server)
+      - [Chat](#chat)
+      - [Images](#images)
+      - [Models](#models)
   - [Basic Usage](#basic-usage)
   - [Bots Group Chat](#bots-group-chat)
   - [Misc](#misc)
@@ -238,9 +241,11 @@ F12 for Devtools (Right-click + Inspect)
 - /models
 - /chat/completions
 - /images/generations
+- /images/edits
 - /v1/models
 - /v1/chat/completions
 - /v1/images/generations
+- /v1/images/edits
 
 #### Quick Setup
 - First, install the additional packages:
@@ -265,7 +270,7 @@ python example.py
 
 #### Built-in completion (WIP)
 
-#### OpenAI Proxy
+#### OpenAI Proxy Server
 - Start the server
 ```py
 from poe_api_wrapper import PoeServer
@@ -276,6 +281,8 @@ tokens = [
 ]
 PoeServer(tokens=tokens)
 ```
+
+##### Chat
 - Non-streamed example:
 ```py
 import openai 
@@ -308,13 +315,13 @@ for chunk in stream:
     if chunk.choices[0].delta.content is not None:
         print(chunk.choices[0].delta.content, end="")
 ```
-- Image Input example:
+- Image input example:
 ```py
 import openai 
 client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
 
 response = client.chat.completions.create(
-    model="claude-instant",
+    model="claude-3.5-sonnet",
     messages=[
         {
             "role": "user",
@@ -331,7 +338,9 @@ response = client.chat.completions.create(
 
 print(response.choices[0].message.content)
 ```
-- Images Generation example:
+
+##### Images
+- Create image example:
 ```py
 import openai
 client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
@@ -339,10 +348,44 @@ client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/",
 images_url = client.images.generate(
   model="playground-v2.5",
   prompt="A cute baby sea otter",
+  n=2, # The number of images to generate
+)
+
+print(images_url)
+```
+- Edit image example:
+```py
+import openai
+client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
+
+images_url = client.images.generate(
+  image="https://imgcdn.stablediffusionweb.com/2024/4/29/0b0b8798-1965-4e3d-b0a8-d153728320d4.jpg",
+  model="stable-diffusion-xl",
+  prompt="A cute baby sea otter wearing a raincoat",
   n=1, # The number of images to generate
 )
 
 print(images_url)
+```
+
+##### Models
+- List models example:
+```py
+import openai
+client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
+
+models = client.models.list()
+
+print(models)
+```
+- Retrieve model example:
+```py
+import openai
+client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
+
+model = client.models.retrieve("gpt-3.5-turbo-instruct")
+
+print(model)
 ```
 </details>
 

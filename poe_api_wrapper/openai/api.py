@@ -4,7 +4,7 @@ from daphne.cli import CommandLineInterface
 from typing import Any, Generator
 from poe_api_wrapper import AsyncPoeApi
 from poe_api_wrapper.openai import helpers
-from poe_api_wrapper.openai.type import ChatData, ImagesData
+from poe_api_wrapper.openai.type import ChatData, ImagesGenData, ImagesEditData
 import ujson, asyncio, random, os
 from httpx import AsyncClient
 
@@ -28,10 +28,20 @@ async def index():
                                          "docs": "See project docs @ https://github.com/snowby666/poe-api-wrapper"}, 
                                         indent=4), media_type="application/json")
 
+
+
+@app.get("/models/{model}")
+@app.get("/v1/models/{model}")
 @app.get("/models")
 @app.get("/v1/models")
-async def models():
+async def list_models(request: Request, model: str = None) -> dict:
+    if model:
+        if model not in app.state.models:
+            raise HTTPException(status_code=400, detail="Invalid model.")
+        return Response(content=ujson.dumps(app.state.models[model], indent=4), media_type="application/json")
     return Response(content=ujson.dumps(app.state.models, indent=4), media_type="application/json")
+
+
 
 @app.post("/chat/completions")
 @app.post("/v1/chat/completions")
@@ -48,7 +58,7 @@ async def chat_completions(request: Request, data: ChatData) -> dict:
     modelData = app.state.models[model]
     baseModel, tokensLimit, endpoints, premiumModel = modelData["baseModel"], modelData["tokens"], modelData["endpoints"], modelData["premium_model"]
     
-    if endpoints != "/v1/chat/completions":
+    if "/v1/chat/completions" not in endpoints:
         raise HTTPException(status_code=400, detail="This model does not support chat completions.")
     
     token = random.choice(app.state.tokens)
@@ -71,9 +81,10 @@ async def chat_completions(request: Request, data: ChatData) -> dict:
         return resp
 
 
+
 @app.post("/images/generations")
 @app.post("/v1/images/generations")
-async def images(request: Request, data: ImagesData) -> None:
+async def create_images(request: Request, data: ImagesGenData) -> None:
     prompt, model, n = data.prompt, data.model, data.n
     
     if not isinstance(prompt, str):
@@ -85,7 +96,7 @@ async def images(request: Request, data: ImagesData) -> None:
     modelData = app.state.models[model]
     baseModel, tokensLimit, endpoints, premiumModel = modelData["baseModel"], modelData["tokens"], modelData["endpoints"], modelData["premium_model"]
     
-    if endpoints != "/v1/images/generations":
+    if "/v1/images/generations" not in endpoints:
         raise HTTPException(status_code=400, detail="This model does not support image generation.")
     
     token = random.choice(app.state.tokens)
@@ -104,9 +115,9 @@ async def images(request: Request, data: ImagesData) -> None:
         urls.extend([url for url in image_generation.split() if url.startswith("https://")])
     
     if len(urls) == 0:
-        raise HTTPException(detail={"error": {"message": "The provider for {model} sent an invalid response.", "type": "error", "param": None, "code": 500}}, status_code=500)
+        raise HTTPException(detail={"error": {"message": f"The provider for {model} sent an invalid response.", "type": "error", "param": None, "code": 500}}, status_code=500)
         
-    async with AsyncClient() as fetcher:
+    async with AsyncClient(http2=True) as fetcher:
         for url in urls:
             r = await fetcher.get(url)
             content_type = r.headers.get("Content-Type", "")
@@ -116,12 +127,64 @@ async def images(request: Request, data: ImagesData) -> None:
     return {"created": await helpers.__generate_timestamp(), "data": [{"url": url} for url in urls]}
 
 
+
+@app.post("/images/edits")
+@app.post("/v1/images/edits")
+async def edit_images(request: Request, data: ImagesEditData) -> None:
+    image, prompt, model = data.image, data.prompt, data.model
+    
+    if isinstance(image, str) and not os.path.exists(image) and not image.startswith("http"):
+        raise HTTPException(status_code=400, detail="Invalid image.")
+    
+    if not isinstance(prompt, str):
+        raise HTTPException(status_code=400, detail="Invalid prompt.")
+    
+    if model not in app.state.models:
+        raise HTTPException(status_code=400, detail="Invalid model.")
+    
+    modelData = app.state.models[model]
+    baseModel, tokensLimit, endpoints, premiumModel = modelData["baseModel"], modelData["tokens"], modelData["endpoints"], modelData["premium_model"]
+    
+    if "/v1/images/edits" not in endpoints:
+        raise HTTPException(status_code=400, detail="This model does not support image editing.")
+    
+    token = random.choice(app.state.tokens)
+    client = await AsyncPoeApi(token).create()
+    settings = await client.get_settings()
+    subscription = settings["subscription"]["isActive"]
+    
+    if premiumModel and not subscription:
+        raise HTTPException(status_code=402, detail="Premium model requires a subscription.")
+    
+    response = await image_handler(baseModel, prompt, tokensLimit)
+    
+    urls = []
+    for _ in range(1):
+        image_generation = await generate_image(client, response, [image])
+        urls.extend([url for url in image_generation.split() if url.startswith("https://")])
+        
+    if len(urls) == 0:
+        raise HTTPException(detail={"error": {"message": f"The provider for {model} sent an invalid response.", "type": "error", "param": None, "code": 500}}, status_code=500)
+    
+    async with AsyncClient(http2=True) as fetcher:
+        for url in urls:
+            r = await fetcher.get(url)
+            content_type = r.headers.get("Content-Type", "")
+            if not content_type.startswith("image/"):
+                raise HTTPException(detail={"error": {"message": "The content returned was not an image.", "type": "error", "param": None, "code": 500}}, status_code=500)
+            
+    return {"created": await helpers.__generate_timestamp(), "data": [{"url": url} for url in urls]} 
+   
+
+
 async def image_handler(baseModel: str, prompt: str, tokensLimit: int) -> dict:
     try:
         message = await helpers.__progressive_summarize_text(prompt, min(len(prompt), tokensLimit))
         return {"bot": baseModel, "message": message}
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Failed to truncate prompt.") from e
+        raise HTTPException(status_code=400, detail=f"Failed to truncate prompt. Error: {e}") from e
+   
+   
          
 async def message_handler(baseModel: str, messages: list[dict[str, str]], tokensLimit: int) -> dict:
     try:
@@ -136,19 +199,24 @@ async def message_handler(baseModel: str, messages: list[dict[str, str]], tokens
         message = f"IGNORE PREVIOUS MESSAGES.\n\nYour current message context: {rest_string}\n\nThe most recent message: {main_request}\n\n"
         return {"bot": baseModel, "message": message}
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Failed to process messages.") from e
+        raise HTTPException(status_code=400, detail=f"Failed to process messages. Error: {e}") from e
 
-async def generate_image(client: AsyncPoeApi, response: dict) -> str:
+
+
+async def generate_image(client: AsyncPoeApi, response: dict, image: list = []) -> str:
     try:
-        async for chunk in client.send_message(bot=response["bot"], message=response["message"]):
+        async for chunk in client.send_message(bot=response["bot"], message=response["message"], file_path=image):
             pass
         return chunk["text"]
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to generate image.") from e
+        raise HTTPException(status_code=500, detail=f"Failed to generate image. Error: {e}") from e
+    
+    
     
 async def create_completion_data(chunk, completion_id, model):
     completion_timestamp = await helpers.__generate_timestamp()
     return ujson.dumps({"id": f"chatcmpl-{completion_id}", "object": "chat.completion.chunk", "created": completion_timestamp, "model": model, "choices": [{"index": 0, "delta": {"content": chunk}, "finish_reason": None}]}, separators=(",",":"), escape_forward_slashes=False)
+
 
 
 async def streaming_response(client: AsyncPoeApi, response: dict, model: str, completion_id: str, image_urls: list[str]) -> Generator[str, Any, None]:
@@ -176,10 +244,17 @@ async def streaming_response(client: AsyncPoeApi, response: dict, model: str, co
         yield "data: [DONE]"
     except GeneratorExit:
         pass
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to stream response. Error: {e}") from e
+
+
 
 async def non_streaming_response(client: AsyncPoeApi, response: dict, model: str, completion_id: str, messages: list[dict[str, str]], image_urls: list[str]) -> dict:
-    async for chunk in client.send_message(bot=response["bot"], message=response["message"], file_path=image_urls):
-        pass
+    try:
+        async for chunk in client.send_message(bot=response["bot"], message=response["message"], file_path=image_urls):
+            pass
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate completion. Error: {e}") from e
     
     prompt_tokens, completion_tokens = await helpers.__tokenize(''.join([str(message['content']) for message in messages])), await helpers.__tokenize(chunk["text"])
     
