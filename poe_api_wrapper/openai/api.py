@@ -1,51 +1,49 @@
-from fastapi import FastAPI, Request, HTTPException, Response
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import StreamingResponse, ORJSONResponse, Response
 from daphne.cli import CommandLineInterface
-from typing import Any, Generator
+from typing import Any, Union, AsyncGenerator
 from poe_api_wrapper import AsyncPoeApi
 from poe_api_wrapper.openai import helpers
 from poe_api_wrapper.openai.type import ChatData, ImagesGenData, ImagesEditData
-import ujson, asyncio, random, os
+import orjson, asyncio, random, os, uuid
 from httpx import AsyncClient
 
 DIR = os.path.dirname(os.path.abspath(__file__))
 
-app = FastAPI()
+app = FastAPI(title="Poe API Wrapper", description="OpenAI Proxy Server")
 
-with open(os.path.join(DIR, "secrets.json"), "r") as f:
-    TOKENS = ujson.load(f)
+with open(os.path.join(DIR, "secrets.json"), "rb") as f:
+    TOKENS = orjson.loads(f.read())
     if "tokens" not in TOKENS:
         raise Exception("Tokens not found in secrets.json")
     app.state.tokens = TOKENS["tokens"]
 
-with open(os.path.join(DIR, "models.json"), "r") as f:
-    models = ujson.load(f)
+with open(os.path.join(DIR, "models.json"), "rb") as f:
+    models = orjson.loads(f.read())
     app.state.models = models
 
-@app.get("/")
-async def index():
-    return Response(content=ujson.dumps({"message": "Welcome to the Poe API!", 
-                                         "docs": "See project docs @ https://github.com/snowby666/poe-api-wrapper"}, 
-                                        indent=4), media_type="application/json")
+@app.get("/", response_model=None)
+async def index() -> ORJSONResponse:
+    return ORJSONResponse({"message": "Welcome to Poe Api Wrapper reverse proxy!",
+                            "docs": "See project docs @ https://github.com/snowby666/poe-api-wrapper"})
 
 
-
-@app.get("/models/{model}")
-@app.get("/v1/models/{model}")
-@app.get("/models")
-@app.get("/v1/models")
-async def list_models(request: Request, model: str = None) -> dict:
+@app.api_route("/models/{model}", methods=["GET", "POST", "PUT", "PATCH", "HEAD"], response_model=None)
+@app.api_route("/models/{model}", methods=["GET", "POST", "PUT", "PATCH", "HEAD"], response_model=None)
+@app.api_route("/models", methods=["GET", "POST", "PUT", "PATCH", "HEAD"], response_model=None)
+@app.api_route("/v1/models", methods=["GET", "POST", "PUT", "PATCH", "HEAD"], response_model=None)
+async def list_models(request: Request, model: str = None) -> ORJSONResponse:
     if model:
         if model not in app.state.models:
             raise HTTPException(status_code=400, detail="Invalid model.")
-        return Response(content=ujson.dumps(app.state.models[model], indent=4), media_type="application/json")
-    return Response(content=ujson.dumps(app.state.models, indent=4), media_type="application/json")
+        return ORJSONResponse(app.state.models[model])
+    return ORJSONResponse({"object": "list", "data": app.state.models})
 
 
 
-@app.post("/chat/completions")
-@app.post("/v1/chat/completions")
-async def chat_completions(request: Request, data: ChatData) -> dict:
+@app.api_route("/chat/completions", methods=["POST", "OPTIONS"], response_model=None)
+@app.api_route("/v1/chat/completions", methods=["POST", "OPTIONS"], response_model=None)
+async def chat_completions(request: Request, data: ChatData) -> Union[StreamingResponse, ORJSONResponse]:
     messages, model, streaming = data.messages, data.model, data.stream
     
     # Validate messages format
@@ -61,10 +59,7 @@ async def chat_completions(request: Request, data: ChatData) -> dict:
     if "/v1/chat/completions" not in endpoints:
         raise HTTPException(status_code=400, detail="This model does not support chat completions.")
     
-    token = random.choice(app.state.tokens)
-    client = await AsyncPoeApi(token).create() 
-    settings = await client.get_settings()
-    subscription = settings["subscription"]["isActive"]
+    client, subscription = await rotate_token(app.state.tokens)
     
     if premiumModel and not subscription:
         raise HTTPException(status_code=402, detail="Premium model requires a subscription.")
@@ -74,17 +69,11 @@ async def chat_completions(request: Request, data: ChatData) -> dict:
     response = await message_handler(baseModel, text_messages, tokensLimit)
     completion_id = await helpers.__generate_completion_id()
     
-    if streaming:
-        return StreamingResponse(content=streaming_response(client, response, model, completion_id, image_urls), media_type="text/event-stream", status_code=200)
-    else:
-        resp = await non_streaming_response(client, response, model, completion_id, messages, image_urls)
-        return resp
+    return await streaming_response(client, response, model, completion_id, image_urls) if streaming else await non_streaming_response(client, response, model, completion_id, messages, image_urls)
 
-
-
-@app.post("/images/generations")
-@app.post("/v1/images/generations")
-async def create_images(request: Request, data: ImagesGenData) -> None:
+@app.api_route("/images/generations", methods=["POST", "OPTIONS"], response_model=None)
+@app.api_route("/v1/images/generations", methods=["POST", "OPTIONS"], response_model=None)
+async def create_images(request: Request, data: ImagesGenData) -> ORJSONResponse:
     prompt, model, n = data.prompt, data.model, data.n
     
     if not isinstance(prompt, str):
@@ -99,10 +88,7 @@ async def create_images(request: Request, data: ImagesGenData) -> None:
     if "/v1/images/generations" not in endpoints:
         raise HTTPException(status_code=400, detail="This model does not support image generation.")
     
-    token = random.choice(app.state.tokens)
-    client = await AsyncPoeApi(token).create()
-    settings = await client.get_settings()
-    subscription = settings["subscription"]["isActive"]
+    client, subscription = await rotate_token(app.state.tokens)
     
     if premiumModel and not subscription:
         raise HTTPException(status_code=402, detail="Premium model requires a subscription.")
@@ -124,13 +110,13 @@ async def create_images(request: Request, data: ImagesGenData) -> None:
             if not content_type.startswith("image/"):
                 raise HTTPException(detail={"error": {"message": "The content returned was not an image.", "type": "error", "param": None, "code": 500}}, status_code=500)
 
-    return {"created": await helpers.__generate_timestamp(), "data": [{"url": url} for url in urls]}
+    return ORJSONResponse({"created": await helpers.__generate_timestamp(), "data": [{"url": url} for url in urls]})
 
 
 
-@app.post("/images/edits")
-@app.post("/v1/images/edits")
-async def edit_images(request: Request, data: ImagesEditData) -> None:
+@app.api_route("/images/edits", methods=["POST", "OPTIONS"], response_model=None)
+@app.api_route("/v1/images/edits", methods=["POST", "OPTIONS"], response_model=None)
+async def edit_images(request: Request, data: ImagesEditData) -> ORJSONResponse:
     image, prompt, model = data.image, data.prompt, data.model
     
     if isinstance(image, str) and not os.path.exists(image) and not image.startswith("http"):
@@ -148,10 +134,7 @@ async def edit_images(request: Request, data: ImagesEditData) -> None:
     if "/v1/images/edits" not in endpoints:
         raise HTTPException(status_code=400, detail="This model does not support image editing.")
     
-    token = random.choice(app.state.tokens)
-    client = await AsyncPoeApi(token).create()
-    settings = await client.get_settings()
-    subscription = settings["subscription"]["isActive"]
+    client, subscription = await rotate_token(app.state.tokens)
     
     if premiumModel and not subscription:
         raise HTTPException(status_code=402, detail="Premium model requires a subscription.")
@@ -173,9 +156,20 @@ async def edit_images(request: Request, data: ImagesEditData) -> None:
             if not content_type.startswith("image/"):
                 raise HTTPException(detail={"error": {"message": "The content returned was not an image.", "type": "error", "param": None, "code": 500}}, status_code=500)
             
-    return {"created": await helpers.__generate_timestamp(), "data": [{"url": url} for url in urls]} 
+    return ORJSONResponse({"created": await helpers.__generate_timestamp(), "data": [{"url": url} for url in urls]})
    
-
+   
+async def rotate_token(tokens):
+    token = random.choice(tokens)
+    client = await AsyncPoeApi(token).create()
+    settings = await client.get_settings()
+    if settings["messagePointInfo"]["messagePointBalance"] <= 20:
+        tokens.remove(token)
+        if len(tokens) == 0:
+            raise HTTPException(status_code=402, detail="No tokens available.")
+        return await rotate_token(tokens)
+    subscriptions = settings["subscription"]["isActive"]
+    return client, subscriptions
 
 async def image_handler(baseModel: str, prompt: str, tokensLimit: int) -> dict:
     try:
@@ -185,7 +179,6 @@ async def image_handler(baseModel: str, prompt: str, tokensLimit: int) -> dict:
         raise HTTPException(status_code=400, detail=f"Failed to truncate prompt. Error: {e}") from e
    
    
-         
 async def message_handler(baseModel: str, messages: list[dict[str, str]], tokensLimit: int) -> dict:
     try:
         main_request = messages[-1]["content"]
@@ -202,7 +195,6 @@ async def message_handler(baseModel: str, messages: list[dict[str, str]], tokens
         raise HTTPException(status_code=400, detail=f"Failed to process messages. Error: {e}") from e
 
 
-
 async def generate_image(client: AsyncPoeApi, response: dict, image: list = []) -> str:
     try:
         async for chunk in client.send_message(bot=response["bot"], message=response["message"], file_path=image):
@@ -212,18 +204,26 @@ async def generate_image(client: AsyncPoeApi, response: dict, image: list = []) 
         raise HTTPException(status_code=500, detail=f"Failed to generate image. Error: {e}") from e
     
     
-    
-async def create_completion_data(chunk, completion_id, model):
+async def create_completion_data(chunk: str, completion_id: str, model: str) -> dict[str, Union[str, list, float]]:
     completion_timestamp = await helpers.__generate_timestamp()
-    return ujson.dumps({"id": f"chatcmpl-{completion_id}", "object": "chat.completion.chunk", "created": completion_timestamp, "model": model, "choices": [{"index": 0, "delta": {"content": chunk}, "finish_reason": None}]}, separators=(",",":"), escape_forward_slashes=False)
+    return {
+        "id": f"chatcmpl-{completion_id}", 
+        "object": "chat.completion.chunk", 
+        "created": completion_timestamp, 
+        "model": model, 
+        "choices": [{
+            "index": 0, 
+            "delta": {"content": chunk}, 
+            "finish_reason": None
+        }]
+    }
 
 
-
-async def streaming_response(client: AsyncPoeApi, response: dict, model: str, completion_id: str, image_urls: list[str]) -> Generator[str, Any, None]:
+async def generate_chunks(client: AsyncPoeApi, response: dict, model: str, completion_id: str, image_urls: list[str]) -> AsyncGenerator[bytes, None]:
     try:
         async for chunk in client.send_message(bot=response["bot"], message=response["message"], file_path=image_urls):
             content = await create_completion_data(chunk["response"], completion_id, model)
-            yield f"data: {content}\n\n"
+            yield b"data: " + orjson.dumps(content) + b"\n\n"
             await asyncio.sleep(0.001)
             
         end_completion_data = {
@@ -239,17 +239,19 @@ async def streaming_response(client: AsyncPoeApi, response: dict, model: str, co
                 }
             ],
         }
-        content = ujson.dumps(end_completion_data, separators=(",", ":"))
-        yield f"data: {content}\n\n"
-        yield "data: [DONE]"
+        
+        yield b"data: " +  orjson.dumps(end_completion_data) + b"\n\n"
+        yield b"data: [DONE]"
     except GeneratorExit:
         pass
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to stream response. Error: {e}") from e
+    
+async def streaming_response(client: AsyncPoeApi, response: dict, model: str, completion_id: str, image_urls: list[str]) -> StreamingResponse:
+    return StreamingResponse(content=generate_chunks(client, response, model, completion_id, image_urls), status_code=200, headers={"X-Request-ID": str(uuid.uuid4()), "Content-Type": "text/event-stream"})
 
 
-
-async def non_streaming_response(client: AsyncPoeApi, response: dict, model: str, completion_id: str, messages: list[dict[str, str]], image_urls: list[str]) -> dict:
+async def non_streaming_response(client: AsyncPoeApi, response: dict, model: str, completion_id: str, messages: list[dict[str, str]], image_urls: list[str]) -> ORJSONResponse:
     try:
         async for chunk in client.send_message(bot=response["bot"], message=response["message"], file_path=image_urls):
             pass
@@ -258,7 +260,7 @@ async def non_streaming_response(client: AsyncPoeApi, response: dict, model: str
     
     prompt_tokens, completion_tokens = await helpers.__tokenize(''.join([str(message['content']) for message in messages])), await helpers.__tokenize(chunk["text"])
     
-    return {
+    return ORJSONResponse({
             "id": f"chatcmpl-{completion_id}",
             "object": "chat.completion",
             "created": await helpers.__generate_timestamp(),
@@ -276,7 +278,7 @@ async def non_streaming_response(client: AsyncPoeApi, response: dict, model: str
                 }
             ],
             
-        }
+        })
 
 
 if __name__ == "__main__":

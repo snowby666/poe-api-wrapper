@@ -9,7 +9,8 @@ def main():
     parser.add_argument('-f', help='formkey for poe.com')
     parser.add_argument('-v', '--version',action='version', version='v'+metadata.version('poe-api-wrapper'))
     args = parser.parse_args()
-    PoeExample({'p-b': args.b, 'p-lat': args.lat, 'formkey': args.f}).chat_with_bot()
+    tokens = {'p-b': args.b, 'p-lat': args.lat, 'formkey': args.f} if args.f else {'p-b': args.b, 'p-lat': args.lat}
+    PoeExample(tokens).chat_with_bot()
 
 if __name__=='__main__':
     main()

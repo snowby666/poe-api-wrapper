@@ -3,8 +3,7 @@ try:
     ASYNC = True
 except ImportError:
     ASYNC = False
-import asyncio, queue, ujson, random, ssl, threading, websocket, string, secrets, os, hashlib, re
-from time import time
+import asyncio, queue, orjson, random, ssl, threading, websocket, string, secrets, os, hashlib, re, aiofiles
 from typing import  AsyncIterator
 from loguru import logger
 from requests_toolbelt import MultipartEncoder
@@ -38,6 +37,8 @@ Credit to @ading2210 for the GraphQL queries
 class AsyncPoeApi:
     BASE_URL = BASE_URL
     HEADERS = HEADERS
+    MAX_CONCURRENT_MESSAGES = 3
+    
     def __init__(self, tokens: dict={}, proxy: list=[], auto_proxy: bool=False):
         self.client = None
         if not ASYNC:
@@ -45,21 +46,20 @@ class AsyncPoeApi:
         if not {'p-b', 'p-lat'}.issubset(tokens):
             raise ValueError("Please provide valid p-b and p-lat cookies")
         
-        self.proxy = proxy
-        self.auto_proxy = auto_proxy
-        self.tokens = tokens
-        self.formkey = None
-        self.ws_connecting = False
-        self.ws_connected = False
-        self.ws_error = False
-        self.active_messages = {}
+        self.proxy: list = proxy
+        self.auto_proxy: bool = auto_proxy
+        self.tokens: dict = tokens
+        self.formkey: str = ""
+        self.ws_connecting: bool = False
+        self.ws_connected: bool = False
+        self.ws_error: bool = False
+        self.active_messages: dict[int, str] = {}
         self.message_queues: dict[int, queue.Queue] = {}
-        self.current_thread = {}
-        self.retry_attempts = 3
-        self.message_generating = True
-        self.ws_refresh = 3
-        self.groups = {}
-        self.proxies = {}
+        self.current_thread: dict[str, list] = {}
+        self.retry_attempts: int = 3
+        self.ws_refresh: int = 3
+        self.groups: dict = {}
+        self.proxies: dict = {}
         self.bundle: PoeBundle = None
         
         self.client = AsyncClient(headers=self.HEADERS, timeout=60, http2=True)
@@ -109,6 +109,7 @@ class AsyncPoeApi:
             })
         except Exception as e:
             logger.error(f"Failed to load bundle. Reason: {e}")
+            logger.warning("Failed to get formkey from bundle. Please provide a valid formkey manually." if self.formkey == "" else "Continuing with provided formkey")
         
     async def select_proxy(self, proxy: list, auto_proxy: bool=False):
         if proxy == [] and auto_proxy == True:
@@ -132,7 +133,7 @@ class AsyncPoeApi:
 
     async def send_request(self, path: str, query_name: str="", variables: dict={}, file_form: list=[], knowledge: bool=False, ratelimit: int = 0):
         if ratelimit > 0:
-            logger.warning(f"Wating for {ratelimit} seconds to avoid rate limit")
+            logger.warning(f"Waiting queue {ratelimit}/2 to avoid rate limit")
             asyncio.sleep(random.randint(2, 3))
         status_code = 0
         
@@ -160,7 +161,7 @@ class AsyncPoeApi:
             response = await self.client.post(f'{self.BASE_URL}/api/{path}', data=payload, headers=headers, follow_redirects=True, timeout=30)
             
             status_code = response.status_code
-            json_data = ujson.loads(response.text)
+            json_data = orjson.loads(response.text)
 
             if (
                 "success" in json_data.keys()
@@ -205,7 +206,7 @@ class AsyncPoeApi:
     
     async def get_channel_settings(self):
         response = await self.client.get(f'{self.BASE_URL}/api/settings', headers=self.HEADERS, follow_redirects=True, timeout=30)
-        response_json = response.json()
+        response_json = orjson.loads(response.text)
         self.ws_domain = f"tch{random.randint(1, int(1e6))}"[:11]
         self.tchannel_data = response_json["tchannelData"]
         self.client.headers["Poe-Tchannel"] = self.tchannel_data["channel"]
@@ -302,7 +303,7 @@ class AsyncPoeApi:
 
     def on_message(self, ws, msg):
         try:
-            ws_data = ujson.loads(msg)
+            ws_data = orjson.loads(msg)
 
             if "error" in ws_data.keys() and ws_data["error"] == "missed_messages":
                 self.disconnect_ws()
@@ -313,7 +314,7 @@ class AsyncPoeApi:
                 return
             
             for data in ws_data["messages"]:
-                data = ujson.loads(data)
+                data = orjson.loads(data)
                 message_type = data.get("message_type")
                 if message_type == "refetchChannel":
                     self.disconnect_ws()
@@ -321,36 +322,43 @@ class AsyncPoeApi:
                     return
 
                 payload = data.get("payload", {})
-
-                if payload.get("subscription_name") not in [
-                    "messageAdded",
-                    "messageCancelled",
-                ]:
-                    continue
-
-                data = (payload.get("data", {})).get("messageAdded", {})
                 
-                if (
-                    not data
-                    or data["suggestedReplies"]
-                    or data.get("author") == "chat_break"
-                ):
+                subscriptionName = payload.get("subscription_name")
+                
+                if subscriptionName not in ("messageAdded", "messageCancelled", "chatTitleUpdated"):
                     continue
 
-                chat_id: int = int(payload.get("unique_id")[13:])
+                data = (payload.get("data", {}))
+                
+                if not data:
+                    continue
+                        
+                chat_id: int = int(payload.get("unique_id")[(len(subscriptionName) + 1):])
                 
                 if chat_id not in self.message_queues:
                     continue
                 
                 if chat_id in self.message_queues:
-                    self.active_messages[chat_id] = data["messageId"]
-                    self.message_queues[chat_id].put(data)
+                    self.message_queues[chat_id].put(
+                        {
+                            "data": data,
+                            "subscription": subscriptionName,
+                        }
+                    )
+                    if subscriptionName == "messageAdded":
+                        self.active_messages[chat_id] = data["messageAdded"]["messageId"]          
                     return
                 
         except Exception:
             logger.exception(f"Failed to parse message: {msg}")
             self.disconnect_ws()
             asyncio.get_event_loop().run_until_complete(self.connect_ws())
+            
+    async def delete_queues(self, chatId: int):
+        if chatId in self.message_queues:
+            del self.message_queues[chatId]
+        if chatId in self.active_messages:
+            del self.active_messages[chatId]
             
     async def get_settings(self):
         response_json = await self.send_request('gql_POST', 'SettingsPageQuery', {})
@@ -533,35 +541,11 @@ class AsyncPoeApi:
                 'id': botData['id'],
                 }
         return data
-    
-    async def get_suggestions(self, queue, response, chatId: int, title: str,chatCode: str=None, timeout: int=10):
-        variables = {'chatCode': chatCode}
-        state = 'incomplete'
-        suggestions = []
-        start_time = time()
-        while True:
-            elapsed_time = time() - start_time
-            if elapsed_time >= timeout:
-                break
-            await asyncio.sleep(0.5)
-            response_json = await self.send_request('gql_POST', 'ChatPageQuery', variables)
-            hasSuggestedReplies = response_json['data']['chatOfCode']['defaultBotObject']['mayHaveSuggestedReplies']
-            latest_message = response_json['data']['chatOfCode']['lastMessage']
-            if hasSuggestedReplies and latest_message:
-                suggestions = latest_message['suggestedReplies']
-                state = latest_message['state']
-                if state == 'complete' and suggestions:
-                    break
-                if state == 'error_user_message_too_long':
-                    break
-            else:
-                break
-        queue.put({'text': response["text"], 'response':'', 'suggestedReplies': suggestions, 'state': state, 'chatCode': chatCode, 'chatId': chatId, 'title': title})
         
     async def retry_message(self, chatCode: str, suggest_replies: bool=False, timeout: int=20):
         self.retry_attempts = 3
         timer = 0
-        while None in self.active_messages.values():
+        while None in self.active_messages.values() and len(self.active_messages) > self.MAX_CONCURRENT_MESSAGES:
             await asyncio.sleep(0.01)
             timer += 0.01
             if timer > timeout:
@@ -614,18 +598,17 @@ class AsyncPoeApi:
         else:
             logger.info(f"Message {bot_message_id} of Thread {chatCode} has been retried.")
             
-        self.message_generating = True
         self.active_messages[chatId] = None
         self.message_queues[chatId] = queue.Queue()
 
-        last_text = ""
-        message_id = None
-        
+        last_text = ""        
         stateChange = False
+        old_length = 0  
+        suggest_attempts = 3
         
         while True:
             try:
-                response = self.message_queues[chatId].get(timeout=timeout)
+                ws_data = self.message_queues[chatId].get(timeout=timeout)
             except KeyError:
                 await asyncio.sleep(1)
                 continue
@@ -636,66 +619,70 @@ class AsyncPoeApi:
                         logger.warning(f"Retrying request {3-self.retry_attempts}/3 times...")
                     else:
                         self.retry_attempts = 3
-                        del self.active_messages[chatId]
-                        del self.message_queues[chatId]
+                        await self.delete_queues(chatId)
                         raise RuntimeError("Timed out waiting for response.")
                     await self.connect_ws()
                     continue
                 except Exception as e:
                     raise e
             
-            response["chatCode"] = chatCode
-            response["chatId"] = chatId
-            response["title"] = title
-            response["msgPrice"] = msgPrice
-
-            if response["state"] == "error_user_message_too_long":
-                response["response"]  = 'Message too long. Please try again!'
-                yield response
+            if ws_data["subscription"] == "messageCancelled":
                 break
             
-            if (response['author'] == 'pacarana' and response['text'].strip() == last_text.strip()):
-                response["response"] = ''
-            elif response['author'] == 'pacarana' and (last_text == '' or bot == 'web-search'):
-                response["response"] = f'{response["text"]}\n'
-            else:
-                if stateChange == False:
-                    response["response"] = response["text"]
-                    stateChange = True
-                else:
-                    response["response"] = response["text"][len(last_text):]
+            elif ws_data["subscription"] == "chatTitleUpdated":
+                title = ws_data["data"]["chatTitleUpdated"]["title"]
             
-            yield response
-            
-            if response["state"] == "complete" or not self.message_generating:
-                if last_text and response["messageId"] == message_id:
+            elif ws_data["subscription"] == "messageAdded":
+                response = ws_data["data"]["messageAdded"]
+                
+                response["chatCode"] = chatCode
+                response["chatId"] = chatId
+                response["title"] = title
+                response["msgPrice"] = msgPrice
+                response["response"] = ""
+                
+                if suggest_replies and response["state"]:
+                    new_length = len(response["suggestedReplies"])
+                    if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
+                        old_length = len(response["suggestedReplies"])
+                        suggest_attempts -= 1
+                        await asyncio.sleep(1.5)
+                        continue
+                    yield response
                     break
+
+                if response["state"] == "error_user_message_too_long":
+                    response["response"]  = "Message too long. Please try again!"
+                    yield response
+                    break
+                
+                if (response["author"] == "pacarana" and response["text"].strip() == last_text.strip()):
+                    response["response"] = ""
+                elif response["author"] == "pacarana" and (last_text == "" or bot != "web-search"):
+                    response["response"] = f'{response["text"]}\n'
                 else:
-                    continue
-            
-            last_text = response["text"]
-            message_id = response["messageId"]
+                    if stateChange == False:
+                        response["response"] = response["text"]
+                        stateChange = True
+                    else:
+                        response["response"] = response["text"][len(last_text):]
+                
+                yield response
+                
+                if response["state"] == "complete":
+                    if not response["title"]:
+                        continue
+                    break
+                
+                last_text = response["text"]
         
-        if response["state"] != "error_user_message_too_long": 
-            
-            if suggest_replies:
-                self.suggestions_queue = queue.Queue()
-                await self.get_suggestions(self.suggestions_queue, response, chatId, title, chatCode, 10)
-                try:
-                    suggestions = self.suggestions_queue.get(timeout=10)
-                    yield suggestions
-                except queue.Empty:
-                    yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
-                del self.suggestions_queue
-        
-        del self.active_messages[chatId]
-        del self.message_queues[chatId]
+        await self.delete_queues(chatId)
         self.retry_attempts = 3
         
     async def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, msgPrice: int=20, file_path: list=[], suggest_replies: bool=False, timeout: int=20) -> AsyncIterator[dict]:
         self.retry_attempts = 3
         timer = 0
-        while None in self.active_messages.values():
+        while None in self.active_messages.values() and len(self.active_messages) > self.MAX_CONCURRENT_MESSAGES:
             await asyncio.sleep(0.01)
             timer += 0.01
             if timer > timeout:
@@ -766,6 +753,11 @@ class AsyncPoeApi:
                         raise RuntimeError(f"Daily limit reached for {bot}.")
                     elif status in ('too_many_tokens', 'concurrent_messages'):
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
+                    elif status == 'rate_limit_exceeded':
+                        await asyncio.sleep(random.randint(3, 6))
+                        async for chunk in self.send_message(bot, message, chatId, chatCode, msgPrice, file_path, suggest_replies, timeout):
+                            yield chunk
+                        return
                         
                     logger.info(f"New Thread created | {message_data['data']['messageEdgeCreate']['chat']['chatCode']}")
                 
@@ -834,6 +826,11 @@ class AsyncPoeApi:
                         raise RuntimeError(f"Daily limit reached for {bot}.")
                     elif status in ('too_many_tokens', 'concurrent_messages'):
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
+                    elif status == 'rate_limit_exceeded':
+                        await asyncio.sleep(random.randint(3, 6))
+                        async for chunk in self.send_message(bot, message, chatId, chatCode, msgPrice, file_path, suggest_replies, timeout):
+                            yield chunk
+                        return
                         
                 if "pending" in self.active_messages:
                     del self.active_messages["pending"]
@@ -842,18 +839,17 @@ class AsyncPoeApi:
                     del self.active_messages["pending"]
                 raise e
                     
-        self.message_generating = True
         self.active_messages[chatId] = None
         self.message_queues[chatId] = queue.Queue()
 
-        last_text = ""
-        message_id = None
-        
+        last_text = ""     
         stateChange = False
+        old_length = 0
+        suggest_attempts = 3
         
         while True:
             try:
-                response = self.message_queues[chatId].get(timeout=timeout)
+                ws_data = self.message_queues[chatId].get(timeout=timeout)
             except KeyError:
                 await asyncio.sleep(1)
                 continue
@@ -864,64 +860,67 @@ class AsyncPoeApi:
                         logger.warning(f"Retrying request {3-self.retry_attempts}/3 times...")
                     else:
                         self.retry_attempts = 3
-                        del self.active_messages[chatId]
-                        del self.message_queues[chatId]
+                        await self.delete_queues(chatId)
                         raise RuntimeError("Timed out waiting for response.")
                     await self.connect_ws()
                     continue
                 except Exception as e:
                     raise e
             
-            response["chatCode"] = chatCode
-            response["chatId"] = chatId
-            response["title"] = title
-            response["msgPrice"] = msgPrice
-
-            if response["state"] == "error_user_message_too_long":
-                response["response"]  = 'Message too long. Please try again!'
-                yield response
+            if ws_data["subscription"] == "messageCancelled":
                 break
             
-            if (response['author'] == 'pacarana' and response['text'].strip() == last_text.strip()):
-                response["response"] = ''
-            elif response['author'] == 'pacarana' and (last_text == '' or bot != 'web-search'):
-                response["response"] = f'{response["text"]}\n'
-            else:
-                if stateChange == False:
-                    response["response"] = response["text"]
-                    stateChange = True
-                else:
-                    response["response"] = response["text"][len(last_text):]
+            elif ws_data["subscription"] == "chatTitleUpdated":
+                title = ws_data["data"]["chatTitleUpdated"]["title"]
             
-            yield response
-            
-            if response["state"] == "complete" or not self.message_generating:
-                if last_text and response["messageId"] == message_id:
+            elif ws_data["subscription"] == "messageAdded":
+                response = ws_data["data"]["messageAdded"]
+                
+                response["chatCode"] = chatCode
+                response["chatId"] = chatId
+                response["title"] = title
+                response["msgPrice"] = msgPrice
+                response["response"] = ""
+                
+                if suggest_replies and response["state"] == "complete":
+                    new_length = len(response["suggestedReplies"])
+                    if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
+                        old_length = len(response["suggestedReplies"])
+                        suggest_attempts -= 1
+                        await asyncio.sleep(1.5)
+                        continue
+                    yield response
                     break
+
+                if response["state"] == "error_user_message_too_long":
+                    response["response"]  = "Message too long. Please try again!"
+                    yield response
+                    break
+                
+                if (response["author"] == "pacarana" and response["text"].strip() == last_text.strip()):
+                    response["response"] = ""
+                elif response["author"] == "pacarana" and (last_text == "" or bot != "web-search"):
+                    response["response"] = f'{response["text"]}\n'
                 else:
-                    continue
-            
-            last_text = response["text"]
-            message_id = response["messageId"]
-            
-        if response["state"] != "error_user_message_too_long": 
-            
-            if suggest_replies:
-                self.suggestions_queue = queue.Queue()
-                await self.get_suggestions(self.suggestions_queue, response, chatId, title, chatCode, 10)
-                try:
-                    suggestions = self.suggestions_queue.get(timeout=10)
-                    yield suggestions
-                except queue.Empty:
-                    yield {'text': response["text"], 'response':'', 'suggestedReplies': [], 'state': None, 'chatCode': chatCode, 'chatId': chatId, 'title': title}
-                del self.suggestions_queue
+                    if stateChange == False:
+                        response["response"] = response["text"]
+                        stateChange = True
+                    else:
+                        response["response"] = response["text"][len(last_text):]
+                
+                yield response
+                
+                if response["state"] == "complete":
+                    if not response["title"]:
+                        continue
+                    break
+                
+                last_text = response["text"]
         
-        del self.active_messages[chatId]
-        del self.message_queues[chatId]
+        await self.delete_queues(chatId)
         self.retry_attempts = 3
         
     async def cancel_message(self, chunk: dict):
-        self.message_generating = False
         variables = {"messageId": chunk["messageId"], "textLength": len(chunk["text"])}
         await self.send_request('gql_POST', 'StopMessage_messageCancel_Mutation', variables)
         
@@ -1532,8 +1531,8 @@ class AsyncPoeApi:
                 raise ValueError(f"File path {file_path} is invalid.")
             if not file_path.endswith('.json'):
                 raise ValueError(f"File path {file_path} is not a json file.")
-        with open(file_path, 'w') as f:
-            ujson.dump(saveData, f)
+        async with aiofiles.open(file_path, 'w') as f:
+            await f.write(orjson.dumps(saveData, indent=4))
         logger.info(f"Group {group_name} saved to {file_path}")
         return file_path
         
@@ -1547,8 +1546,8 @@ class AsyncPoeApi:
                 raise ValueError(f"File path {file_path} is not a json file.")
             if os.stat(file_path).st_size == 0:
                 raise ValueError(f"File path {file_path} is empty.")
-        with open(file_path, 'r') as f:
-            groupData = ujson.load(f)
+        async with aiofiles.open(file_path, 'rb') as f:
+            groupData = orjson.loads(await f.read())
         group_name = file_path.split('.')[0]
         self.groups[group_name] = groupData
         logger.info(f"Group {group_name} loaded from {file_path}")

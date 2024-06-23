@@ -3,7 +3,7 @@ try:
     from ballyregan.models import Protocols, Anonymities
     PROXY = True
 except ImportError as e:
-    print(e)
+    print(f"Skipping ProxyFetcher due to {e}.")
     PROXY = False
 
 if PROXY:

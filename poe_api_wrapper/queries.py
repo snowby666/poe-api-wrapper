@@ -1,4 +1,4 @@
-import ujson, random
+import orjson, random
 
 QUERIES = {
   "RegenerateMessageMutation": "056f5f4b6a39ca7786a4f0b2ef37eee401c81d6086cd78ffc12fe2ce0bccb1fd",
@@ -167,8 +167,9 @@ def generate_payload(query_name, variables) -> str:
             "hash": QUERIES[query_name]
         }
     }
-    return ujson.dumps(payload, separators=(",", ":"))
-
+    return orjson.dumps(payload).decode("utf-8")
+    
+    
 def generate_recv_payload(variables):
     payload = [
     {
@@ -188,4 +189,4 @@ def generate_recv_payload(variables):
             "extra_data": {},
         },
         })
-    return ujson.dumps(payload, separators=(",", ":"))
+    return orjson.dumps(payload).decode("utf-8")
