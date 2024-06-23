@@ -308,6 +308,9 @@ class PoeApi:
                 
                 if not data:
                     continue
+                
+                if subscriptionName == "messageAdded" and data["messageAdded"]["author"] == "human":
+                    continue
                         
                 chat_id: int = int(payload.get("unique_id")[(len(subscriptionName) + 1):])
                 
@@ -335,6 +338,10 @@ class PoeApi:
             del self.message_queues[chatId]
         if chatId in self.active_messages:
             del self.active_messages[chatId]
+        
+    def delete_pending_messages(self, prompt_md5: str):
+        if prompt_md5 in self.active_messages:
+            del self.active_messages[prompt_md5]
             
     def get_settings(self):
         response_json = self.send_request('gql_POST', 'SettingsPageQuery', {})
@@ -473,9 +480,7 @@ class PoeApi:
     def get_threadData(self, bot: str="", chatCode: str=None, chatId: int=None):
         id = None
         title = None
-        if bot not in self.current_thread:
-            self.current_thread[bot] = self.get_chat_history(bot=bot)['data'][bot]
-        elif len(self.current_thread[bot]) <= 1:
+        if bot not in self.current_thread or len(self.current_thread[bot]) <= 1:
             self.current_thread[bot] = self.get_chat_history(bot=bot)['data'][bot]
         if chatCode != None:
             for chat in self.current_thread[bot]:
@@ -524,7 +529,9 @@ class PoeApi:
             timer += 0.01
             if timer > timeout:
                 raise RuntimeError("Timed out waiting for other messages to send.")
-        self.active_messages["pending"] = None
+            
+        prompt_md5 = hashlib.md5((chatCode + generate_nonce()).encode()).hexdigest()
+        self.active_messages[prompt_md5] = None
         
         while self.ws_error:
             sleep(0.01)
@@ -565,6 +572,7 @@ class PoeApi:
                 raise RuntimeError(f"Last message is too long. Raw response data: {response_json}")
         
         bot_message_id = last_message['messageId']
+        self.delete_pending_messages(prompt_md5)
         
         response_json = self.send_request('gql_POST', 'RegenerateMessageMutation', {'messageId': bot_message_id, 'messagePointsDisplayPrice': msgPrice})
         if response_json['data'] == None and response_json["errors"]:
@@ -661,7 +669,9 @@ class PoeApi:
             timer += 0.01
             if timer > timeout:
                 raise RuntimeError("Timed out waiting for other messages to send.")
-        self.active_messages["pending"] = None
+
+        prompt_md5 = hashlib.md5((message + generate_nonce()).encode()).hexdigest() 
+        self.active_messages[prompt_md5] = None
         
         while self.ws_error:
             sleep(0.01)
@@ -725,10 +735,11 @@ class PoeApi:
                         logger.warning("This file type is not supported. Please try again with a different file.")
                     elif status == 'reached_limit':
                         raise RuntimeError(f"Daily limit reached for {bot}.")
-                    elif status in ('too_many_tokens', 'concurrent_messages'):
+                    elif status == 'too_many_tokens':
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
-                    elif status == 'rate_limit_exceeded':
-                        sleep(random.randint(3, 6))
+                    elif status in ('rate_limit_exceeded', 'concurrent_messages'):
+                        self.delete_pending_messages(prompt_md5)
+                        sleep(random.randint(4, 6))
                         for chunk in self.send_message(bot, message, chatId, chatCode, msgPrice, file_path, suggest_replies, timeout):
                             yield chunk
                         return
@@ -745,11 +756,9 @@ class PoeApi:
                     self.current_thread[bot] = [{'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']}]
                 else:
                     self.current_thread[bot].append({'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']})
-                if "pending" in self.active_messages:
-                    del self.active_messages["pending"]
+                self.delete_pending_messages(prompt_md5)
             except Exception as e:
-                if "pending" in self.active_messages:
-                    del self.active_messages["pending"]
+                self.delete_pending_messages(prompt_md5)
                 raise e
         else:
             chatdata = self.get_threadData(bot, chatCode, chatId)
@@ -798,19 +807,18 @@ class PoeApi:
                         logger.warning("This file type is not supported. Please try again with a different file.")
                     elif status == 'reached_limit':
                         raise RuntimeError(f"Daily limit reached for {bot}.")
-                    elif status in ('too_many_tokens', 'concurrent_messages'):
+                    elif status == 'too_many_tokens':
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
-                    elif status == 'rate_limit_exceeded':
-                        sleep(random.randint(3, 6))
+                    elif status in ('rate_limit_exceeded', 'concurrent_messages'):
+                        self.delete_pending_messages(prompt_md5)
+                        sleep(random.randint(4, 6))
                         for chunk in self.send_message(bot, message, chatId, chatCode, msgPrice, file_path, suggest_replies, timeout):
                             yield chunk
                         return
                         
-                if "pending" in self.active_messages:
-                    del self.active_messages["pending"]
+                self.delete_pending_messages(prompt_md5)
             except Exception as e:
-                if "pending" in self.active_messages:
-                    del self.active_messages["pending"]
+                self.delete_pending_messages(prompt_md5)
                 raise e
         
         self.active_messages[chatId] = None
@@ -1501,7 +1509,7 @@ class PoeApi:
             if not file_path.endswith('.json'):
                 raise ValueError(f"File path {file_path} is not a json file.")
         with open(file_path, 'w') as f:
-            f.write(orjson.dumps(saveData, indent=4))
+            f.write(orjson.dumps(saveData, option=orjson.OPT_INDENT_2))
         logger.info(f"Group {group_name} saved to {file_path}")
         return file_path
         

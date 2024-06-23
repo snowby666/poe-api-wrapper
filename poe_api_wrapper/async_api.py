@@ -332,7 +332,10 @@ class AsyncPoeApi:
                 
                 if not data:
                     continue
-                        
+                
+                if subscriptionName == "messageAdded" and data["messageAdded"]["author"] == "human":
+                    continue
+                             
                 chat_id: int = int(payload.get("unique_id")[(len(subscriptionName) + 1):])
                 
                 if chat_id not in self.message_queues:
@@ -359,6 +362,10 @@ class AsyncPoeApi:
             del self.message_queues[chatId]
         if chatId in self.active_messages:
             del self.active_messages[chatId]
+            
+    async def delete_pending_messages(self, prompt_md5: str):
+        if prompt_md5 in self.active_messages:
+            del self.active_messages[prompt_md5]
             
     async def get_settings(self):
         response_json = await self.send_request('gql_POST', 'SettingsPageQuery', {})
@@ -497,10 +504,7 @@ class AsyncPoeApi:
     async def get_threadData(self, bot: str="", chatCode: str=None, chatId: int=None):
         id = None
         title = None
-        if bot not in self.current_thread:
-            temp = await self.get_chat_history(bot=bot)
-            self.current_thread[bot] = temp['data'][bot]
-        elif len(self.current_thread[bot]) <= 1:
+        if bot not in self.current_thread or len(self.current_thread[bot]) <= 1:
             temp = await self.get_chat_history(bot=bot)
             self.current_thread[bot] = temp['data'][bot]
         if chatCode != None:
@@ -550,7 +554,9 @@ class AsyncPoeApi:
             timer += 0.01
             if timer > timeout:
                 raise RuntimeError("Timed out waiting for other messages to send.")
-        self.active_messages["pending"] = None
+            
+        prompt_md5 = hashlib.md5((chatCode + generate_nonce()).encode()).hexdigest()
+        self.active_messages[prompt_md5] = None
         
         while self.ws_error:
             await asyncio.sleep(0.01)
@@ -591,6 +597,7 @@ class AsyncPoeApi:
                 raise RuntimeError(f"Last message is too long. Raw response data: {response_json}")
         
         bot_message_id = last_message['messageId']
+        await self.delete_pending_messages(prompt_md5)
         
         response_json = await self.send_request('gql_POST', 'RegenerateMessageMutation', {'messageId': bot_message_id, 'messagePointsDisplayPrice': msgPrice})
         if response_json['data'] == None and response_json["errors"]:
@@ -687,7 +694,9 @@ class AsyncPoeApi:
             timer += 0.01
             if timer > timeout:
                 raise RuntimeError("Timed out waiting for other messages to send.")
-        self.active_messages["pending"] = None
+        
+        prompt_md5 = hashlib.md5((message + generate_nonce()).encode()).hexdigest()
+        self.active_messages[prompt_md5] = None
         
         while self.ws_error:
             await asyncio.sleep(0.01)
@@ -751,10 +760,11 @@ class AsyncPoeApi:
                         logger.warning("This file type is not supported. Please try again with a different file.")
                     elif status == 'reached_limit':
                         raise RuntimeError(f"Daily limit reached for {bot}.")
-                    elif status in ('too_many_tokens', 'concurrent_messages'):
+                    elif status == 'too_many_tokens':
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
-                    elif status == 'rate_limit_exceeded':
-                        await asyncio.sleep(random.randint(3, 6))
+                    elif status in ('rate_limit_exceeded', 'concurrent_messages'):
+                        await self.delete_pending_messages(prompt_md5)
+                        await asyncio.sleep(random.randint(4, 6))
                         async for chunk in self.send_message(bot, message, chatId, chatCode, msgPrice, file_path, suggest_replies, timeout):
                             yield chunk
                         return
@@ -771,11 +781,9 @@ class AsyncPoeApi:
                     self.current_thread[bot] = [{'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']}]
                 else:
                     self.current_thread[bot].append({'chatId': chatId, 'chatCode': chatCode, 'id': message_data['id'], 'title': message_data['title']})
-                if "pending" in self.active_messages:
-                    del self.active_messages["pending"]
+                await self.delete_pending_messages(prompt_md5)
             except Exception as e:
-                if "pending" in self.active_messages:
-                    del self.active_messages["pending"]
+                await self.delete_pending_messages(prompt_md5)
                 raise e
         else:
             chatdata = await self.get_threadData(bot, chatCode, chatId)
@@ -824,19 +832,18 @@ class AsyncPoeApi:
                         logger.warning("This file type is not supported. Please try again with a different file.")
                     elif status == 'reached_limit':
                         raise RuntimeError(f"Daily limit reached for {bot}.")
-                    elif status in ('too_many_tokens', 'concurrent_messages'):
+                    elif status == 'too_many_tokens':
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
-                    elif status == 'rate_limit_exceeded':
-                        await asyncio.sleep(random.randint(3, 6))
+                    elif status in ('rate_limit_exceeded', 'concurrent_messages'):
+                        await self.delete_pending_messages(prompt_md5)
+                        await asyncio.sleep(random.randint(4, 6))
                         async for chunk in self.send_message(bot, message, chatId, chatCode, msgPrice, file_path, suggest_replies, timeout):
                             yield chunk
                         return
                         
-                if "pending" in self.active_messages:
-                    del self.active_messages["pending"]
+                await self.delete_pending_messages(prompt_md5)
             except Exception as e:
-                if "pending" in self.active_messages:
-                    del self.active_messages["pending"]
+                await self.delete_pending_messages(prompt_md5)
                 raise e
                     
         self.active_messages[chatId] = None
@@ -1532,7 +1539,7 @@ class AsyncPoeApi:
             if not file_path.endswith('.json'):
                 raise ValueError(f"File path {file_path} is not a json file.")
         async with aiofiles.open(file_path, 'w') as f:
-            await f.write(orjson.dumps(saveData, indent=4))
+            await f.write(orjson.dumps(saveData, option=orjson.OPT_INDENT_2))
         logger.info(f"Group {group_name} saved to {file_path}")
         return file_path
         

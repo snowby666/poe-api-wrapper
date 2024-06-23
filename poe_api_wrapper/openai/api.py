@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import StreamingResponse, ORJSONResponse, Response
+from fastapi.responses import StreamingResponse, ORJSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from daphne.cli import CommandLineInterface
 from typing import Any, Union, AsyncGenerator
 from poe_api_wrapper import AsyncPoeApi
@@ -11,6 +12,8 @@ from httpx import AsyncClient
 DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI(title="Poe API Wrapper", description="OpenAI Proxy Server")
+
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 with open(os.path.join(DIR, "secrets.json"), "rb") as f:
     TOKENS = orjson.loads(f.read())
@@ -37,8 +40,8 @@ async def list_models(request: Request, model: str = None) -> ORJSONResponse:
         if model not in app.state.models:
             raise HTTPException(status_code=400, detail="Invalid model.")
         return ORJSONResponse(app.state.models[model])
-    return ORJSONResponse({"object": "list", "data": app.state.models})
-
+    modelsData = [{"id": model, "object": "model", "created": None, "owned_by": values["owned_by"], "tokens": values["tokens"], "endpoints": values["endpoints"]} for model, values in app.state.models.items()]
+    return ORJSONResponse({"object": "list", "data": modelsData})
 
 
 @app.api_route("/chat/completions", methods=["POST", "OPTIONS"], response_model=None)
