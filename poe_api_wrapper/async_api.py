@@ -61,6 +61,7 @@ class AsyncPoeApi:
         self.groups: dict = {}
         self.proxies: dict = {}
         self.bundle: PoeBundle = None
+        self.loop: asyncio.AbstractEventLoop = None
         
         self.client = AsyncClient(headers=self.HEADERS, timeout=60, http2=True)
         self.client.cookies.update({
@@ -221,7 +222,13 @@ class AsyncPoeApi:
     def ws_run_thread(self):
         if not self.ws.sock:
             kwargs = {"sslopt": {"cert_reqs": ssl.CERT_NONE}}
-            self.ws.run_forever(**kwargs)
+            try:
+                self.ws.run_forever(**kwargs)
+            except Exception as e:
+                logger.error(f"Failed to run websocket. Reason: {e}")
+            finally:
+                self.loop.call_soon_threadsafe(self.loop.stop)
+                self.loop.close()
              
     async def connect_ws(self, timeout=20):
          
@@ -249,10 +256,12 @@ class AsyncPoeApi:
                 logger.error(f"Failed to get channel settings. Reason: {e}")
                 await asyncio.sleep(1)
                 continue
-
-        self.ws = await asyncio.get_event_loop().run_in_executor(
+        
+        self.loop = asyncio.get_event_loop()
+                    
+        self.ws = await self.loop.run_in_executor(
             None,
-            lambda: websocket.WebSocketApp(self.channel_url, 
+            lambda: websocket.WebSocketApp(self.channel_url,
                                            header={
                                                 "Origin": f"{self.BASE_URL}",
                                                 "Pragma": "no-cache",
@@ -283,6 +292,8 @@ class AsyncPoeApi:
         self.ws_connected = False
         if self.ws:
             self.ws.close()
+            self.ws = None
+            logger.info("Websocket connection closed.")
 
     def on_ws_connect(self, ws):
         self.ws_connecting = False
@@ -294,7 +305,7 @@ class AsyncPoeApi:
         if self.ws_error:
             logger.warning("Connection to remote host was lost. Reconnecting...")
             self.ws_error = False
-            asyncio.get_event_loop().run_until_complete(self.connect_ws())
+            self.refresh_ws()
 
     def on_ws_error(self, ws, error):
         self.ws_connecting = False
@@ -306,8 +317,7 @@ class AsyncPoeApi:
             ws_data = orjson.loads(msg)
 
             if "error" in ws_data.keys() and ws_data["error"] == "missed_messages":
-                self.disconnect_ws()
-                asyncio.get_event_loop().run_until_complete(self.connect_ws())
+                self.refresh_ws()
                 return
             
             if not "messages" in ws_data:
@@ -317,8 +327,7 @@ class AsyncPoeApi:
                 data = orjson.loads(data)
                 message_type = data.get("message_type")
                 if message_type == "refetchChannel":
-                    self.disconnect_ws()
-                    asyncio.get_event_loop().run_until_complete(self.connect_ws())
+                    self.refresh_ws()
                     return
 
                 payload = data.get("payload", {})
@@ -326,20 +335,20 @@ class AsyncPoeApi:
                 subscriptionName = payload.get("subscription_name")
                 
                 if subscriptionName not in ("messageAdded", "messageCancelled", "chatTitleUpdated"):
-                    continue
+                    return
 
                 data = (payload.get("data", {}))
                 
                 if not data:
-                    continue
+                    return
                 
                 if subscriptionName == "messageAdded" and data["messageAdded"]["author"] == "human":
-                    continue
+                    return
                              
                 chat_id: int = int(payload.get("unique_id")[(len(subscriptionName) + 1):])
                 
                 if chat_id not in self.message_queues:
-                    continue
+                    return
                 
                 if chat_id in self.message_queues:
                     self.message_queues[chat_id].put(
@@ -354,8 +363,13 @@ class AsyncPoeApi:
                 
         except Exception:
             logger.exception(f"Failed to parse message: {msg}")
-            self.disconnect_ws()
-            asyncio.get_event_loop().run_until_complete(self.connect_ws())
+            self.refresh_ws()
+            
+    def refresh_ws(self):
+        self.disconnect_ws()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_in_executor(None, self.connect_ws())
             
     async def delete_queues(self, chatId: int):
         if chatId in self.message_queues:
@@ -636,27 +650,18 @@ class AsyncPoeApi:
             if ws_data["subscription"] == "messageCancelled":
                 break
             
-            elif ws_data["subscription"] == "chatTitleUpdated":
+            if ws_data["subscription"] == "chatTitleUpdated":
                 title = ws_data["data"]["chatTitleUpdated"]["title"]
-            
-            elif ws_data["subscription"] == "messageAdded":
-                response = ws_data["data"]["messageAdded"]
+
+            if ws_data["subscription"] == "messageAdded" or title:
+                if ws_data["subscription"] == "messageAdded":
+                    response = ws_data["data"]["messageAdded"]
                 
                 response["chatCode"] = chatCode
                 response["chatId"] = chatId
                 response["title"] = title
                 response["msgPrice"] = msgPrice
                 response["response"] = ""
-                
-                if suggest_replies and response["state"]:
-                    new_length = len(response["suggestedReplies"])
-                    if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
-                        old_length = len(response["suggestedReplies"])
-                        suggest_attempts -= 1
-                        await asyncio.sleep(1.5)
-                        continue
-                    yield response
-                    break
 
                 if response["state"] == "error_user_message_too_long":
                     response["response"]  = "Message too long. Please try again!"
@@ -672,14 +677,24 @@ class AsyncPoeApi:
                         response["response"] = response["text"]
                         stateChange = True
                     else:
-                        response["response"] = response["text"][len(last_text):]
-                
-                yield response
+                        response["response"] = response["text"][len(last_text):]                   
                 
                 if response["state"] == "complete":
+                    if suggest_replies:
+                        new_length = len(response["suggestedReplies"])
+                        if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
+                            old_length = len(response["suggestedReplies"])
+                            suggest_attempts -= 1
+                            await asyncio.sleep(1.5)
+                            continue
+                    else:
+                        response["suggestedReplies"] = []
                     if not response["title"]:
                         continue
+                    yield response
                     break
+                
+                yield response
                 
                 last_text = response["text"]
         
@@ -725,7 +740,8 @@ class AsyncPoeApi:
                                 "shouldFetchChat": True, 
                                 "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, 
                                 "clientNonce": generate_nonce(),
-                                "sdid":"","attachments":attachments, 
+                                "sdid":"",
+                                "attachments":attachments, 
                                 "existingMessageAttachmentsIds":[],
                                 "messagePointsDisplayPrice": msgPrice
                             }
@@ -877,27 +893,18 @@ class AsyncPoeApi:
             if ws_data["subscription"] == "messageCancelled":
                 break
             
-            elif ws_data["subscription"] == "chatTitleUpdated":
+            if ws_data["subscription"] == "chatTitleUpdated":
                 title = ws_data["data"]["chatTitleUpdated"]["title"]
-            
-            elif ws_data["subscription"] == "messageAdded":
-                response = ws_data["data"]["messageAdded"]
+
+            if ws_data["subscription"] == "messageAdded" or title:
+                if ws_data["subscription"] == "messageAdded":
+                    response = ws_data["data"]["messageAdded"]
                 
                 response["chatCode"] = chatCode
                 response["chatId"] = chatId
                 response["title"] = title
                 response["msgPrice"] = msgPrice
                 response["response"] = ""
-                
-                if suggest_replies and response["state"] == "complete":
-                    new_length = len(response["suggestedReplies"])
-                    if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
-                        old_length = len(response["suggestedReplies"])
-                        suggest_attempts -= 1
-                        await asyncio.sleep(1.5)
-                        continue
-                    yield response
-                    break
 
                 if response["state"] == "error_user_message_too_long":
                     response["response"]  = "Message too long. Please try again!"
@@ -913,14 +920,24 @@ class AsyncPoeApi:
                         response["response"] = response["text"]
                         stateChange = True
                     else:
-                        response["response"] = response["text"][len(last_text):]
-                
-                yield response
+                        response["response"] = response["text"][len(last_text):]                        
                 
                 if response["state"] == "complete":
+                    if suggest_replies:
+                        new_length = len(response["suggestedReplies"])
+                        if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
+                            old_length = len(response["suggestedReplies"])
+                            suggest_attempts -= 1
+                            await asyncio.sleep(1.5)
+                            continue
+                    else:
+                        response["suggestedReplies"] = []
                     if not response["title"]:
                         continue
+                    yield response
                     break
+                
+                yield response
                 
                 last_text = response["text"]
         

@@ -76,7 +76,13 @@ async def __split_content(messages):
                         text_messages.append({"role": message["role"], "content": item["text"]})
                 elif item["type"] == "image_url":
                     if "image_url" in item:
-                        image_urls.append(item["image_url"])  
+                        if isinstance(item["image_url"], str):
+                            image_urls.append(item["image_url"])  
+                        elif isinstance(item["image_url"], dict) and "url" in item["image_url"]:
+                            if item["image_url"]["url"] not in image_urls:
+                                image_urls.append(item["image_url"]["url"])
+                        else:
+                            logger.error(f"Invalid image URL format: {item['image_url']}")
         elif "content" in message and isinstance(message["content"], str):
             text_messages.append({"role": message["role"], "content": message["content"]})  
                

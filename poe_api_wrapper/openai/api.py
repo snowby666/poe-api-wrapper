@@ -39,8 +39,8 @@ async def list_models(request: Request, model: str = None) -> ORJSONResponse:
     if model:
         if model not in app.state.models:
             raise HTTPException(status_code=400, detail="Invalid model.")
-        return ORJSONResponse(app.state.models[model])
-    modelsData = [{"id": model, "object": "model", "created": None, "owned_by": values["owned_by"], "tokens": values["tokens"], "endpoints": values["endpoints"]} for model, values in app.state.models.items()]
+        return ORJSONResponse({"id": model, "object": "model", "created": await helpers.__generate_timestamp(), "owned_by": app.state.models[model]["owned_by"], "tokens": app.state.models[model]["tokens"], "endpoints": app.state.models[model]["endpoints"]})
+    modelsData = [{"id": model, "object": "model", "created": await helpers.__generate_timestamp(), "owned_by": values["owned_by"], "tokens": values["tokens"], "endpoints": values["endpoints"]} for model, values in app.state.models.items()]
     return ORJSONResponse({"object": "list", "data": modelsData})
 
 
@@ -74,6 +74,7 @@ async def chat_completions(request: Request, data: ChatData) -> Union[StreamingR
     
     return await streaming_response(client, response, model, completion_id, image_urls) if streaming else await non_streaming_response(client, response, model, completion_id, messages, image_urls)
 
+
 @app.api_route("/images/generations", methods=["POST", "OPTIONS"], response_model=None)
 @app.api_route("/v1/images/generations", methods=["POST", "OPTIONS"], response_model=None)
 async def create_images(request: Request, data: ImagesGenData) -> ORJSONResponse:
@@ -84,6 +85,9 @@ async def create_images(request: Request, data: ImagesGenData) -> ORJSONResponse
     
     if model not in app.state.models:
         raise HTTPException(status_code=400, detail="Invalid model.")
+    
+    if not isinstance(n, int) or n < 1:
+        raise HTTPException(status_code=400, detail="Invalid n value.")
 
     modelData = app.state.models[model]
     baseModel, tokensLimit, endpoints, premiumModel = modelData["baseModel"], modelData["tokens"], modelData["endpoints"], modelData["premium_model"]
@@ -102,6 +106,9 @@ async def create_images(request: Request, data: ImagesGenData) -> ORJSONResponse
     for _ in range(n):
         image_generation = await generate_image(client, response)
         urls.extend([url for url in image_generation.split() if url.startswith("https://")])
+        if len(urls) >= n:
+            break
+    urls = urls[-n:]
     
     if len(urls) == 0:
         raise HTTPException(detail={"error": {"message": f"The provider for {model} sent an invalid response.", "type": "error", "param": None, "code": 500}}, status_code=500)
@@ -116,13 +123,12 @@ async def create_images(request: Request, data: ImagesGenData) -> ORJSONResponse
     return ORJSONResponse({"created": await helpers.__generate_timestamp(), "data": [{"url": url} for url in urls]})
 
 
-
 @app.api_route("/images/edits", methods=["POST", "OPTIONS"], response_model=None)
 @app.api_route("/v1/images/edits", methods=["POST", "OPTIONS"], response_model=None)
 async def edit_images(request: Request, data: ImagesEditData) -> ORJSONResponse:
-    image, prompt, model = data.image, data.prompt, data.model
+    image, prompt, model, n = data.image, data.prompt, data.model, data.n
     
-    if isinstance(image, str) and not os.path.exists(image) and not image.startswith("http"):
+    if not (isinstance(image, str) and (os.path.exists(image) or image.startswith("http"))):
         raise HTTPException(status_code=400, detail="Invalid image.")
     
     if not isinstance(prompt, str):
@@ -130,6 +136,9 @@ async def edit_images(request: Request, data: ImagesEditData) -> ORJSONResponse:
     
     if model not in app.state.models:
         raise HTTPException(status_code=400, detail="Invalid model.")
+    
+    if not isinstance(n, int) or n < 1:
+        raise HTTPException(status_code=400, detail="Invalid n value.")
     
     modelData = app.state.models[model]
     baseModel, tokensLimit, endpoints, premiumModel = modelData["baseModel"], modelData["tokens"], modelData["endpoints"], modelData["premium_model"]
@@ -145,9 +154,12 @@ async def edit_images(request: Request, data: ImagesEditData) -> ORJSONResponse:
     response = await image_handler(baseModel, prompt, tokensLimit)
     
     urls = []
-    for _ in range(1):
+    for _ in range(n):
         image_generation = await generate_image(client, response, [image])
         urls.extend([url for url in image_generation.split() if url.startswith("https://")])
+        if len(urls) >= n:
+            break
+    urls = urls[-n:]
         
     if len(urls) == 0:
         raise HTTPException(detail={"error": {"message": f"The provider for {model} sent an invalid response.", "type": "error", "param": None, "code": 500}}, status_code=500)
@@ -287,6 +299,10 @@ async def non_streaming_response(client: AsyncPoeApi, response: dict, model: str
 if __name__ == "__main__":
     CommandLineInterface().run(["api:app", "--bind", "127.0.0.1", "--port", "8000"])
     
-def start_server(tokens):
+def start_server(tokens: list, address: str="127.0.0.1", port: str="8000"):
+    if not isinstance(tokens, list):
+        raise TypeError("Tokens must be a list.")
+    if not all(isinstance(token, dict) for token in tokens):
+        raise TypeError("Tokens must be a list of dictionaries.")
     app.state.tokens = tokens
-    CommandLineInterface().run(["poe_api_wrapper.openai.api:app", "--bind", "127.0.0.1", "--port", "8000"])
+    CommandLineInterface().run(["poe_api_wrapper.openai.api:app", "--bind", f"{address}", "--port", f"{port}"])

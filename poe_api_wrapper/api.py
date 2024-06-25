@@ -259,6 +259,8 @@ class PoeApi:
         self.ws_connected = False
         if self.ws:
             self.ws.close()
+            self.ws = None
+            logger.info("Websocket connection closed.")
 
     def on_ws_connect(self, ws):
         self.ws_connecting = False
@@ -302,20 +304,20 @@ class PoeApi:
                 subscriptionName = payload.get("subscription_name")
                 
                 if subscriptionName not in ("messageAdded", "messageCancelled", "chatTitleUpdated"):
-                    continue
+                    return
 
                 data = (payload.get("data", {}))
                 
                 if not data:
-                    continue
+                    return
                 
                 if subscriptionName == "messageAdded" and data["messageAdded"]["author"] == "human":
-                    continue
+                    return
                         
                 chat_id: int = int(payload.get("unique_id")[(len(subscriptionName) + 1):])
                 
                 if chat_id not in self.message_queues:
-                    continue
+                    return
                 
                 if chat_id in self.message_queues:
                     self.message_queues[chat_id].put(
@@ -611,27 +613,18 @@ class PoeApi:
             if ws_data["subscription"] == "messageCancelled":
                 break
             
-            elif ws_data["subscription"] == "chatTitleUpdated":
+            if ws_data["subscription"] == "chatTitleUpdated":
                 title = ws_data["data"]["chatTitleUpdated"]["title"]
-            
-            elif ws_data["subscription"] == "messageAdded":
-                response = ws_data["data"]["messageAdded"]
+
+            if ws_data["subscription"] == "messageAdded" or title:
+                if ws_data["subscription"] == "messageAdded":
+                    response = ws_data["data"]["messageAdded"]
                 
                 response["chatCode"] = chatCode
                 response["chatId"] = chatId
                 response["title"] = title
                 response["msgPrice"] = msgPrice
                 response["response"] = ""
-                
-                if suggest_replies and response["state"] == "complete":
-                    new_length = len(response["suggestedReplies"])
-                    if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
-                        old_length = len(response["suggestedReplies"])
-                        suggest_attempts -= 1
-                        sleep(1.5)
-                        continue
-                    yield response
-                    break
 
                 if response["state"] == "error_user_message_too_long":
                     response["response"]  = "Message too long. Please try again!"
@@ -649,12 +642,22 @@ class PoeApi:
                     else:
                         response["response"] = response["text"][len(last_text):]
                 
-                yield response
-                
                 if response["state"] == "complete":
+                    if suggest_replies:
+                        new_length = len(response["suggestedReplies"])
+                        if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
+                            old_length = len(response["suggestedReplies"])
+                            suggest_attempts -= 1
+                            sleep(1.5)
+                            continue
+                    else:
+                        response["suggestedReplies"] = []
                     if not response["title"]:
                         continue
+                    yield response
                     break
+                
+                yield response
                 
                 last_text = response["text"]
         
@@ -700,7 +703,8 @@ class PoeApi:
                                 "shouldFetchChat": True, 
                                 "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, 
                                 "clientNonce": generate_nonce(),
-                                "sdid":"","attachments":attachments, 
+                                "sdid":"",
+                                "attachments":attachments, 
                                 "existingMessageAttachmentsIds":[],
                                 "messagePointsDisplayPrice": msgPrice
                             }
@@ -852,27 +856,18 @@ class PoeApi:
             if ws_data["subscription"] == "messageCancelled":
                 break
             
-            elif ws_data["subscription"] == "chatTitleUpdated":
+            if ws_data["subscription"] == "chatTitleUpdated":
                 title = ws_data["data"]["chatTitleUpdated"]["title"]
-            
-            elif ws_data["subscription"] == "messageAdded":
-                response = ws_data["data"]["messageAdded"]
+
+            if ws_data["subscription"] == "messageAdded" or title:
+                if ws_data["subscription"] == "messageAdded":
+                    response = ws_data["data"]["messageAdded"]
                 
                 response["chatCode"] = chatCode
                 response["chatId"] = chatId
                 response["title"] = title
                 response["msgPrice"] = msgPrice
                 response["response"] = ""
-                
-                if suggest_replies and response["state"] == "complete":
-                    new_length = len(response["suggestedReplies"])
-                    if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
-                        old_length = len(response["suggestedReplies"])
-                        suggest_attempts -= 1
-                        sleep(1.5)
-                        continue
-                    yield response
-                    break
 
                 if response["state"] == "error_user_message_too_long":
                     response["response"]  = "Message too long. Please try again!"
@@ -889,13 +884,23 @@ class PoeApi:
                         stateChange = True
                     else:
                         response["response"] = response["text"][len(last_text):]
-                
-                yield response
-                
+                        
                 if response["state"] == "complete":
+                    if suggest_replies:
+                        new_length = len(response["suggestedReplies"])
+                        if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
+                            old_length = len(response["suggestedReplies"])
+                            suggest_attempts -= 1
+                            sleep(1.5)
+                            continue
+                    else:
+                        response["suggestedReplies"] = []
                     if not response["title"]:
                         continue
+                    yield response
                     break
+                
+                yield response
                 
                 last_text = response["text"]
                           

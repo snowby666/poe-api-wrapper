@@ -1,4 +1,4 @@
-import os, string, secrets
+import os, string, secrets, base64
 from urllib.parse import urlparse
 from httpx import Client
 from loguru import logger
@@ -83,8 +83,8 @@ BOTS_LIST = {
     'Claude-2-100k': 'a2_2',
     'Claude-instant': 'a2',
     'Claude-instant-100k': 'a2_100k',
-    'ChatGPT': 'chinchilla',
-    'GPT-3.5-Turbo': 'gpt3_5',
+    'GPT-3.5-Turbo': 'chinchilla',
+    'GPT-3.5-Turbo-Raw': 'gpt3_5',
     'GPT-3.5-Turbo-Instruct': 'chinchilla_instruct',
     'ChatGPT-16k': 'agouti',
     'GPT-4-Classic': 'gpt4_classic',
@@ -155,7 +155,15 @@ def generate_file(file_path: list, proxy: dict=None):
     files = []   
     file_size = 0
     for file in file_path:
-        if is_valid_url(file):
+        if file.startswith("data:image"):
+            file_extension = file.split(";")[0].split("/")[-1]
+            content_type = MEDIA_EXTENSIONS.get(f".{file_extension}", "image/png")
+            file_data = base64.b64decode(file.split(",")[1])
+            file_name = f"{generate_nonce(8)}.{file_extension}"
+            files.append((file_name, file_data, content_type))
+            file_size += len(file_data)
+            
+        elif is_valid_url(file):
             # Handle URL files
             file_name = file.split('/')[-1]
             file_extension = os.path.splitext(file_name)[1].lower()

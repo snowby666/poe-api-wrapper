@@ -53,7 +53,7 @@
         "owned_by": "openai"
     },
 
-    "gpt-4-o": {
+    "gpt-4o": {
         "baseModel": "gpt4_o",
         "tokens": 4000,
         "endpoints": ["/v1/chat/completions"],
@@ -458,13 +458,22 @@
         "owned_by": "playgroundai"
     },
 
-    "stable-diffusion-xl": {
-        "baseModel": "stablediffusionxl",
+    "sdxl": {
+        "baseModel": "falsdxl",
         "tokens": 80,
         "endpoints": ["/v1/images/generations", "/v1/images/edits"],
         "premium_model": false,
         "object": "model",
         "owned_by": "stable-diffusion"
+    },
+
+    "sdxl-lightning": {
+        "baseModel": "falsdxllightning",
+        "tokens": 80,
+        "endpoints": ["/v1/images/generations", "/v1/images/edits"],
+        "premium_model": false,
+        "object": "model",
+        "owned_by": "bytedance"
     },
 
     "stable-diffusion-3": {

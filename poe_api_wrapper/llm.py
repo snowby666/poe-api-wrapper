@@ -7,9 +7,9 @@ except ImportError:
     LLM_PACKAGE = False
 
 class PoeServer:
-    def __init__(self, tokens: dict[str, str]):
+    def __init__(self, tokens: dict[str, str], address: str="127.0.0.1", port: str="8000"):
         try:
-            start_server(tokens)
+            start_server(tokens, address, port)
         except Exception as e:
             logger.error(f"Failed to start server: {e}")
             raise e

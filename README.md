@@ -129,7 +129,7 @@ pip install -U poe-api-wrapper
 ```
 Or you can install a proxy-support version of this library for **Python 3.9+**
 ```ShellSession
-pip install -U poe-api-wrapper[proxy]
+pip install -U 'poe-api-wrapper[proxy]'
 ```
 Quick setup for Async Client:
 ```py
@@ -183,8 +183,8 @@ poe -b P-B_HERE -lat P-LAT_HERE -f FORMKEY_HERE
 | Claude-2-100k          | a2_2                      | 100K        | 75K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | Claude-instant         | a2                        | 9K          | 7K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Claude-instant-100k    | a2_100k                   | 100K        | 75K   | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| ChatGPT                | chinchilla                | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| GPT-3.5-Turbo          | gpt3_5                    | 2k          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-3.5-Turbo          | chinchilla                | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-3.5-Turbo-Raw      | gpt3_5                    | 2k          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | GPT-4-Classic          | gpt4_classic              | 2K          | 1.5K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
@@ -251,7 +251,7 @@ F12 for Devtools (Right-click + Inspect)
 #### Quick Setup
 - First, install the additional packages:
 ```ShellSession
-pip install -U poe_api_wrapper[llm]
+pip install -U 'poe-api-wrapper[llm]'
 ```
 - Clone the repo or use the same setup in `openai` folder:
 ```ShellSession
@@ -281,6 +281,9 @@ tokens = [
     {"p-b": "XXXXXXXX", "p-lat": "XXXXXXXX"}
 ]
 PoeServer(tokens=tokens)
+
+# You can also specify address and port (default is 127.0.0.1:8000)
+PoeServer(tokens=tokens, address="0.0.0.0", port="8080")
 ```
 
 ##### Chat
@@ -321,6 +324,7 @@ for chunk in stream:
 import openai 
 client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
 
+# Legacy style (https://platform.openai.com/docs/api-reference/chat/create)
 response = client.chat.completions.create(
     model="claude-3.5-sonnet",
     messages=[
@@ -331,10 +335,92 @@ response = client.chat.completions.create(
                 {
                     "type": "image_url",
                     "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-                },
+                }
             ],
         }
     ]
+)
+
+# New style (https://platform.openai.com/docs/guides/vision)
+response = client.chat.completions.create(
+    model="claude-3.5-sonnet",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+                    }
+                }
+            ],
+        }
+    ]
+)
+
+# Multiple images
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "What are in these images? Is there any difference between them?",
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+          },
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://imgcdn.stablediffusionweb.com/2024/4/29/0b0b8798-1965-4e3d-b0a8-d153728320d4.jpg",
+          }
+        }
+      ]
+    }
+  ]
+)
+
+# Base64 image
+import base64
+
+# Function to encode the image
+def encode_image(image_path):
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+
+# Path to your image
+image_path = "path_to_your_image.jpg"
+
+# Getting the base64 string
+base64_image = encode_image(image_path)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "What’s in this image?"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image}"
+          }
+        }
+      ]
+    }
+  ]
 )
 
 print(response.choices[0].message.content)
@@ -361,7 +447,7 @@ client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/",
 
 images_url = client.images.edit(
   image="https://imgcdn.stablediffusionweb.com/2024/4/29/0b0b8798-1965-4e3d-b0a8-d153728320d4.jpg",
-  model="stable-diffusion-xl",
+  model="sdxl",
   prompt="A cute baby sea otter wearing a raincoat",
   n=1, # The number of images to generate
 )
