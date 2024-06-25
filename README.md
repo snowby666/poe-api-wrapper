@@ -433,7 +433,7 @@ import openai
 client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
 
 images_url = client.images.generate(
-  model="playground-v2.5",
+  model="sdxl",
   prompt="A cute baby sea otter",
   n=2, # The number of images to generate
 )
@@ -447,7 +447,7 @@ client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/",
 
 images_url = client.images.edit(
   image="https://imgcdn.stablediffusionweb.com/2024/4/29/0b0b8798-1965-4e3d-b0a8-d153728320d4.jpg",
-  model="sdxl",
+  model="playground-v2.5",
   prompt="A cute baby sea otter wearing a raincoat",
   n=1, # The number of images to generate
 )
