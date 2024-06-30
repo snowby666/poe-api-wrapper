@@ -100,6 +100,7 @@ BOTS_LIST = {
     'Code-Llama-13b': 'code_llama_13b_instruct',
     'Code-Llama-34b': 'code_llama_34b_instruct',
     'Solar-Mini':'upstage_solar_0_70b_16bit',
+    'Gemini-1.5-Flash-Search': 'gemini_pro_search'
 }
 
 REVERSE_BOTS_LIST = {v: k for k, v in BOTS_LIST.items()}

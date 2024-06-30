@@ -127,7 +127,7 @@
 ```ShellSession
 pip install -U poe-api-wrapper
 ```
-Or you can install a proxy-support version of this library for **Python 3.9+**
+Or you can install auto-proxy version of this library for **Python 3.9+**
 ```ShellSession
 pip install -U 'poe-api-wrapper[proxy]'
 ```
@@ -168,38 +168,39 @@ poe -b P-B_HERE -lat P-LAT_HERE -f FORMKEY_HERE
 
 ## 🦄 Documentation
 ### Available Default Bots
-| Display Name           | Model                     | Token Limit | Words | Access Type                                                     |
-| ---------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
-| Assistant              | capybara                  | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Claude-3.5-Sonnet      | claude_3_igloo            | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Claude-3-Opus          | claude_2_1_cedar          | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Claude-3-Sonnet        | claude_2_1_bamboo         | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Claude-3-Haiku         | claude_3_haiku            | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Claude-3.5-Sonnet-200k | claude_3_igloo_200k       | 200K        | 150K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Claude-3-Opus-200k     | claude_3_opus_200k        | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Claude-3-Sonnet-200k   | claude_3_sonnet_200k      | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Claude-3-Haiku-200k    | claude_3_haiku_200k       | 200K        | 150K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Claude-2               | claude_2_short            | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Claude-2-100k          | a2_2                      | 100K        | 75K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Claude-instant         | a2                        | 9K          | 7K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Claude-instant-100k    | a2_100k                   | 100K        | 75K   | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| GPT-3.5-Turbo          | chinchilla                | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| GPT-3.5-Turbo-Raw      | gpt3_5                    | 2k          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| GPT-3.5-Turbo-Instruct | chinchilla_instruct       | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| ChatGPT-16k            | agouti                    | 16K         | 12K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| GPT-4-Classic          | gpt4_classic              | 2K          | 1.5K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| GPT-4-Turbo            | beaver                    | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| GPT-4-Turbo-128k       | vizcacha                  | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| GPT-4o                 | gpt4_o                    | 4k          | 3k    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| GPT-4o-128k            | gpt4_o_128k               | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| Google-PaLM            | acouchy                   | 8K          | 6K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Llama-2-7b             | llama_2_7b_chat           | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Llama-2-13b            | llama_2_13b_chat          | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Llama-2-70b            | llama_2_70b_chat          | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Code-Llama-7b          | code_llama_7b_instruct    | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Code-Llama-13b         | code_llama_13b_instruct   | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Code-Llama-34b         | code_llama_34b_instruct   | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Solar-Mini             | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Display Name            | Model                     | Token Limit | Words | Access Type                                                     |
+| ----------------------- | ------------------------- | ----------- | ----- | --------------------------------------------------------------- |
+| Assistant               | capybara                  | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-3.5-Sonnet       | claude_3_igloo            | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-3-Opus           | claude_2_1_cedar          | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| Claude-3-Sonnet         | claude_2_1_bamboo         | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-3-Haiku          | claude_3_haiku            | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-3.5-Sonnet-200k  | claude_3_igloo_200k       | 200K        | 150K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-3-Opus-200k      | claude_3_opus_200k        | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| Claude-3-Sonnet-200k    | claude_3_sonnet_200k      | 200K        | 150K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| Claude-3-Haiku-200k     | claude_3_haiku_200k       | 200K        | 150K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-2                | claude_2_short            | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| Claude-2-100k           | a2_2                      | 100K        | 75K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| Claude-instant          | a2                        | 9K          | 7K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Claude-instant-100k     | a2_100k                   | 100K        | 75K   | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-3.5-Turbo           | chinchilla                | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-3.5-Turbo-Raw       | gpt3_5                    | 2k          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-3.5-Turbo-Instruct  | chinchilla_instruct       | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| ChatGPT-16k             | agouti                    | 16K         | 12K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| GPT-4-Classic           | gpt4_classic              | 2K          | 1.5K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| GPT-4-Turbo             | beaver                    | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| GPT-4-Turbo-128k        | vizcacha                  | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| GPT-4o                  | gpt4_o                    | 4k          | 3k    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-4o-128k             | gpt4_o_128k               | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| Google-PaLM             | acouchy                   | 8K          | 6K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Llama-2-7b              | llama_2_7b_chat           | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Llama-2-13b             | llama_2_13b_chat          | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Llama-2-70b             | llama_2_70b_chat          | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Code-Llama-7b           | code_llama_7b_instruct    | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Code-Llama-13b          | code_llama_13b_instruct   | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Code-Llama-34b          | code_llama_34b_instruct   | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Solar-Mini              | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Gemini-1.5-Flash-Search | gemini_pro_search         | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 > [!IMPORTANT]  
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed. 
 >
@@ -316,8 +317,36 @@ stream = client.chat.completions.create(
 )
 
 for chunk in stream:
-    if chunk.choices[0].delta.content is not None:
-        print(chunk.choices[0].delta.content, end="")
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+
+# Set max_tokens
+stream_2 = client.chat.completions.create(
+    model="claude-instant", 
+    messages = [
+                {"role": "user", "content": "Can you tell me about the creation of blackholes?"}
+            ],
+    stream=True,
+    max_tokens=20, # if max_tokens reached, finish_reason will be 'length'
+)
+
+for chunk in stream_2:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+
+# Include usage 
+stream_3 = client.chat.completions.create(
+    model="claude-instant", 
+    messages = [
+                {"role": "user", "content": "Write a 100-character meta description for my blog post about llamas"}
+            ],
+    stream=True,
+    max_tokens=4096,
+    stream_options={
+		"include_usage": True # last chunk contains prompts_tokens, completion_tokens and total_tokens
+	}
+)
+
+for chunk in stream_3:
+    print(chunk, end="\n\n", flush=True)
 ```
 - Image input example:
 ```py
@@ -433,9 +462,10 @@ import openai
 client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
 
 images_url = client.images.generate(
-  model="sdxl",
+  model="playground-v2.5",
   prompt="A cute baby sea otter",
   n=2, # The number of images to generate
+  size="1792x1024" # The size of image (view models.json for available sizes)
 )
 
 print(images_url)
@@ -447,9 +477,10 @@ client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/",
 
 images_url = client.images.edit(
   image="https://imgcdn.stablediffusionweb.com/2024/4/29/0b0b8798-1965-4e3d-b0a8-d153728320d4.jpg",
-  model="playground-v2.5",
+  model="sdxl",
   prompt="A cute baby sea otter wearing a raincoat",
   n=1, # The number of images to generate
+  size="1024x1024" # The size of image (view models.json for available sizes)
 )
 
 print(images_url)

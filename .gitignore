@@ -1,8 +1,9 @@
+**/__pycache__/
+*.egg-info/
 build/
 dist/
+.tox/
 playground/
-poe_api_wrapper/openai/__pycache__/
-*.egg-info/
-poe_api_wrapper/__pycache__/
 examples/
 langchain/
+Dockerfile

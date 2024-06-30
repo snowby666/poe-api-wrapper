@@ -20,6 +20,7 @@ from nltk.corpus import stopwords
 from nltk.probability import FreqDist
 from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize, word_tokenize
+import tiktoken
 
 async def __progressive_summarize_text(text, max_length, initial_reduction_ratio=0.8, step=0.1):
     if len(text) < max_length:
@@ -44,7 +45,7 @@ async def __progressive_summarize_text(text, max_length, initial_reduction_ratio
     while True:
         num_sentences = max(1, round(len(sentences) * reduction_ratio))
         selected_indexes = nlargest(num_sentences, sentence_scores, key=sentence_scores.get)
-        summary = ' '.join(sentences[idx] for idx in sorted(selected_indexes))
+        summary = '\n'.join(sentences[idx] for idx in sorted(selected_indexes))
 
         if 0 < len(summary.strip()) <= max_length or reduction_ratio - step < 0:
             break
@@ -95,8 +96,8 @@ async def __generate_timestamp():
     return int(time.time())
 
 async def __tokenize(text):
-    size = len(text)
-    return round(size / 4)
+    enconder = tiktoken.get_encoding("cl100k_base")
+    return len(enconder.encode(text))
 
 async def __stringify_messages(messages):
     return '\n'.join(f"{message['role'].capitalize()}: {message['content']}" for message in messages)

@@ -233,7 +233,7 @@
         "owned_by": "google"
     },
 
-    "gemini-1.0-pro-search": {
+    "gemini-1.5-flash-search": {
         "baseModel": "gemini_pro_search",
         "tokens": 4000,
         "endpoints": ["/v1/chat/completions"],
@@ -455,22 +455,48 @@
         "endpoints": ["/v1/images/generations", "/v1/images/edits"],
         "premium_model": false,
         "object": "model",
-        "owned_by": "playgroundai"
+        "owned_by": "playgroundai",
+        "sizes": {
+            "1024x1024": "--aspect 1:1",
+            "1254x836": "--aspect 3:2",
+            "836x1254": "--aspect 2:3",
+            "1182x886": "--aspect 4:3",
+            "886x1182": "--aspect 3:4",
+            "1161x903": "--aspect 9:7",
+            "903x1161": "--aspect 7:9",
+            "1536x640": "--aspect 12:5",
+            "640x1536": "--aspect 5:12",
+            "1365x768": "--aspect 16:9",
+            "768x1365": "--aspect 9:16",
+            "1295x809": "--aspect 16:10",
+            "809x1295": "--aspect 10:16"
+        }
     },
 
     "sdxl": {
-        "baseModel": "falsdxl",
+        "baseModel": "stablediffusionxl",
         "tokens": 80,
         "endpoints": ["/v1/images/generations", "/v1/images/edits"],
         "premium_model": false,
         "object": "model",
-        "owned_by": "stable-diffusion"
+        "owned_by": "stabilityai",
+        "sizes": {
+            "1024x1024": "--aspect 1:1",
+            "1792x1024": "--aspect 7:4",
+            "1024x1792": "--aspect 4:7",
+            "1152x896": "--aspect 9:7",
+            "896x1152": "--aspect 7:9",
+            "1216x832": "--aspect 19:13",
+            "832x1216": "--aspect 13:19",
+            "1536x640": "--aspect 12:5",
+            "640x1536": "--aspect 5:12"
+        }
     },
 
     "sdxl-lightning": {
         "baseModel": "falsdxllightning",
         "tokens": 80,
-        "endpoints": ["/v1/images/generations", "/v1/images/edits"],
+        "endpoints": ["/v1/images/generations"],
         "premium_model": false,
         "object": "model",
         "owned_by": "bytedance"
@@ -482,7 +508,7 @@
         "endpoints": ["/v1/images/generations", "/v1/images/edits"],
         "premium_model": true,
         "object": "model",
-        "owned_by": "stable-diffusion"
+        "owned_by": "stabilityai"
     },
 
     "stable-diffusion-3-turbo": {
@@ -491,7 +517,7 @@
         "endpoints": ["/v1/images/generations", "/v1/images/edits"],
         "premium_model": true,
         "object": "model",
-        "owned_by": "stable-diffusion"
+        "owned_by": "stabilityai"
     },
 
     "stable-diffusion-3-2b": {
@@ -500,7 +526,7 @@
         "endpoints": ["/v1/images/generations", "/v1/images/edits"],
         "premium_model": false,
         "object": "model",
-        "owned_by": "stable-diffusion"
+        "owned_by": "stabilityai"
     },
 
     "dall-e-3": {
@@ -509,7 +535,12 @@
         "endpoints": ["/v1/images/generations", "/v1/images/edits"],
         "premium_model": true,
         "object": "model",
-        "owned_by": "openai"
+        "owned_by": "openai",
+        "sizes": {
+            "1024x1024": "--aspect 1:1",
+            "1792x1024": "--aspect 7:4",
+            "1024x1792": "--aspect 4:7"
+        }
     },
 
     "ideogram": {
@@ -518,6 +549,17 @@
         "endpoints": ["/v1/images/generations", "/v1/images/edits"],
         "premium_model": true,
         "object": "model",
-        "owned_by": "ideogram"
+        "owned_by": "ideogram",
+        "sizes": {
+            "1024x1024": "--aspect 1:1",
+            "1254x836": "--aspect 3:2",
+            "836x1254": "--aspect 2:3",
+            "1182x886": "--aspect 4:3",
+            "886x1182": "--aspect 3:4",
+            "1365x768": "--aspect 16:9",
+            "768x1365": "--aspect 9:16",
+            "1295x809": "--aspect 16:10",
+            "809x1295": "--aspect 10:16"
+        }
     }
 }

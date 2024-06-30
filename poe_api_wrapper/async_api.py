@@ -1,8 +1,4 @@
-try:
-    from httpx import AsyncClient, ConnectError, ReadTimeout
-    ASYNC = True
-except ImportError:
-    ASYNC = False
+from httpx import AsyncClient, ConnectError, ReadTimeout
 import asyncio, queue, orjson, random, ssl, threading, websocket, string, secrets, os, hashlib, re, aiofiles
 from typing import  AsyncIterator
 from loguru import logger
@@ -41,8 +37,6 @@ class AsyncPoeApi:
     
     def __init__(self, tokens: dict={}, proxy: list=[], auto_proxy: bool=False):
         self.client = None
-        if not ASYNC:
-            raise ImportError("Please install Async version using 'pip install poe-api-wrapper[async]'")
         if not {'p-b', 'p-lat'}.issubset(tokens):
             raise ValueError("Please provide valid p-b and p-lat cookies")
         
@@ -190,7 +184,7 @@ class AsyncPoeApi:
             if isinstance(e, ReadTimeout):
                 if query_name == "SendMessageMutation":
                     logger.error(f"Failed to send message {variables['query']} due to ReadTimeout")
-                    logger.info(f"Attempting to retry message {variables['query']} 3 times...")
+                    raise e
                 else:
                     logger.error(f"Automatic retrying request {query_name} due to ReadTimeout")
                     return await self.send_request(path, query_name, variables, file_form)
@@ -220,7 +214,7 @@ class AsyncPoeApi:
             raise RuntimeError(f'Failed to subscribe by sending SubscriptionsMutation. Raw response data: {response_json}')
             
     def ws_run_thread(self):
-        if not self.ws.sock:
+        if self.ws and not self.ws.sock:
             kwargs = {"sslopt": {"cert_reqs": ssl.CERT_NONE}}
             try:
                 self.ws.run_forever(**kwargs)
@@ -292,7 +286,6 @@ class AsyncPoeApi:
         self.ws_connected = False
         if self.ws:
             self.ws.close()
-            self.ws = None
             logger.info("Websocket connection closed.")
 
     def on_ws_connect(self, ws):
@@ -363,10 +356,10 @@ class AsyncPoeApi:
                 
         except Exception:
             logger.exception(f"Failed to parse message: {msg}")
+            self.disconnect_ws()
             self.refresh_ws()
             
     def refresh_ws(self):
-        self.disconnect_ws()
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.loop.run_in_executor(None, self.connect_ws())

@@ -169,7 +169,7 @@ class PoeApi:
             if isinstance(e, ReadTimeout):
                 if query_name == "SendMessageMutation":
                     logger.error(f"Failed to send message {variables['query']} due to ReadTimeout")
-                    logger.info(f"Attempting to retry message {variables['query']} 3 times...")
+                    raise e
                 else:
                     logger.error(f"Automatic retrying request {query_name} due to ReadTimeout")
                     return self.send_request(path, query_name, variables, file_form)
@@ -198,7 +198,7 @@ class PoeApi:
             raise RuntimeError(f'Failed to subscribe by sending SubscriptionsMutation. Raw response data: {response_json}')
             
     def ws_run_thread(self):
-        if not self.ws.sock:
+        if self.ws and not self.ws.sock:
             kwargs = {"sslopt": {"cert_reqs": ssl.CERT_NONE}}
             self.ws.run_forever(**kwargs)
              
@@ -259,7 +259,6 @@ class PoeApi:
         self.ws_connected = False
         if self.ws:
             self.ws.close()
-            self.ws = None
             logger.info("Websocket connection closed.")
 
     def on_ws_connect(self, ws):
@@ -284,7 +283,6 @@ class PoeApi:
             ws_data = orjson.loads(msg)
 
             if "error" in ws_data.keys() and ws_data["error"] == "missed_messages":
-                self.disconnect_ws()
                 self.connect_ws()
                 return
             
@@ -295,7 +293,6 @@ class PoeApi:
                 data = orjson.loads(data)
                 message_type = data.get("message_type")
                 if message_type == "refetchChannel":
-                    self.disconnect_ws()
                     self.connect_ws()
                     return
 
