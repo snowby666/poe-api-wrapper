@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Extra
-from typing import Any, Optional, List, Literal
+from typing import Any, Optional, List, Literal, Dict
 
 class ChatData(BaseModel):
     model: Any
@@ -10,7 +10,7 @@ class ChatData(BaseModel):
     presence_penalty: Optional[float] = 1.0
     temperature: Optional[float] = 1.0
     top_p: Optional[float] = 1.0
-    stream_options: Optional[dict[str, Any]] = None
+    stream_options: Optional[Dict[str, Any]] = None
     
 class ImagesGenData(BaseModel):
     prompt: Any
