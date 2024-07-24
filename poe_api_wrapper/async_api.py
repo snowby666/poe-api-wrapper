@@ -182,7 +182,7 @@ class AsyncPoeApi:
             
         except Exception as e:
             if isinstance(e, ReadTimeout):
-                if query_name == "SendMessageMutation":
+                if query_name == "sendMessageMutation":
                     logger.error(f"Failed to send message {variables['query']} due to ReadTimeout")
                     raise e
                 else:
@@ -738,7 +738,7 @@ class AsyncPoeApi:
                                 "existingMessageAttachmentsIds":[],
                                 "messagePointsDisplayPrice": msgPrice
                             }
-                message_data = await self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                message_data = await self.send_request(apiPath, 'sendMessageMutation', variables, file_form)
                 
                 if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
                     msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
@@ -754,7 +754,7 @@ class AsyncPoeApi:
                                     "existingMessageAttachmentsIds":[],
                                     "messagePointsDisplayPrice": msgPrice
                                 }
-                    message_data = await self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                    message_data = await self.send_request(apiPath, 'sendMessageMutation', variables, file_form)
         
                 if message_data["data"] == None and message_data["errors"]:
                     raise ValueError(
@@ -813,7 +813,7 @@ class AsyncPoeApi:
                         }
             
             try:
-                message_data = await self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                message_data = await self.send_request(apiPath, 'sendMessageMutation', variables, file_form)
                 if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
                     msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
                     variables = {
@@ -828,7 +828,7 @@ class AsyncPoeApi:
                                     "existingMessageAttachmentsIds":[],
                                     "messagePointsDisplayPrice": msgPrice
                                 }
-                    message_data = await self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                    message_data = await self.send_request(apiPath, 'sendMessageMutation', variables, file_form)
                     
                 if message_data["data"] == None and message_data["errors"]:
                     raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
