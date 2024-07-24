@@ -167,7 +167,7 @@ class PoeApi:
             
         except Exception as e:
             if isinstance(e, ReadTimeout):
-                if query_name == "SendMessageMutation":
+                if query_name == "sendMessageMutation":
                     logger.error(f"Failed to send message {variables['query']} due to ReadTimeout")
                     raise e
                 else:
@@ -705,7 +705,7 @@ class PoeApi:
                                 "existingMessageAttachmentsIds":[],
                                 "messagePointsDisplayPrice": msgPrice
                             }
-                message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                message_data = self.send_request(apiPath, 'sendMessageMutation', variables, file_form)
                 
                 if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
                     msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
@@ -721,7 +721,7 @@ class PoeApi:
                                     "existingMessageAttachmentsIds":[],
                                     "messagePointsDisplayPrice": msgPrice
                                 }
-                    message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                    message_data = self.send_request(apiPath, 'sendMessageMutation', variables, file_form)
         
                 if message_data["data"] == None and message_data["errors"]:
                     raise ValueError(
@@ -780,7 +780,7 @@ class PoeApi:
                         }
             
             try:
-                message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                message_data = self.send_request(apiPath, 'sendMessageMutation', variables, file_form)
                 if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
                     msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
                     variables = {
@@ -795,7 +795,7 @@ class PoeApi:
                                     "existingMessageAttachmentsIds":[],
                                     "messagePointsDisplayPrice": msgPrice
                                 }
-                    message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
+                    message_data = self.send_request(apiPath, 'sendMessageMutation', variables, file_form)
                     
                 if message_data["data"] == None and message_data["errors"]:
                     raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")

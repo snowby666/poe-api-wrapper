@@ -1,4 +1,7 @@
-import orjson, random
+import random
+
+import orjson
+
 
 QUERIES = {
   "RegenerateMessageMutation": "056f5f4b6a39ca7786a4f0b2ef37eee401c81d6086cd78ffc12fe2ce0bccb1fd",
@@ -120,7 +123,7 @@ QUERIES = {
   "SearchResultsListPaginationQuery": "f6d4b5bbec10438548a5f8feedac11001878efe2e31a3d0ecd7680a4decb5c66",
   "SearchResultsMainQuery": "7ee1c22fd46693de7869ce0305d0209b7fda41ef91389110cd989804194fcaf8",
   "SelectorTestPageQuery": "9ec86fe8e3d0d3b264d0fab0feb73e38c86d616c7c3d8340d7a6146bd8445ed3",
-  "SendMessageMutation": "b4aff2855bc876361737bcbf5f9310b5da4d3250923894ecb8f339de4c2e3fa3",
+  "sendMessageMutation": "b5694554bb2d91d0226fed35139f1d038fdd0fa30148be02546d0e2afa3e72a4",
   "SendVerificationCodeMutation": "d418fa3d2357d089b20065226041180573fa0b0382914a90cf905435281af520",
   "SetPrimaryEmailMutation": "01e75a6d937351b304ca9cc0b231e43587a5923e7f8618863bdf996df38d28b5",
   "SettingsDefaultBotSectionMutation": "4084604e8741af8650ac6b4236cdfa13c91a70cf1c63ad8a368706a386d0887e",
