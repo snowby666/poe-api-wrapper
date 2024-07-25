@@ -857,7 +857,7 @@ print(client.get_botInfo(handle=bot))
 ```py
 print(client.get_available_creation_models())
 >> Output:
-['chinchilla', 'claude_3_haiku', 'mythomaxl213b', 'mixtral8x7bchat', 'playgroundv25', 'stablediffusionxl', 'dalle3', 'a2', 'claude_2_short', 'gemini_pro', 'a2_2', 'a2_100k', 'gpt4_o', 'gpt4_o_128k', 'beaver', 'vizcacha', 'gemini_1_5_pro', 'gemini_1_5_pro_128k', 'gemini_1_5_pro_1m', 'gemini_1_5_flash', 'gemini_1_5_flash_128k', 'gemini_1_5_flash_1m', 'llama_2_70b_chat', 'claude_2_1_bamboo', 'claude_2_1_cedar', 'claude_3_haiku_200k', 'claude_3_sonnet_200k', 'claude_3_opus_200k', 'sd3turbo', 'stablediffusion3', 'ideogram']
+{'text': ['claude_3_igloo', 'gpt4_o_mini', 'gpt4_o', 'gemini_1_5_flash', 'gemini_1_5_pro', 'playgroundv25', 'ideogram', 'pika', 'claude_2_1_bamboo', 'claude_3_haiku', 'claude_2_1_cedar', 'dalle3', 'gemini_1_5_flash_128k', 'gemini_1_5_pro_128k', 'gemini_1_5_flash_1m', 'gemini_1_5_pro_1m', 'gpt4_o_mini_128k', 'gpt4_o_128k', 'beaver', 'gemini_pro', 'stablediffusion3', 'sd3turbo', 'stablediffusionxl', 'chinchilla', 'vizcacha', 'claude_3_igloo_200k', 'claude_3_sonnet_200k', 'claude_3_haiku_200k', 'claude_3_opus_200k', 'mixtral8x7bchat', 'claude_2_short', 'a2_2', 'mythomaxl213b', 'a2', 'a2_100k'], 'image': ['playgroundv25', 'ideogram', 'dalle3', 'stablediffusion3', 'sd3turbo', 'stablediffusionxl'], 'video': ['pika']}
 ```
 - Creating a new Bot
 ```py
