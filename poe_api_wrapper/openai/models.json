@@ -314,6 +314,42 @@
         "owned_by": "meta"
     },
 
+    "llama-3.1-8b-128k": {
+        "baseModel": "llama318bfw128k",
+        "tokens": 128000,
+        "endpoints": ["/v1/chat/completions"],
+        "premium_model": false,
+        "object": "model",
+        "owned_by": "meta"
+    },
+
+    "llama-3.1-70b-128k": {
+        "baseModel": "llama3170bfw128k",
+        "tokens": 128000,
+        "endpoints": ["/v1/chat/completions"],
+        "premium_model": false,
+        "object": "model",
+        "owned_by": "meta"
+    },
+
+    "llama-3.1-405b-instruct": {
+        "baseModel": "llama31405bt",
+        "tokens": 4000,
+        "endpoints": ["/v1/chat/completions"],
+        "premium_model": false,
+        "object": "model",
+        "owned_by": "meta"
+    },
+
+    "llama-3.1-405b-128k": {
+        "baseModel": "llama31405bfw128k",
+        "tokens": 128000,
+        "endpoints": ["/v1/chat/completions"],
+        "premium_model": false,
+        "object": "model",
+        "owned_by": "meta"
+    },
+
     "mistral-7b": {
         "baseModel": "groq_mixtral_8x_7b",
         "tokens": 4000,

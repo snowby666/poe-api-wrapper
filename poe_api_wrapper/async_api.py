@@ -1212,7 +1212,7 @@ class AsyncPoeApi:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response}")
         models_data = response['data']['viewer']['botsAllowedForUserCreation']
         models = {
-            'text': [bot['model'] for bot in models_data if not (bot['isImageGen'] and bot['isVideoGen'])],
+            'text': [bot['model'] for bot in models_data if not bot['isImageGen'] and not bot['isVideoGen']],
             'image': [bot['model'] for bot in models_data if bot['isImageGen']],
             'video': [bot['model'] for bot in models_data if bot['isVideoGen']]
         }
