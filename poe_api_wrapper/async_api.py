@@ -619,6 +619,7 @@ class AsyncPoeApi:
         stateChange = False
         old_length = 0  
         suggest_attempts = 3
+        response = {}
         
         while True:
             try:
@@ -862,6 +863,7 @@ class AsyncPoeApi:
         stateChange = False
         old_length = 0
         suggest_attempts = 3
+        response = {}
         
         while True:
             try:
@@ -1115,6 +1117,8 @@ class AsyncPoeApi:
         new_variables = {"after": "5", "first": count, "id": id}
         response = await self.send_request('gql_POST', 'BotKnowledgeSourcesModalPaginationQuery', new_variables)
         edges = response['data']['node']['knowledgeSourceConnection']['edges']
+        total_sources = 0
+        
         if edges:
             for edge in edges:
                 if edge['node']['title'] not in sources_ids:
@@ -1207,22 +1211,43 @@ class AsyncPoeApi:
         if response['data'] == None and response["errors"]:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response}")
         models_data = response['data']['viewer']['botsAllowedForUserCreation']
-        models = [
-          bot['model'] for bot in models_data
-        ]
+        models = {
+            'text': [bot['model'] for bot in models_data if not (bot['isImageGen'] and bot['isVideoGen'])],
+            'image': [bot['model'] for bot in models_data if bot['isImageGen']],
+            'video': [bot['model'] for bot in models_data if bot['isVideoGen']]
+        }
         return models
             
-    async def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", intro_message="", 
+    async def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", botCategory: int=None, description="", intro_message="", 
                    api_key=None, api_bot=False, api_url=None, prompt_public=True, pfp_url=None, markdown_rendering=True,
                    suggested_replies=False, private=False, temperature=None, customMessageLimit=None, messagePriceCc=None,
-                   shouldCiteSources=True, knowledgeSourceIds:dict = {}, allowRelatedBotRecommendations=True):
+                   shouldCiteSources=True, knowledgeSourceIds:dict = {}, allowRelatedBotRecommendations=True, 
+                   inviteCodeReqHash=None
+                ):
         
         if not re.match("^[a-zA-Z0-9_.-]{4,20}$", handle):
                 raise ValueError("Invalid handle. Should be unique and use 4-20 characters, including letters, numbers, dashes, periods and underscores.")
         
-        bot_models = await self.get_available_creation_models()
+        botCategories = await self.get_available_creation_models()
+        bot_models = [model for sublist in botCategories.values() for model in sublist]
         if base_model not in bot_models:
             raise ValueError(f"Invalid base model {base_model}. Please choose from {bot_models}")
+        
+        if botCategory:
+            if botCategory in (1, 4):
+                if base_model not in botCategories['text']:
+                    raise ValueError(f"Invalid base model {base_model} for category {botCategory}. Please choose from {botCategories['text']}")
+            elif botCategory == 2:
+                if base_model not in botCategories['image']:
+                    raise ValueError(f"Invalid base model {base_model} for category {botCategory}. Please choose from {botCategories['image']}")
+            elif botCategory == 3:
+                if base_model not in botCategories['video']:
+                    raise ValueError(f"Invalid base model {base_model} for category {botCategory}. Please choose from {botCategories['video']}")
+            else:
+                raise ValueError(f"Invalid bot category {botCategory}. Please choose from 1 (Prompt bot), 2 (Image generation), 3 (Video generation) or 4 (Role play)")
+        else:
+            botCategory = 1 if base_model in botCategories['text'] else 2 if base_model in botCategories['image'] else 3 if base_model in botCategories['video'] else None
+            
         # Auto complete profile
         try:
             await self.send_request('gql_POST', 'MarkMultiplayerNuxCompleted', {})
@@ -1234,6 +1259,7 @@ class AsyncPoeApi:
             sourceIds = []
     
         variables = {
+            "botCategory": botCategory,
             "model": base_model,
             "displayName": display_name,
             "handle": handle,
@@ -1254,6 +1280,7 @@ class AsyncPoeApi:
             "messagePriceCc": messagePriceCc,
             "shouldCiteSources": shouldCiteSources,
             "allowRelatedBotRecommendations": allowRelatedBotRecommendations,
+            "inviteCodeReqHash": inviteCodeReqHash
         }
         
         temp = await self.send_request('gql_POST', 'PoeBotCreate', variables)
@@ -1274,7 +1301,7 @@ class AsyncPoeApi:
                 f"Fail to get botId from {handle}. Make sure the bot exists and you have access to it."
             ) from e
 
-    async def edit_bot(self, handle, prompt, new_handle=None, display_name=None, base_model="chinchilla", description="",
+    async def edit_bot(self, handle, prompt, new_handle=None, display_name=None, base_model="chinchilla", botCategory: int=None, description="",
                 intro_message="", api_key=None, api_url=None, private=False, prompt_public=True,
                 pfp_url=None, markdown_rendering=True, suggested_replies=False, temperature=None, 
                 customMessageLimit=None, knowledgeSourceIdsToAdd:dict = {}, knowledgeSourceIdsToRemove:dict = {},
@@ -1283,9 +1310,25 @@ class AsyncPoeApi:
         if new_handle and not re.match("^[a-zA-Z0-9_.-]{4,20}$", new_handle):
             raise ValueError("Invalid handle. Should be unique and use 4-20 characters, including letters, numbers, dashes, periods and underscores.") 
         
-        bot_models = await self.get_available_creation_models()
+        botCategories = await self.get_available_creation_models()
+        bot_models = [model for sublist in botCategories.values() for model in sublist]
         if base_model not in bot_models:
             raise ValueError(f"Invalid base model {base_model}. Please choose from {bot_models}")  
+        
+        if botCategory:
+            if botCategory in (1, 4):
+                if base_model not in botCategories['text']:
+                    raise ValueError(f"Invalid base model {base_model} for category {botCategory}. Please choose from {botCategories['text']}")
+            elif botCategory == 2:
+                if base_model not in botCategories['image']:
+                    raise ValueError(f"Invalid base model {base_model} for category {botCategory}. Please choose from {botCategories['image']}")
+            elif botCategory == 3:
+                if base_model not in botCategories['video']:
+                    raise ValueError(f"Invalid base model {base_model} for category {botCategory}. Please choose from {botCategories['video']}")
+            else:
+                raise ValueError(f"Invalid bot category {botCategory}. Please choose from 1 (Prompt bot), 2 (Image generation), 3 (Video generation) or 4 (Role play)")
+        else:
+            botCategory = 1 if base_model in botCategories['text'] else 2 if base_model in botCategories['image'] else 3 if base_model in botCategories['video'] else None
         
         if knowledgeSourceIdsToAdd != {}:
             addIds = [item for sublist in knowledgeSourceIdsToAdd.values() for item in sublist]
@@ -1305,6 +1348,7 @@ class AsyncPoeApi:
             ) from e
             
         variables = {
+            "botCategory": botCategory,
             "baseBot": base_model,
             "botId": botId,
             "handle": new_handle if new_handle != None else handle,

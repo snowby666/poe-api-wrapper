@@ -71,6 +71,24 @@
         "owned_by": "openai"
     },
 
+    "gpt-4o-mini": {
+        "baseModel": "gpt4_o_mini",
+        "tokens": 4000,
+        "endpoints": ["/v1/chat/completions"],
+        "premium_model": false,
+        "object": "model",
+        "owned_by": "openai"
+    },
+
+    "gpt-4o-mini-128k": {
+        "baseModel": "gpt4_o_mini_128k",
+        "tokens": 128000,
+        "endpoints": ["/v1/chat/completions"],
+        "premium_model": true,
+        "object": "model",
+        "owned_by": "openai"
+    },
+
     "claude-instant": {
         "baseModel": "a2",
         "tokens": 9000,
@@ -197,9 +215,9 @@
         "owned_by": "google"
     },
 
-    "gemini-1.5-pro-1m": {
+    "gemini-1.5-pro-2m": {
         "baseModel": "gemini_1_5_pro_1m",
-        "tokens": 1000000,
+        "tokens": 2000000,
         "endpoints": ["/v1/chat/completions"],
         "premium_model": true,
         "object": "model",
@@ -251,42 +269,6 @@
         "owned_by": "google"
     },
 
-    "llama-2-7b": {
-        "baseModel": "llama_2_7b_chat",
-        "tokens": 2000,
-        "endpoints": ["/v1/chat/completions"],
-        "premium_model": false,
-        "object": "model",
-        "owned_by": "meta"
-    },
-
-    "llama-2-13b": {
-        "baseModel": "llama_2_13b_chat",
-        "tokens": 2000,
-        "endpoints": ["/v1/chat/completions"],
-        "premium_model": false,
-        "object": "model",
-        "owned_by": "meta"
-    },
-
-    "llama-2-70b": {
-        "baseModel": "llama_2_70b_chat",
-        "tokens": 2000,
-        "endpoints": ["/v1/chat/completions"],
-        "premium_model": false,
-        "object": "model",
-        "owned_by": "meta"
-    },
-
-    "code-llama-7b": {
-        "baseModel": "code_llama_7b_instruct",
-        "tokens": 4000,
-        "endpoints": ["/v1/chat/completions"],
-        "premium_model": false,
-        "object": "model",
-        "owned_by": "meta"
-    },
-    
     "code-llama-13b": {
         "baseModel": "code_llama_13b_instruct",
         "tokens": 4000,

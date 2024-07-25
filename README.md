@@ -190,17 +190,16 @@ poe -b P-B_HERE -lat P-LAT_HERE -f FORMKEY_HERE
 | GPT-4-Classic           | gpt4_classic              | 2K          | 1.5K  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | GPT-4-Turbo             | beaver                    | 4K          | 3K    | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 | GPT-4-Turbo-128k        | vizcacha                  | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
-| GPT-4o                  | gpt4_o                    | 4k          | 3k    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-4o                  | gpt4_o                    | 4k          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | GPT-4o-128k             | gpt4_o_128k               | 128K        | 96K   | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
+| GPT-4o-Mini             | gpt4_o_mini               | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| GPT-4o-Mini-128k        | gpt4_o_mini_128k          | 128K        | 96K    | ![Free](https://img.shields.io/badge/free-2feb7a)              |
 | Google-PaLM             | acouchy                   | 8K          | 6K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Llama-2-7b              | llama_2_7b_chat           | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Llama-2-13b             | llama_2_13b_chat          | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Llama-2-70b             | llama_2_70b_chat          | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
-| Code-Llama-7b           | code_llama_7b_instruct    | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Code-Llama-13b          | code_llama_13b_instruct   | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Code-Llama-34b          | code_llama_34b_instruct   | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Solar-Mini              | upstage_solar_0_70b_16bit | 2K          | 1.5K  | ![Free](https://img.shields.io/badge/free-2feb7a)               |
 | Gemini-1.5-Flash-Search | gemini_pro_search         | 4K          | 3K    | ![Free](https://img.shields.io/badge/free-2feb7a)               |
+| Gemini-1.5-Pro-2M       | gemini_1_5_pro_1m         | 2M          | 1.5M  | ![Subscriber](https://img.shields.io/badge/subscriber-fc4747)   |
 > [!IMPORTANT]  
 > The data on token limits and word counts listed above are approximate and may not be entirely accurate, as the pre-prompt engineering process of poe.com is private and not publicly disclosed. 
 >

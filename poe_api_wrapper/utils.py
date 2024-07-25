@@ -7,7 +7,7 @@ BASE_URL = 'https://poe.com'
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
     "Accept": "*/*",
-    "Accept-Language": "en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+    "Accept-Language": "en-US,en;q=0.5",
     "Sec-Ch-Ua": '"Microsoft Edge";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
     "Sec-Ch-Ua-Mobile": "?0",
     "Sec-Ch-Ua-Platform": '"Windows"',
@@ -92,15 +92,14 @@ BOTS_LIST = {
     'GPT-4-Turbo-128k': 'vizcacha',
     'GPT-4o': 'gpt4_o',
     'GPT-4o-128k': 'gpt4_o_128k',
+    'GPT-4o-Mini': 'gpt4_o_mini',
+    'GPT-4o-Mini-128k': 'gpt4_o_mini_128k',
     'Google-PaLM': 'acouchy',
-    'Llama-2-7b': 'llama_2_7b_chat',
-    'Llama-2-13b': 'llama_2_13b_chat',
-    'Llama-2-70b': 'llama_2_70b_chat',
-    'Code-Llama-7b': 'code_llama_7b_instruct',
     'Code-Llama-13b': 'code_llama_13b_instruct',
     'Code-Llama-34b': 'code_llama_34b_instruct',
     'Solar-Mini':'upstage_solar_0_70b_16bit',
-    'Gemini-1.5-Flash-Search': 'gemini_pro_search'
+    'Gemini-1.5-Flash-Search': 'gemini_pro_search',
+    'Gemini-1.5-Pro-2M': 'gemini_1_5_pro_1m',
 }
 
 REVERSE_BOTS_LIST = {v: k for k, v in BOTS_LIST.items()}
@@ -156,7 +155,7 @@ def generate_file(file_path: list, proxy: dict=None):
     files = []   
     file_size = 0
     for file in file_path:
-        if file.startswith("data:image"):
+        if isinstance(file, str) and file.startswith("data:image"):
             file_extension = file.split(";")[0].split("/")[-1]
             content_type = MEDIA_EXTENSIONS.get(f".{file_extension}", "image/png")
             file_data = base64.b64decode(file.split(",")[1])
