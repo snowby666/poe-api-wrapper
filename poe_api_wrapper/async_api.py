@@ -553,7 +553,7 @@ class AsyncPoeApi:
                 }
         return data
         
-    async def retry_message(self, chatCode: str, suggest_replies: bool=False, timeout: int=20):
+    async def retry_message(self, chatCode: str, suggest_replies: bool=False, timeout: int=5):
         self.retry_attempts = 3
         timer = 0
         while None in self.active_messages.values() and len(self.active_messages) > self.MAX_CONCURRENT_MESSAGES:
@@ -617,9 +617,9 @@ class AsyncPoeApi:
 
         last_text = ""        
         stateChange = False
-        old_length = 0  
-        suggest_attempts = 3
+        suggest_attempts = 4
         response = {}
+        suggestedReplies = []
         
         while True:
             try:
@@ -656,6 +656,7 @@ class AsyncPoeApi:
                 response["title"] = title
                 response["msgPrice"] = msgPrice
                 response["response"] = ""
+                response["suggestedReplies"] = suggestedReplies
 
                 if response["state"] == "error_user_message_too_long":
                     response["response"]  = "Message too long. Please try again!"
@@ -675,14 +676,13 @@ class AsyncPoeApi:
                 
                 if response["state"] == "complete":
                     if suggest_replies:
-                        new_length = len(response["suggestedReplies"])
-                        if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
-                            old_length = len(response["suggestedReplies"])
-                            suggest_attempts -= 1
-                            await asyncio.sleep(1.5)
+                        if suggest_attempts > 0 and len(response["followupActions"]) <= 4:
+                            actions = response["followupActions"]
+                            suggestedReplies = [action["bodyText"] for action in actions]
+                            suggest_attempts -= 1     
+                            await asyncio.sleep(1)
                             continue
-                    else:
-                        response["suggestedReplies"] = []
+                        
                     if not response["title"]:
                         continue
                     yield response
@@ -695,7 +695,7 @@ class AsyncPoeApi:
         await self.delete_queues(chatId)
         self.retry_attempts = 3
         
-    async def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, msgPrice: int=20, file_path: list=[], suggest_replies: bool=False, timeout: int=20) -> AsyncIterator[dict]:
+    async def send_message(self, bot: str, message: str, chatId: int=None, chatCode: str=None, msgPrice: int=20, file_path: list=[], suggest_replies: bool=False, timeout: int=5) -> AsyncIterator[dict]:
         self.retry_attempts = 3
         timer = 0
         while None in self.active_messages.values() and len(self.active_messages) > self.MAX_CONCURRENT_MESSAGES:
@@ -861,9 +861,9 @@ class AsyncPoeApi:
 
         last_text = ""     
         stateChange = False
-        old_length = 0
-        suggest_attempts = 3
+        suggest_attempts = 4
         response = {}
+        suggestedReplies = []
         
         while True:
             try:
@@ -900,6 +900,7 @@ class AsyncPoeApi:
                 response["title"] = title
                 response["msgPrice"] = msgPrice
                 response["response"] = ""
+                response["suggestedReplies"] = suggestedReplies
 
                 if response["state"] == "error_user_message_too_long":
                     response["response"]  = "Message too long. Please try again!"
@@ -917,16 +918,16 @@ class AsyncPoeApi:
                     else:
                         response["response"] = response["text"][len(last_text):]                        
                 
-                if response["state"] == "complete":
+                if response["state"] == "complete":    
                     if suggest_replies:
-                        new_length = len(response["suggestedReplies"])
-                        if response["bot"]["mayHaveSuggestedReplies"] and (suggest_attempts > 0) and (new_length == 0 or (new_length > old_length and new_length >= 1)):
-                            old_length = len(response["suggestedReplies"])
-                            suggest_attempts -= 1
-                            await asyncio.sleep(1.5)
+                            
+                        if suggest_attempts > 0 and len(response["followupActions"]) <= 4:
+                            actions = response["followupActions"]
+                            suggestedReplies = [action["bodyText"] for action in actions]
+                            suggest_attempts -= 1     
+                            await asyncio.sleep(1)
                             continue
-                    else:
-                        response["suggestedReplies"] = []
+                        
                     if not response["title"]:
                         continue
                     yield response
