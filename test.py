@@ -5,8 +5,7 @@ loguru.logger.disable('poe_api_wrapper')
 
 p_b = input("Enter your p-b cookie: ")
 p_lat = input("Enter your p-lat cookie: ")
-formkey = input("Enter your formkey: ")
-TOKEN = {'p-b': p_b, 'p-lat': p_lat, 'formkey': formkey}
+TOKEN = {'p-b': p_b, 'p-lat': p_lat}
 
 def testObjectGenerator(length):
        return ''.join(random.choice(string.ascii_letters) for _ in range(length))
