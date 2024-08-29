@@ -215,13 +215,18 @@ async def message_handler(
     try:
         main_request = messages[-1]["content"]
 
-        rest_string = await helpers.__stringify_messages(messages=messages)
+        full_string = await helpers.__stringify_messages(messages=messages)
         
-        rest_string = await helpers.__progressive_summarize_text(
-                    rest_string, min(len(rest_string), tokensLimit) 
-                )
+        history_string = await helpers.__stringify_messages(messages=messages[:-1])
+
+        full_tokens = await helpers.__tokenize(full_string)
         
-        message = f"Your current message context: \n{rest_string}\n\nThe most recent message: {main_request}\n\n"
+        if full_tokens > tokensLimit:
+            history_string = await helpers.__progressive_summarize_text(
+                history_string, tokensLimit - await helpers.__tokenize(main_request) - 100
+            )
+        
+        message = f"Your current message context: \n{history_string}\n\nThe most recent message: {main_request}\n\n"
         return {"bot": baseModel, "message": message}
     except Exception as e:
         raise HTTPException(detail={"error": {"message": f"Failed to process messages. Error: {e}", "type": "error", "param": None, "code": 400}}, status_code=400) from e
