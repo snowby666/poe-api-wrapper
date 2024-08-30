@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import StreamingResponse, ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from daphne.cli import CommandLineInterface
-from typing import Any, Union, AsyncGenerator
+from typing import Any, Dict, Tuple, Union, AsyncGenerator
 from poe_api_wrapper import AsyncPoeApi
 from poe_api_wrapper.openai import helpers
 from poe_api_wrapper.openai.type import *
@@ -209,7 +209,7 @@ async def image_handler(baseModel: str, prompt: str, tokensLimit: int) -> dict:
    
    
 async def message_handler(
-    baseModel: str, messages: list[dict[str, str]], tokensLimit: int
+    baseModel: str, messages: List[Dict[str, str]], tokensLimit: int
 ) -> dict:
     
     try:
@@ -240,7 +240,7 @@ async def create_completion_data(
     completion_id: str, model: str, chunk: str = None, 
     finish_reason: str = None, include_usage: bool=False,
     prompt_tokens: int = 0, completion_tokens: int = 0 
-) -> dict[str, Union[str, list, float]]:
+) -> Dict[str, Union[str, list, float]]:
     
     completion_timestamp = await helpers.__generate_timestamp()
     
@@ -271,7 +271,7 @@ async def create_completion_data(
     
 async def generate_chunks(
     client: AsyncPoeApi, response: dict, model: str, completion_id: str, 
-    prompt_tokens: int, image_urls: list[str], max_tokens: int, include_usage:bool
+    prompt_tokens: int, image_urls: List[str], max_tokens: int, include_usage:bool
 ) -> AsyncGenerator[bytes, None]:
     
     try:
@@ -309,7 +309,7 @@ async def generate_chunks(
     
 async def streaming_response(
     client: AsyncPoeApi, response: dict, model: str, completion_id: str, 
-    prompt_tokens: int, image_urls: list[str], max_tokens: int, include_usage: bool
+    prompt_tokens: int, image_urls: List[str], max_tokens: int, include_usage: bool
 ) -> StreamingResponse:
     
     return StreamingResponse(content=generate_chunks(client, response, model, completion_id, prompt_tokens, image_urls, max_tokens, include_usage), status_code=200, 
@@ -318,7 +318,7 @@ async def streaming_response(
 
 async def non_streaming_response(
     client: AsyncPoeApi, response: dict, model: str, completion_id: str,
-    prompt_tokens: int, image_urls: list[str], max_tokens: int
+    prompt_tokens: int, image_urls: List[str], max_tokens: int
 ) -> ORJSONResponse:
     
     try:
@@ -356,7 +356,7 @@ async def non_streaming_response(
     return ORJSONResponse(content.dict())
 
 
-async def rotate_token(tokens) -> tuple[AsyncPoeApi, bool]:
+async def rotate_token(tokens) -> Tuple[AsyncPoeApi, bool]:
     if len(tokens) == 0:
         raise HTTPException(detail={"error": {"message": "All tokens have been used. Please add more tokens.", "type": "error", "param": None, "code": 402}}, status_code=402)
     token = random.choice(tokens)
