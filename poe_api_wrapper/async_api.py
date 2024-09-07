@@ -77,7 +77,8 @@ class AsyncPoeApi:
             })
         
     async def create(self):
-        await self.load_bundle()
+        if self.formkey == "":
+            await self.load_bundle()
         
         if self.proxy != [] or self.auto_proxy == True:
             await self.select_proxy(self.proxy, auto_proxy=self.auto_proxy)

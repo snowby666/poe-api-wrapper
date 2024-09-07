@@ -66,7 +66,8 @@ class PoeApi:
                 'Poe-Formkey': self.formkey,
             })
         
-        self.load_bundle()
+        if self.formkey == "":
+            self.load_bundle()
 
         if proxy != [] or auto_proxy == True:
             self.select_proxy(proxy, auto_proxy=auto_proxy)
