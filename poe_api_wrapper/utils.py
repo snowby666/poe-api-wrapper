@@ -18,18 +18,26 @@ HEADERS = {
 
 SubscriptionsMutation = {
     "subscriptions":[
-        {"subscriptionName":"messageAdded","query":None,"queryHash":"41ca89f5809bf7fd210b10dedacd28d872f63ab5c434766e639530dd396ef48d"},
+        {"subscriptionName":"messageAdded","query":None,"queryHash":"993dcce616ce18788af3cce85e31437abf8fd64b14a3daaf3ae2f0e02d35aa03"},
         {"subscriptionName":"messageCancelled","query":None,"queryHash":"14647e90e5960ec81fa83ae53d270462c3743199fbb6c4f26f40f4c83116d2ff"},
         {"subscriptionName":"messageDeleted","query":None,"queryHash":"91f1ea046d2f3e21dabb3131898ec3c597cb879aa270ad780e8fdd687cde02a3"},
-        {"subscriptionName":"messageCreated","query":None,"queryHash":"2b51823489f77348fb74e6d6b4defbca1d5f18ff67ceec12529c36e894a10399"},
-        {"subscriptionName":"viewerStateUpdated","query":None,"queryHash":"03169de18b76396784ed970bd6f33eb48763d763b3732711525181bf8a3a6bc2"},
+        {"subscriptionName":"messageRead","query":None,"queryHash":"8c80ca00f63ad411ba7de0f1fa064490ed5f438d4a0e60fd9caa080b11af9495"},
+        {"subscriptionName":"messageCreated","query":None,"queryHash":"47ee9830e0383f002451144765226c9be750d6c2135e648bced2ca7efc9d8a67"},
+        {"subscriptionName":"messageStateUpdated","query":None,"queryHash":"117a49c685b4343e7e50b097b10a13b9555fedd61d3bf4030c450dccbeef5676"},
+        {"subscriptionName":"messageAttachmentAdded","query":None,"queryHash":"65798bb2f409d9457fc84698479f3f04186d47558c3d7e75b3223b6799b6788d"},
+        {"subscriptionName":"messageFollowupActionAdded","query":None,"queryHash":"d2e770beae7c217c77db4918ed93e848ae77df668603bc84146c161db149a2c7"},
+        {"subscriptionName":"messageMetadataUpdated","query":None,"queryHash":"71c247d997d73fb0911089c1a77d5d8b8503289bc3701f9fb93c9b13df95aaa6"},
+        {"subscriptionName":"messageTextUpdated","query":None,"queryHash":"800eea48edc9c3a81aece34f5f1ff40dc8daa71dead9aec28f2b55523fe61231"},
+        {"subscriptionName":"jobStarted","query":None,"queryHash":"17099b40b42eb9f7e32323aa6badc9283b75a467bc8bc40ff5069c37d91856f6"},
+        {"subscriptionName":"jobUpdated","query":None,"queryHash":"e8e492bfaf5041985055d07ad679e46b9a6440ab89424711da8818ae01d1a1f1"},
+        {"subscriptionName":"viewerStateUpdated","query":None,"queryHash":"3b2014dba11e57e99faa68b6b6c4956f3e982556f0cf832d728534f4319b92c7"},
+        {"subscriptionName":"unreadChatsUpdated","query":None,"queryHash":"5b4853e53ff735ae87413a9de0bce15b3c9ba19102bf03ff6ae63ff1f0f8f1cd"},
         {"subscriptionName":"chatTitleUpdated","query":None,"queryHash":"ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06"},
         {"subscriptionName":"knowledgeSourceUpdated","query":None,"queryHash":"7de63f89277bcf54f2323008850573809595dcef687f26a78561910cfd4f6c37"},
         {"subscriptionName":"messagePointLimitUpdated","query":None,"queryHash":"ed3857668953d6e8849c1562f3039df16c12ffddaaac1db930b91108775ee16d"},
-        {"subscriptionName":"chatMemberAdded","query":None,"queryHash":"365b7b0352ff8b6267801b0a54c7f5567651cae30fa2d54ba5ee2931141ad5f0"},
+        {"subscriptionName":"chatMemberAdded","query":None,"queryHash":"21ef45e20cc8120c31a320c3104efe659eadf37d49249802eff7b15d883b917b"},
         {"subscriptionName":"chatSettingsUpdated","query":None,"queryHash":"3b370c05478959224e3dbf9112d1e0490c22e17ffb4befd9276fc62e196b0f5b"},
-        {"subscriptionName":"chatModalStateChanged","query":None,"queryHash":"8dcd92366d3ea9a867957f1ac9443d8ca25140a206dff4957b99f40ec6f46994"}
-    ]
+        {"subscriptionName":"chatModalStateChanged","query":None,"queryHash":"f641bc122ac6a31d466c92f6c724343688c2f679963b7769cb07ec346096bfe7"}]
 }
 
 
