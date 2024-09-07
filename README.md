@@ -611,8 +611,6 @@ print(chunk["text"])
 # You can get chatCode and chatId of created thread to continue the conversation
 chatCode = chunk["chatCode"]
 chatId = chunk["chatId"]
-# You can get the meaningful title as well
-title = chunk["title"]
 # You can also retrieve msgPrice
 msgPrice = chunk["msgPrice"]
 

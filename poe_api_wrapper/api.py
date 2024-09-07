@@ -650,9 +650,7 @@ class PoeApi:
                             suggest_attempts -= 1     
                             sleep(1)
                             continue
-                        
-                    if not response["title"]:
-                        continue
+                                   
                     yield response
                     break
                 
@@ -688,7 +686,7 @@ class PoeApi:
         else:
             apiPath = 'gql_upload_POST'
             file_form, file_size = generate_file(file_path, self.proxies)
-            if file_size > 50000000:
+            if file_size > 350000000:
                 raise RuntimeError("File size too large. Please try again with a smaller file.")
             for i in range(len(file_form)):
                 attachments.append(f'file{i}')
@@ -895,8 +893,6 @@ class PoeApi:
                             sleep(1)
                             continue
 
-                    if not response["title"]:
-                        continue
                     yield response
                     break
                 
@@ -1133,7 +1129,7 @@ class PoeApi:
         if file_path != []:
             for path in file_path:
                 file_form, file_size = generate_file([path], self.proxies)
-                if file_size > 50000000:
+                if file_size > 350000000:
                     raise RuntimeError("File size too large. Please try again with a smaller file.")
                 response = self.send_request('gql_upload_POST', 'Knowledge_CreateKnowledgeSourceMutation', {"sourceInput":{"file_upload":{"attachment":"file"}}}, file_form, knowledge=True)
                 if response['data']['knowledgeSourceCreate']['status'] != 'success':
