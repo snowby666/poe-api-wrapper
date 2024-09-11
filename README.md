@@ -12,6 +12,8 @@
 <img alt="Python Version" src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="python">
 <a href="https://www.pepy.tech/projects/poe-api-wrapper">
 <img alt="PyPI - Downloads" src="https://pepy.tech/badge/poe-api-wrapper"></a>
+<a href="https://discord.gg/apUUqbxCBQ">
+<img alt="Support Server" src="https://dcbadge.limes.pink/api/server/https://discord.com/invite/apUUqbxCBQ?style=flat"></a>
 <br>
 </p>
 
@@ -452,6 +454,127 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
+```
+- Function calling example:
+```py
+import openai 
+client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
+
+TEST_MODEL = "gpt-4o-mini"
+
+# Example dummy function hard coded to return the same weather
+# In production, this could be your backend API or an external API
+def get_current_temperature(location, unit="fahrenheit"):
+    """Get the current weather in a given location"""
+    if "tokyo" in location.lower():
+        return json.dumps({"location": "Tokyo", "temperature": "10", "unit": unit})
+    elif "san francisco" in location.lower():
+        return json.dumps({"location": "San Francisco", "temperature": "72", "unit": unit})
+    elif "paris" in location.lower():
+        return json.dumps({"location": "Paris", "temperature": "22", "unit": unit})
+    else:
+        return json.dumps({"location": location, "temperature": "unknown"})
+    
+def get_rain_probability(location):
+    """Get the probability of rain in a given location"""
+    if "tokyo" in location.lower():
+        return json.dumps({"location": "Tokyo", "rain_probability": "10%"})
+    elif "san francisco" in location.lower():
+        return json.dumps({"location": "San Francisco", "rain_probability": "20%"})
+    elif "paris" in location.lower():
+        return json.dumps({"location": "Paris", "rain_probability": "30%"})
+    else:
+        return json.dumps({"location": location, "rain_probability": "unknown"})
+    
+def run_conversation():
+    # Step 1: send the conversation and available functions to the model
+    messages = [
+        {'role': 'user', 'content': "Hello there. What the weather like in Tokyo?"},
+        {'role': 'assistant', 'content': "Let me check the weather for you."},
+        {'role': 'user', 'content': "What is the chance of raining in paris? Can you also tell me the temperature in Tokyo and LA?"},
+                ]
+    tools = [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_current_temperature",
+        "description": "Get the current temperature for a specific location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string",
+              "description": "The city and state, e.g., San Francisco, CA"
+            },
+            "unit": {
+              "type": "string",
+              "enum": ["Celsius", "Fahrenheit"],
+              "description": "The temperature unit to use. Infer this from the user's location."
+            }
+          },
+          "required": ["location", "unit"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_rain_probability",
+        "description": "Get the probability of rain for a specific location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string",
+              "description": "The city and state, e.g., San Francisco, CA"
+            }
+          },
+          "required": ["location"]
+        }
+      }
+    }
+  ]
+    response = client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=messages,
+        tools=tools,
+        tool_choice={"type": "function", "function": {"name": "get_current_temperature"}},
+    )
+    response_message = response.choices[0].message
+    print("\n", response_message, "\n")
+        
+    tool_calls = response_message.tool_calls
+    # Step 2: check if the model wanted to call a function
+    if tool_calls:
+        # Step 3: call the function
+        # Note: the JSON response may not always be valid; be sure to handle errors
+        available_functions = {
+            "get_current_temperature": get_current_temperature,
+            "get_rain_probability": get_rain_probability
+        }  # only two functions in this example, but you can have multiple
+        messages.append(response_message)  # extend conversation with assistant's reply
+        # Step 4: send the info for each function call and function response to the model
+        for tool_call in tool_calls:
+            print(tool_call, "\n")
+            function_name = tool_call.function.name
+            function_to_call = available_functions[function_name]
+            function_args = json.loads(tool_call.function.arguments)
+            function_response = function_to_call(**function_args)
+            messages.append(
+                {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": function_response,
+                }
+            )  # extend conversation with function response
+    second_response = client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=messages,
+    )  # get a new response from the model where it can see the function response
+    return second_response.choices[0].message.content
+
+print(run_conversation())
 ```
 
 ##### Images

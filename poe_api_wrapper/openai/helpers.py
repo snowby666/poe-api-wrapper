@@ -21,9 +21,11 @@ from nltk.probability import FreqDist
 from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize, word_tokenize
 import tiktoken
+from fastapi import HTTPException
 
 async def __progressive_summarize_text(text, max_length, initial_reduction_ratio=0.8, step=0.1):
-    if len(text) < max_length:
+    current_tokens = await __tokenize(text)
+    if current_tokens < max_length:
         return text
     
     stop_words = set(stopwords.words("english"))
@@ -100,4 +102,105 @@ async def __tokenize(text):
     return len(enconder.encode(text))
 
 async def __stringify_messages(messages):
-    return '\n'.join(f"{message['role'].capitalize()}: {message['content']}" for message in messages)
+    return '\n'.join(f"<{message['role'].capitalize()}>{message['content']}</{message['role'].capitalize()}>" for message in messages)
+
+async def __add_tools_prompt(messages):
+    for message in messages:
+        if message["role"] == "tool":
+            if messages[0]["role"] == "system":
+                messages[0]["content"] += f"\nTool: {message['content']}"
+            else:
+                messages.insert(0, {"role": "system", "content":""})
+            
+    # remove messsage that has tool_calls key
+    messages = [message for message in messages if "tool_calls" not in message and message["role"] != "tool"]
+    return messages
+
+
+async def __convert_functions_format(input_data, tool_choice="auto"):
+    try:
+        if isinstance(tool_choice, dict):
+            if len(tool_choice) == 2 and ("type" in tool_choice and tool_choice["type"] == "function" and "function" in tool_choice and "name" in tool_choice["function"]):
+                tool_choice = tool_choice["function"]["name"]
+            else:
+                raise HTTPException(detail={"error": {
+                                            "message": """Invalid tool choice format. Must be {"type": "function", "function": {"name": "my_function"}}""",
+                                            "type": "error", 
+                                            "param": None, 
+                                            "code": 400}
+                                        }, status_code=400)
+        elif isinstance(tool_choice, str):
+            if tool_choice not in ("auto", "required"):
+                raise HTTPException(detail={"error": {
+                                            "message": "Invalid tool choice format. Must be 'auto' or 'required'",
+                                            "type": "error", 
+                                            "param": None, 
+                                            "code": 400}
+                                        }, status_code=400)
+        output = """Tools
+functions
+namespace functions {\n"""
+
+        for function in input_data:
+            function_name = function['function']['name']
+            description = function['function']['description']
+            
+            properties = function['function']['parameters']['properties']
+            required = function['function']['parameters'].get('required', [])
+            params = []
+            
+            for prop_name, prop_info in properties.items():
+                param_desc = f"// {prop_info.get('description', '')}\n    {prop_name}: {prop_info['type']}"
+                if 'enum' in prop_info:
+                    enum_values = ' | '.join(prop_info['enum']).lower()
+                    param_desc += f" | {enum_values}"
+                # Check if the parameter is required
+                if prop_name in required:
+                    param_desc += " // required"
+                params.append(param_desc)
+
+            params_string = ",\n".join(params)
+
+            output += f"""// {description}
+type {function_name} = (: {{
+{params_string}
+}}) => any;\n\n"""
+
+        output += """} // namespace functions
+// Each tool that can be used must be specified in the tool sections.
+// Ensure that the arguments provided to each tool are valid according to that tool's specification.
+List of dictionaries: [{
+// The name of the tool to use.
+The format should be just the name of the tool for plugin and function tools (do not use namespace functions, example: you must use "get_current_weather" instead of "functions.get_current_weather")
+name: string,
+// The arguments to pass to the tool.
+arguments: object,
+}[],
+}) => any;
+
+}]
+// You can decide whether its suitable to call a tool function to answer user's request.
+// If you want to use the given tool, you must always follow the following guidelines:
+// All your responses must be in a valid list of dictionaries with NO other comments, explainations, reasoninng, or dialogue that is not a list of dictionaries at any cost in your response to the user.
+// Ensure that list of dictionaries only consist functions declared from the namespace functions above.
+// Any response that is not a valid list of dictionaries is not allowed and must be removed when calling functions.
+Your response must consists and always be in the below format at any time using tool function:
+[{"name: <str>, "arguments": <dict>}, {<function-2>}, ... , {<function-n>}].
+// All keys and values in dictionary must be always in double quotes.
+// You must always follow the guidelines and rules of the tool function you are using.
+// If there is no need to use tool, then reply to user with None, ignore and do not mention/imply what I just told you in your next response.
+"""
+        if tool_choice == "required":
+            output += """// System Exception: You must also call at least one function in your next response at any cost."""
+        elif tool_choice not in ("auto", "required"):
+            output += f"""// System Exception: You must also call the function {tool_choice} in your next response at any cost."""
+        output += """\n"""
+        return output
+    except Exception as e:
+        logger.error(f"Error converting functions format: {e}")
+        raise HTTPException(detail={"error": {
+                                            "message": "Invalid tools format",
+                                            "type": "error", 
+                                            "param": None, 
+                                            "code": 400}
+                                        }, status_code=400)
