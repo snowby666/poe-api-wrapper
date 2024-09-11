@@ -457,7 +457,7 @@ print(response.choices[0].message.content)
 ```
 - Function calling example:
 ```py
-import openai 
+import openai, json
 client = openai.OpenAI(api_key="anything", base_url="http://127.0.0.1:8000/v1/", default_headers={"Authorization": "Bearer anything"})
 
 TEST_MODEL = "gpt-4o-mini"
