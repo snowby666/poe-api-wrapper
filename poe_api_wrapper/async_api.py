@@ -157,6 +157,7 @@ class AsyncPoeApi:
             response = await self.client.post(f'{self.BASE_URL}/api/{path}', data=payload, headers=headers, follow_redirects=True, timeout=30)
             
             status_code = response.status_code
+            
             json_data = orjson.loads(response.text)
 
             if (
@@ -572,10 +573,10 @@ class AsyncPoeApi:
         
         variables = {"chatCode": chatCode}
         response_json = await self.send_request('gql_POST', 'ChatPageQuery', variables)
+
         if response_json['data'] == None and response_json["errors"]:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
-        elif response_json['data']['viewer']['enableRemixButton'] != True:
-            raise RuntimeError(f"Retry button is not enabled. Raw response data: {response_json}")
+        
         edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
         edges.reverse()
         
@@ -618,7 +619,7 @@ class AsyncPoeApi:
 
         last_text = ""        
         stateChange = False
-        suggest_attempts = 4
+        suggest_attempts = 6
         response = {}
         suggestedReplies = []
         
@@ -677,7 +678,7 @@ class AsyncPoeApi:
                 
                 if response["state"] == "complete":
                     if suggest_replies:
-                        if suggest_attempts > 0 and len(response["followupActions"]) <= 4:
+                        if suggest_attempts > 0 and len(response["followupActions"]) <= 6:
                             actions = response["followupActions"]
                             suggestedReplies = [action["bodyText"] for action in actions]
                             suggest_attempts -= 1     
@@ -724,6 +725,13 @@ class AsyncPoeApi:
             for i in range(len(file_form)):
                 attachments.append(f'file{i}')
         
+        botInfo = await self.get_botInfo(bot)
+        msgPrice = botInfo.get('displayMessagePointPrice')
+        if not botInfo:
+            raise ValueError(
+                f"Failed to get bot info for {bot}. Make sure the bot exists before creating new chat."
+            )
+        
         if (chatId == None and chatCode == None):
             try:
                 variables = {
@@ -739,22 +747,6 @@ class AsyncPoeApi:
                                 "messagePointsDisplayPrice": msgPrice
                             }
                 message_data = await self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
-                
-                if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
-                    msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
-                    variables = {
-                                    "chatId": None, 
-                                    "bot": bot,
-                                    "query":message, 
-                                    "shouldFetchChat": True, 
-                                    "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, 
-                                    "clientNonce": generate_nonce(),
-                                    "sdid":"",
-                                    "attachments":attachments, 
-                                    "existingMessageAttachmentsIds":[],
-                                    "messagePointsDisplayPrice": msgPrice
-                                }
-                    message_data = await self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
         
                 if message_data["data"] == None and message_data["errors"]:
                     raise ValueError(
@@ -814,22 +806,7 @@ class AsyncPoeApi:
             
             try:
                 message_data = await self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
-                if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
-                    msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
-                    variables = {
-                                    "chatId": chatId, 
-                                    "bot": bot,
-                                    "query":message, 
-                                    "shouldFetchChat": True, 
-                                    "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, 
-                                    "clientNonce": generate_nonce(),
-                                    "sdid":"",
-                                    "attachments":attachments, 
-                                    "existingMessageAttachmentsIds":[],
-                                    "messagePointsDisplayPrice": msgPrice
-                                }
-                    message_data = await self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
-                    
+
                 if message_data["data"] == None and message_data["errors"]:
                     raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
                 else:
@@ -860,7 +837,7 @@ class AsyncPoeApi:
 
         last_text = ""     
         stateChange = False
-        suggest_attempts = 4
+        suggest_attempts = 6
         response = {}
         suggestedReplies = []
         
@@ -920,7 +897,7 @@ class AsyncPoeApi:
                 if response["state"] == "complete":    
                     if suggest_replies:
                             
-                        if suggest_attempts > 0 and len(response["followupActions"]) <= 4:
+                        if suggest_attempts > 0 and len(response["followupActions"]) <= 6:
                             actions = response["followupActions"]
                             suggestedReplies = [action["bodyText"] for action in actions]
                             suggest_attempts -= 1     

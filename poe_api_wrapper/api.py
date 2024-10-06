@@ -539,10 +539,10 @@ class PoeApi:
         
         variables = {"chatCode": chatCode}
         response_json = self.send_request('gql_POST', 'ChatPageQuery', variables)
+        
         if response_json['data'] == None and response_json["errors"]:
             raise RuntimeError(f"An unknown error occurred. Raw response data: {response_json}")
-        elif response_json['data']['viewer']['enableRemixButton'] != True:
-            raise RuntimeError(f"Retry button is not enabled. Raw response data: {response_json}")
+    
         edges = response_json['data']['chatOfCode']['messagesConnection']['edges']
         edges.reverse()
         
@@ -585,8 +585,7 @@ class PoeApi:
 
         last_text = ""
         stateChange = False
-        old_length = 0
-        suggest_attempts = 4
+        suggest_attempts = 6
         response = {}
         suggestedReplies = []
         
@@ -645,7 +644,7 @@ class PoeApi:
                 
                 if response["state"] == "complete":
                     if suggest_replies:
-                        if suggest_attempts > 0 and len(response["followupActions"]) <= 4:
+                        if suggest_attempts > 0 and len(response["followupActions"]) <= 6:
                             actions = response["followupActions"]
                             suggestedReplies = [action["bodyText"] for action in actions]
                             suggest_attempts -= 1     
@@ -692,6 +691,13 @@ class PoeApi:
             for i in range(len(file_form)):
                 attachments.append(f'file{i}')
         
+        botInfo = self.get_botInfo(bot)
+        msgPrice = botInfo.get('displayMessagePointPrice')
+        if not botInfo:
+            raise ValueError(
+                f"Failed to get bot info for {bot}. Make sure the bot exists before creating new chat."
+            )
+            
         if (chatId == None and chatCode == None):
             try:
                 variables = {
@@ -707,22 +713,6 @@ class PoeApi:
                                 "messagePointsDisplayPrice": msgPrice
                             }
                 message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
-                
-                if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
-                    msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
-                    variables = {
-                                    "chatId": None, 
-                                    "bot": bot,
-                                    "query":message, 
-                                    "shouldFetchChat": True, 
-                                    "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, 
-                                    "clientNonce": generate_nonce(),
-                                    "sdid":"",
-                                    "attachments":attachments, 
-                                    "existingMessageAttachmentsIds":[],
-                                    "messagePointsDisplayPrice": msgPrice
-                                }
-                    message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
         
                 if message_data["data"] == None and message_data["errors"]:
                     raise ValueError(
@@ -782,21 +772,6 @@ class PoeApi:
             
             try:
                 message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
-                if message_data["data"] != None and message_data["data"]["messageEdgeCreate"]["status"] == "message_points_display_price_mismatch":
-                    msgPrice = message_data["data"]["messageEdgeCreate"]["bot"]["messagePointLimit"]["displayMessagePointPrice"]
-                    variables = {
-                                    "chatId": chatId, 
-                                    "bot": bot,
-                                    "query":message, 
-                                    "shouldFetchChat": True, 
-                                    "source":{"sourceType":"chat_input","chatInputMetadata":{"useVoiceRecord":False,}}, 
-                                    "clientNonce": generate_nonce(),
-                                    "sdid":"",
-                                    "attachments":attachments, 
-                                    "existingMessageAttachmentsIds":[],
-                                    "messagePointsDisplayPrice": msgPrice
-                                }
-                    message_data = self.send_request(apiPath, 'SendMessageMutation', variables, file_form)
                     
                 if message_data["data"] == None and message_data["errors"]:
                     raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
@@ -828,7 +803,7 @@ class PoeApi:
 
         last_text = ""
         stateChange = False
-        suggest_attempts = 4
+        suggest_attempts = 6
         response = {}
         suggestedReplies = []
         
@@ -887,7 +862,7 @@ class PoeApi:
                         
                 if response["state"] == "complete":
                     if suggest_replies:
-                        if suggest_attempts > 0 and len(response["followupActions"]) <= 4:
+                        if suggest_attempts > 0 and len(response["followupActions"]) <= 6:
                             actions = response["followupActions"]
                             suggestedReplies = [action["bodyText"] for action in actions]
                             suggest_attempts -= 1     

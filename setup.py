@@ -19,7 +19,7 @@ setup(
     python_requires=">=3.7",
     install_requires=['httpx[http2]', 'websocket-client', 'requests_toolbelt', 'loguru', 'rich==13.3.4', 'beautifulsoup4', 'quickjs', 'nest-asyncio', 'orjson', 'aiofiles'],
     extras_require={
-        'proxy': ['ballyregan; python_version>="3.9"'],
+        'proxy': ['ballyregan; python_version>="3.9"', 'numpy==1.26.4'],
         'llm': ['fastapi', 'pydantic', 'nltk', 'daphne', 'openai', 'Twisted[tls,http2]', 'tiktoken'],
         'tests': ['tox'],
     },
