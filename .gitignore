@@ -3,6 +3,7 @@
 build/
 dist/
 .tox/
+.idea/
 playground/
 examples/
 langchain/
