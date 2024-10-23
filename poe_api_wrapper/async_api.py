@@ -48,7 +48,7 @@ class AsyncPoeApi:
         self.ws_connected: bool = False
         self.ws_error: bool = False
         self.active_messages: dict[int, str] = {}
-        self.message_queues: dict[int, queue.Queue] = {}
+        self.message_queues: dict[int, asyncio.Queue] = {}
         self.current_thread: dict[str, list] = {}
         self.retry_attempts: int = 3
         self.ws_refresh: int = 3
@@ -346,12 +346,13 @@ class AsyncPoeApi:
                     return
                 
                 if chat_id in self.message_queues:
-                    self.message_queues[chat_id].put(
-                        {
-                            "data": data,
-                            "subscription": subscriptionName,
-                        }
-                    )
+                    asyncio.run_coroutine_threadsafe(
+                                        self.message_queues[chat_id].put({
+                                            "data": data,
+                                            "subscription": subscriptionName,
+                                        }),
+                                        self.loop  # 需要在类中保存事件循环的引用
+                                    )
                     if subscriptionName == "messageAdded":
                         self.active_messages[chat_id] = data["messageAdded"]["messageId"]          
                     return
@@ -368,6 +369,11 @@ class AsyncPoeApi:
             
     async def delete_queues(self, chatId: int):
         if chatId in self.message_queues:
+            while not self.message_queues[chatId].empty():
+                try:
+                    await self.message_queues[chatId].get_nowait()
+                except asyncio.QueueEmpty:
+                    pass
             del self.message_queues[chatId]
         if chatId in self.active_messages:
             del self.active_messages[chatId]
@@ -615,7 +621,7 @@ class AsyncPoeApi:
             logger.info(f"Message {bot_message_id} of Thread {chatCode} has been retried.")
             
         self.active_messages[chatId] = None
-        self.message_queues[chatId] = queue.Queue()
+        self.message_queues[chatId] = asyncio.Queue()
 
         last_text = ""        
         stateChange = False
@@ -625,11 +631,11 @@ class AsyncPoeApi:
         
         while True:
             try:
-                ws_data = self.message_queues[chatId].get(timeout=timeout)
+                ws_data = await asyncio.wait_for(self.message_queues[chatId].get(), timeout=timeout)
             except KeyError:
                 await asyncio.sleep(1)
                 continue
-            except queue.Empty:
+            except asyncio.TimeoutError:
                 try:
                     if self.retry_attempts > 0:
                         self.retry_attempts -= 1
@@ -843,11 +849,11 @@ class AsyncPoeApi:
         
         while True:
             try:
-                ws_data = self.message_queues[chatId].get(timeout=timeout)
+                ws_data = await asyncio.wait_for(self.message_queues[chatId].get(), timeout=timeout)
             except KeyError:
                 await asyncio.sleep(1)
                 continue
-            except queue.Empty:
+            except asyncio.TimeoutError:
                 try:
                     if self.retry_attempts > 0:
                         self.retry_attempts -= 1
