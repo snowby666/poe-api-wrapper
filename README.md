@@ -11,7 +11,7 @@
 <a href="https://pypi.org/project/poe-api-wrapper/"><img src="https://img.shields.io/pypi/v/poe-api-wrapper"></a>
 <img alt="Python Version" src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="python">
 <a href="https://www.pepy.tech/projects/poe-api-wrapper">
-<img alt="PyPI - Downloads" src="https://pepy.tech/badge/poe-api-wrapper"></a>
+<img alt="PyPI - Downloads" src="https://static.pepy.tech/badge/poe-api-wrapper"></a>
 <a href="https://discord.gg/apUUqbxCBQ">
 <img alt="Support Server" src="https://dcbadge.limes.pink/api/server/https://discord.com/invite/apUUqbxCBQ?style=flat"></a>
 <br>

@@ -4,7 +4,7 @@ from pathlib import Path
 base_path = Path(__file__).parent
 long_description = (base_path / "README.md").read_text(encoding='utf-8')
 
-VERSION = '1.6.9'
+VERSION = '1.7.0'
 DESCRIPTION = 'A simple, lightweight and efficient API wrapper for Poe.com'
 LONG_DESCRIPTION = '👾 A Python API wrapper for Poe.com. With this, you will have free access to GPT-4, Claude, Llama, Gemini, Mistral and more! 🚀'
 

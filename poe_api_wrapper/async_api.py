@@ -1,5 +1,5 @@
 from httpx import AsyncClient, ConnectError, ReadTimeout
-import asyncio, queue, orjson, random, ssl, threading, websocket, string, secrets, os, hashlib, re, aiofiles
+import asyncio, orjson, random, ssl, threading, websocket, string, secrets, os, hashlib, re, aiofiles
 from typing import  AsyncIterator
 from loguru import logger
 from requests_toolbelt import MultipartEncoder
@@ -361,7 +361,7 @@ class AsyncPoeApi:
                                             "data": data,
                                             "subscription": subscriptionName,
                                         }),
-                                        self.loop  # 需要在类中保存事件循环的引用
+                                        self.loop
                                     )
                     if subscriptionName == "messageAdded":
                         self.active_messages[chat_id] = data["messageAdded"]["messageId"]          
@@ -849,7 +849,7 @@ class AsyncPoeApi:
                 raise e
                     
         self.active_messages[chatId] = None
-        self.message_queues[chatId] = queue.Queue()
+        self.message_queues[chatId] = asyncio.Queue()
 
         last_text = ""     
         stateChange = False
