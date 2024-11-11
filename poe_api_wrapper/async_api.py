@@ -381,7 +381,7 @@ class AsyncPoeApi:
         if chatId in self.message_queues:
             while not self.message_queues[chatId].empty():
                 try:
-                    await self.message_queues[chatId].get_nowait()
+                    self.message_queues[chatId].get_nowait()
                 except asyncio.QueueEmpty:
                     pass
             del self.message_queues[chatId]
