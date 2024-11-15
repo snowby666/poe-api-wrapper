@@ -729,13 +729,19 @@ class PoeApi:
                         raise RuntimeError(f"Daily limit reached for {bot}.")
                     elif status == 'too_many_tokens':
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
+                    elif status == 'no_access':
+                        raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
                     elif status in ('rate_limit_exceeded', 'concurrent_messages'):
                         self.delete_pending_messages(prompt_md5)
                         sleep(random.randint(4, 6))
                         for chunk in self.send_message(bot, message, chatId, chatCode, msgPrice, file_path, suggest_replies, timeout):
                             yield chunk
                         return
-                    
+
+                    chat_data = message_data['data']['messageEdgeCreate'].get('chat')
+                    if not chat_data:
+                        raise RuntimeError(f"Failed to create chat: {message_data['data']['messageEdgeCreate'].get('statusMessage', 'Unknown error')}")
+
                     logger.info(f"New Thread created | {message_data['data']['messageEdgeCreate']['chat']['chatCode']}")
                 
                 message_data = message_data['data']['messageEdgeCreate']['chat']
@@ -785,6 +791,8 @@ class PoeApi:
                     elif status == 'reached_limit':
                         raise RuntimeError(f"Daily limit reached for {bot}.")
                     elif status == 'too_many_tokens':
+                        raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
+                    elif status == 'no_access':
                         raise RuntimeError(f"{message_data['data']['messageEdgeCreate']['statusMessage']}")
                     elif status in ('rate_limit_exceeded', 'concurrent_messages'):
                         self.delete_pending_messages(prompt_md5)
