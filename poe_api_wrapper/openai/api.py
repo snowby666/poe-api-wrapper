@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from daphne.cli import CommandLineInterface
 from typing import Any, Dict, Tuple, Union, AsyncGenerator
 from poe_api_wrapper import AsyncPoeApi
-from poe_api_wrapper.openai import helpers
-from poe_api_wrapper.openai.type import *
+import helpers
+from type import *
 import orjson, asyncio, random, os, uuid
 from httpx import AsyncClient
 
