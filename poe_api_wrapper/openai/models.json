@@ -89,6 +89,24 @@
         "owned_by": "openai"
     },
 
+    "o1-mini": {
+        "baseModel": "o1_mini",
+        "tokens": 128000,
+        "endpoints": ["/v1/chat/completions"],
+        "premium_model": true,
+        "object": "model",
+        "owned_by": "openai"
+    },
+
+    "o1-preview": {
+        "baseModel": "o1_preview",
+        "tokens": 128000,
+        "endpoints": ["/v1/chat/completions"],
+        "premium_model": true,
+        "object": "model",
+        "owned_by": "openai"
+    },
+    
     "claude-instant": {
         "baseModel": "a2",
         "tokens": 9000,
@@ -180,7 +198,7 @@
     },
 
     "claude-3.5-sonnet": {
-        "baseModel": "claude_3_igloo",
+        "baseModel": "Claude-3.5-Sonnet",
         "tokens": 4000,
         "endpoints": ["/v1/chat/completions"],
         "premium_model": false,
@@ -189,7 +207,7 @@
     },
     
     "claude-3.5-sonnet-200k": {
-        "baseModel": "claude_3_igloo_200k",
+        "baseModel": "Claude-3.5-Sonnet-200k",
         "tokens": 200000,
         "endpoints": ["/v1/chat/completions"],
         "premium_model": false,
