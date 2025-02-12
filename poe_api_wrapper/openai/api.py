@@ -34,7 +34,7 @@ if os.path.exists(os.path.join(DIR, "proxies.json")):
 async def call_tools(messages, tools, tool_choice):
     response = await message_handler("gpt4_o_mini", messages, 128000, tools, tool_choice)
     tool_calls = None
-    client, _ = await rotate_token(app.state.tokens)
+    client, _ = await rotate_token(app.state.tokens, app.state.proxies)
     async for chunk in client.send_message(bot="gpt4_o_mini", message=response["message"]):
         try:
             res_list = orjson.loads(chunk["text"].strip().replace("\n", "").replace("\\",""))
@@ -89,7 +89,7 @@ async def chat_completions(request: Request, data: ChatData) -> Union[StreamingR
     if "/v1/chat/completions" not in endpoints:
         raise HTTPException(detail={"error": {"message": "This model does not support chat completions.", "type": "error", "param": None, "code": 400}}, status_code=400)
 
-    client, subscription = await rotate_token(app.state.tokens)
+    client, subscription = await rotate_token(app.state.tokens, app.state.proxies)
 
     if premiumModel and not subscription:
         raise HTTPException(detail={"error": {"message": "Premium model requires a subscription.", "type": "error", "param": None, "code": 402}}, status_code=402)
@@ -153,7 +153,7 @@ async def create_images(request: Request, data: ImagesGenData) -> ORJSONResponse
     if "/v1/images/generations" not in endpoints:
         raise HTTPException(detail={"error": {"message": "This model does not support image generation.", "type": "error", "param": None, "code": 400}}, status_code=400)
 
-    client, subscription = await rotate_token(app.state.tokens)
+    client, subscription = await rotate_token(app.state.tokens, app.state.proxies)
 
     if premiumModel and not subscription:
         raise HTTPException(detail={"error": {"message": "Premium model requires a subscription.", "type": "error", "param": None, "code": 402}}, status_code=402)
@@ -211,7 +211,7 @@ async def edit_images(request: Request, data: ImagesEditData) -> ORJSONResponse:
     if "/v1/images/edits" not in endpoints:
         raise HTTPException(detail={"error": {"message": "This model does not support image editing.", "type": "error", "param": None, "code": 400}}, status_code=400)
 
-    client, subscription = await rotate_token(app.state.tokens)
+    client, subscription = await rotate_token(app.state.tokens, app.state.proxies)
 
     if premiumModel and not subscription:
         raise HTTPException(detail={"error": {"message": "Premium model requires a subscription.", "type": "error", "param": None, "code": 402}}, status_code=402)
@@ -459,7 +459,7 @@ async def rotate_token(tokens, proxies) -> Tuple[AsyncPoeApi, bool]:
     settings = await client.get_settings()
     if settings["messagePointInfo"]["messagePointBalance"] <= 20:
         tokens.remove(token)
-        return await rotate_token(tokens)
+        return await rotate_token(tokens, proxies)
     subscriptions = settings["subscription"]["isActive"]
     return client, subscriptions
 
