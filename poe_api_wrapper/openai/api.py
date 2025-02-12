@@ -26,7 +26,7 @@ with open(os.path.join(DIR, "models.json"), "rb") as f:
     app.state.models = models
 
 app.state.proxies = []
-if os.paht.exists(os.path.join(DIR, "proxies.json")):
+if os.path.exists(os.path.join(DIR, "proxies.json")):
     with open(os.path.join(DIR, "proxies.json"), "rb") as f:
         proxies = orjson.loads(f.read())
         app.state.proxies = proxies
