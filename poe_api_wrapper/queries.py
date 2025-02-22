@@ -28,6 +28,7 @@ QUERIES = {
   "ChatsHistoryPageQuery": "9276a572d279d5d0e9704531d8572eb626904c414d2f40370055f2d712058a12",
   "ChatSetTitle": "24574aab7fedf86d1654bbc70bf5421abbc33e195aa1c11178697023a27a912e",
   "ChatSettingsModalQuery": "41910ff112abaa713edd836cbb7fc567433f3f7ac3a61659fffca6306f7288ac",
+  "ChatSettingsModal_ChatSetContextOptimization_Mutation": "1e314e6829565b88fff37dfcbaab95dabe5338df7e231f7a2a2cb420545645b6",
   "ChatSubscriptionPaywallModalQuery": "559ac4c7c8f0f6f50148d255bb6318107034375df7bca4214f608cd65b573a21",
   "ChatSwitcherRefetchQuery": "815b8e6406bd19b25da36523b8b33c8c25e6db2fe93505117bb583c2d9dd60e4",
   "ChatTitleUpdated": "ee062b1f269ecd02ea4c2a3f1e4b2f222f7574c43634a2da4ebeb616d8647e06",

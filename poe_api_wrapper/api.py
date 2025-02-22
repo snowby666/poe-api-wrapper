@@ -1677,3 +1677,15 @@ class PoeApi:
                     
         if autosave:
             self.save_group_history(group_name)
+
+    def set_context_optimization(self, chat_id: int, enabled: bool) -> dict:
+        variables = {
+            "chatId": chat_id,
+            "isContextOptimizationOn": enabled
+        }
+        
+        return self.send_request(
+            path="gql_POST",
+            query_name="ChatSettingsModal_ChatSetContextOptimization_Mutation",
+            variables=variables
+        )
