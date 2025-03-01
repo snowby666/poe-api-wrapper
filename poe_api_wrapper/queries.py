@@ -21,7 +21,7 @@ QUERIES = {
   "ChatHistoryListPaginationQuery": "6ce01455b0201e625489da90c65f87a2809d212ea41ab6e39412b6913990e81f",
   "ChatHomeMainInputContainerOptimisticBotQuery": "1c9267ecff73cb27a8e7d94a3f5b5fe665a82abe0fdd61be2e54dd38c0e61639",
   "ChatHomeMainInputContainerOptimisticViewerQuery": "21f0eb43ab07d97d4a30bcf007db4797b95e852fb6537e8dbbc002da45ba4fac",
-  "ChatListPaginationQuery": "e109d61fff512d58d84989aae2418a19167e3b6a9626d795b8a4f2bc84daf97c",
+  "ChatListPaginationQuery": "c1a8fd96dd6e0a4679814182951b1e256e175587513c81b223addf931833a692",
   "ChatLoaderQuery": "d9467ac216e21b510eb8e72a2888289d173c9d5ce399b072fd88bee3da1b1459",
   "ChatPageBotBotsPagination": "ed9017f85fe2fedbf02b2d000cb4b551d2ec870715d0c7bce6d54a0f3f9b657b",
   "ChatPageQuery": "e7dcf93e713a35a6b5642496b78339c9ef5ff0ae5e7e0c150ef534a738cced8c",
