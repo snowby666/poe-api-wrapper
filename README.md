@@ -899,6 +899,14 @@ for message in previous_messages:
 {'author': 'human', 'text': 'nice to meet you', 'messageId': 2861709279}
 {'author': 'code_llama_34b_instruct', 'text': " Nice to meet you too! How are you doing today? Is there anything on your mind that you'd like to talk about? I'm here to listen and help", 'messageId': 2861873125}
 
+# Get messages with extended metadata (state and creationTime)
+# Using chatCode
+previous_messages = client.get_previous_messages('code_llama_34b_instruct', chatCode='2itg2a7muygs42v1u0k', include_extended=True)
+# Using chatId
+previous_messages = client.get_previous_messages('code_llama_34b_instruct', chatId=74411139, include_extended=True)
+>> Output:
+{'author': 'human', 'text': 'hi there', 'messageId': 2861363514, 'state': 'complete', 'creationTime': 1732029401216595}
+
 # Get all previous messages
 # Using chatCode
 previous_messages = client.get_previous_messages('code_llama_34b_instruct', chatCode='2itg2a7muygs42v1u0k', get_all=True)

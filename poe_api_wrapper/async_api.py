@@ -1051,7 +1051,7 @@ class AsyncPoeApi:
                 await self.send_request('gql_POST', 'DeleteChat', {'chatId': chat})
                 logger.info(f"Chat {chat} deleted")  
                 
-    async def get_previous_messages(self, bot: str, chatId: int = None, chatCode: str = None, count: int = 50, get_all: bool = False):
+    async def get_previous_messages(self, bot: str, chatId: int = None, chatCode: str = None, count: int = 50, get_all: bool = False, include_extended: bool = False):
         bot = bot_map(bot)
         try:
             getchatdata = await self.get_threadData(bot, chatCode, chatId)
@@ -1070,7 +1070,16 @@ class AsyncPoeApi:
                 chatdata = response_json['data']['node']
                 edges = chatdata['messagesConnection']['edges'][::-1]
                 for edge in edges:
-                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text'], 'messageId': edge['node']['messageId'], 'contentType': edge['node']['contentType']})
+                    message = {
+                        'author': edge['node']['author'],
+                        'text': edge['node']['text'],
+                        'messageId': edge['node']['messageId'],
+                        'contentType': edge['node']['contentType']
+                    }
+                    if include_extended:
+                        message['state'] = edge['node'].get('state')
+                        message['creationTime'] = edge['node'].get('creationTime')
+                    messages.append(message)
                 cursor = chatdata['messagesConnection']['pageInfo']['startCursor']
         else:
             num = count
@@ -1080,7 +1089,16 @@ class AsyncPoeApi:
                 chatdata = response_json['data']['node']
                 edges = chatdata['messagesConnection']['edges'][::-1]
                 for edge in edges:
-                    messages.append({'author': edge['node']['author'], 'text': edge['node']['text'], 'messageId': edge['node']['messageId'], 'contentType': edge['node']['contentType']})
+                    message = {
+                        'author': edge['node']['author'],
+                        'text': edge['node']['text'],
+                        'messageId': edge['node']['messageId'],
+                        'contentType': edge['node']['contentType']
+                    }
+                    if include_extended:
+                        message['state'] = edge['node'].get('state')
+                        message['creationTime'] = edge['node'].get('creationTime')
+                    messages.append(message)
                     num -= 1
                     if len(messages) == count:
                         break
