@@ -564,8 +564,8 @@ class AsyncPoeApi:
                 'model':botData['model'],
                 'supportsFileUpload': botData['supportsFileUpload'], 
                 'messageTimeoutSecs': botData['messageTimeoutSecs'], 
-                'displayMessagePointPrice': botData['messagePointLimit']['displayMessagePointPrice'], 
-                'numRemainingMessages': botData['messagePointLimit']['numRemainingMessages'],
+                # 'displayMessagePointPrice': botData['messagePointLimit']['displayMessagePointPrice'], deprecated
+                # 'numRemainingMessages': botData['messagePointLimit']['numRemainingMessages'], deprecated
                 'viewerIsCreator': botData['viewerIsCreator'],
                 'id': botData['id'],
                 }
@@ -598,7 +598,7 @@ class AsyncPoeApi:
         
         chatId = response_json['data']['chatOfCode']['chatId']
         title = response_json['data']['chatOfCode']['title']
-        msgPrice = response_json['data']['chatOfCode']['defaultBotObject']['messagePointLimit']['displayMessagePointPrice']
+        # msgPrice = response_json['data']['chatOfCode']['defaultBotObject']['messagePointLimit']['displayMessagePointPrice']
         last_message = edges[0]['node']
         
         if last_message['author'] == 'human':
@@ -624,7 +624,7 @@ class AsyncPoeApi:
         bot_message_id = last_message['messageId']
         await self.delete_pending_messages(prompt_md5)
         
-        response_json = await self.send_request('gql_POST', 'RegenerateMessageMutation', {'messageId': bot_message_id, 'messagePointsDisplayPrice': msgPrice})
+        response_json = await self.send_request('gql_POST', 'RegenerateMessageMutation', {'messageId': bot_message_id})
         if response_json['data'] == None and response_json["errors"]:
             logger.error(f"Failed to retry message {bot_message_id} of Thread {chatCode}. Raw response data: {response_json}")
         else:
@@ -672,7 +672,7 @@ class AsyncPoeApi:
                 response["chatCode"] = chatCode
                 response["chatId"] = chatId
                 response["title"] = title
-                response["msgPrice"] = msgPrice
+                # response["msgPrice"] = msgPrice
                 response["response"] = ""
                 response["suggestedReplies"] = suggestedReplies
 

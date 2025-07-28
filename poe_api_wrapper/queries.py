@@ -61,7 +61,7 @@ QUERIES = {
   "GenerateAppleAuthNonceMutation": "c3e0c1b990cd17322716d0fa943a8ddc0ffecf45294ad013ccc883954c2171fc",
   "HandleBotChatEmbedPageQuery": "60a48e1b772e6830ddbdb54f19e837beef949d4fc146c51b1f50469f40b7650b",
   "HandleBotChatPageQuery": "dc1891a1d9b3ca42c773a69e9985f95e78a13ad5858cef0574c7f4ce87004a77",
-  "HandleBotLandingPageQuery": "2ec8856116b8c2cb587e9a05e60df21a751694b2ff06d67dfe0c3d0efaf5f6a2",
+  "HandleBotLandingPageQuery": "2997adcc7abe30f763da42eed3174b67fd1b60ac4a23dac794526448c2629a8d",
   "HandleProfileIndexPageQuery": "0243e1784c33ae913d8a3ad20fc1252b930b6741ff9d78bd776e2df4f93f55ee",
   "HandleProfilePageQuery": "61b9722aa439c027110908b160db683f623e8affcde2d5f66378375b9ae668e3",
   "IntroMainQuery": "47f2c9bb41be5238968c81c82f2d2cff4100c73fcc70a9f592825bb40c0efc8d",
