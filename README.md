@@ -17,6 +17,9 @@
 <br>
 </p>
 
+## ⚠️ Notice
+This project is **no longer actively maintained**. We recommend using [Poe's official API](https://poe.com/blog/introducing-the-poe-api) instead, which is more reliable and officially supported.
+
 ## 📚 Table of Contents
 - [📚 Table of Contents](#-table-of-contents)
 - [✨ Highlights](#-highlights)
