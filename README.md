@@ -13,7 +13,7 @@
 <a href="https://www.pepy.tech/projects/poe-api-wrapper">
 <img alt="PyPI - Downloads" src="https://static.pepy.tech/badge/poe-api-wrapper"></a>
 <a href="https://discord.gg/apUUqbxCBQ">
-<img alt="Support Server" src="https://dcbadge.limes.pink/api/server/https://discord.com/invite/apUUqbxCBQ?style=flat"></a>
+<img alt="Support Server" src="https://dcbadge.limes.pink/api/server/https://discord.com/invite/3CQFZjDMxE?style=flat"></a>
 <br>
 </p>
 
